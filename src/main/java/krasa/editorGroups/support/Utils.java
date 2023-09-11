@@ -13,7 +13,7 @@ import com.intellij.openapi.util.io.OSAgnosticPathUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.ex.VirtualFileManagerEx;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.ColorUtil;
 import com.intellij.util.IconUtil;
 import com.intellij.util.ReflectionUtil;
@@ -53,7 +53,7 @@ public class Utils {
 
   @Nullable
   public static VirtualFile getFileByUrl(String url) {
-    return VirtualFileManagerEx.getInstance().findFileByUrl(url);
+    return VirtualFileManager.getInstance().findFileByUrl(url);
   }
 
   public static String getFileContent(String ownerPath) {
