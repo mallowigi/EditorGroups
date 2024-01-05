@@ -1,7 +1,8 @@
 repo_name: mallowigi/EditorGroups
 report_id: 77a83589c05992f298db4978721f64ad
+version: 0.1
 repo_type: Public
-timestamp: '2023-11-19T07:59:39+00:00'
+timestamp: '2024-01-05T08:37:14+00:00'
 requested_by: mallowigi
 provider: github
 branch: master
@@ -16,6 +17,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/995/K85ZWV2F.png
+  detection_source_url: https://github.com/mallowigi/EditorGroups
   detection_source: Repo Metadata
 - name: Kotlin
   description: Statically typed Programming Language targeting JVM and JavaScript
@@ -25,6 +27,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/3750/pCfEzr6L.png
+  detection_source_url: https://github.com/mallowigi/EditorGroups
   detection_source: Repo Metadata
 - name: Git
   description: Fast, scalable, distributed revision control system
@@ -34,6 +37,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Version Control System
   image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/mallowigi/EditorGroups
   detection_source: Repo Metadata
 - name: Gradle
   description: A powerful build system for the JVM
@@ -44,6 +48,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Java Build Tools
   image_url: https://img.stackshare.io/service/975/gradlephant-social-black-bg.png
-  detection_source: gradlew.bat
+  detection_source_url: https://github.com/mallowigi/EditorGroups/blob/master/gradlew
+  detection_source: gradlew
   last_updated_by: Vojtěch Krása
   last_updated_on: 2023-04-12 20:51:52.000000000 Z
