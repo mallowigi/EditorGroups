@@ -1,6 +1,8 @@
 package krasa.editorGroups.tabs2.impl
 
+import com.intellij.concurrency.ContextAwareRunnable
 import com.intellij.icons.AllIcons
+import com.intellij.ide.OccurenceNavigator.OccurenceInfo.position
 import com.intellij.ide.ui.UISettings
 import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
@@ -41,6 +43,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
 import com.intellij.util.ui.update.lazyUiDisposable
+import kotlinx.coroutines.*
 import krasa.editorGroups.tabs2.*
 import krasa.editorGroups.tabs2.impl.multiRow.KrMultiRowLayout
 import krasa.editorGroups.tabs2.impl.multiRow.KrWrapMultiRowLayout
@@ -48,6 +51,7 @@ import krasa.editorGroups.tabs2.impl.singleRow.KrScrollableSingleRowLayout
 import krasa.editorGroups.tabs2.impl.singleRow.KrSingleRowLayout
 import krasa.editorGroups.tabs2.impl.singleRow.KrSingleRowPassInfo
 import krasa.editorGroups.tabs2.impl.themes.KrTabTheme
+import org.jetbrains.annotations.ApiStatus.Internal
 import org.jetbrains.annotations.Nls
 import org.jetbrains.annotations.NonNls
 import java.awt.*
@@ -76,11 +80,25 @@ private const val SCROLL_BAR_THICKNESS = 3
 private const val ADJUST_BORDERS = true
 private const val LAYOUT_DONE: @NonNls String = "Layout.done"
 
+data class KrTabListOptions(
+  @JvmField val supportCompression: Boolean = false,
+  @JvmField val singleRow: Boolean = true,
+  @JvmField val requestFocusOnLastFocusedComponent: Boolean = false,
+
+  @JvmField val paintFocus: Boolean = false,
+  @JvmField val isTabDraggingEnabled: Boolean = false,
+
+  @JvmField val tabPosition: KrTabsPosition = KrTabsPosition.top,
+  @JvmField val hideTabs: Boolean = false,
+)
+
 @Suppress("UnstableApiUsage", "SYNTHETIC_PROPERTY_WITHOUT_JAVA_ORIGIN")
 @DirtyUI
 open class KrTabsImpl(
   private var project: Project?,
-  parentDisposable: Disposable
+  private val parentDisposable: Disposable,
+  coroutineScope: CoroutineScope? = null,
+  tabListOptions: KrTabListOptions,
 ) : JComponent(),
   KrTabsEx,
   PropertyChangeListener,
@@ -114,20 +132,19 @@ open class KrTabsImpl(
     @JvmStatic
     fun getComponentImage(info: KrTabInfo): Image {
       val component = info.component
-      val image: BufferedImage
       if (component.isShowing) {
         val width = component.width
         val height = component.height
-        image = ImageUtil.createImage(
-          info.component?.graphicsConfiguration, if (width > 0) width else 500, if (height > 0) height else 500,
+        val image = ImageUtil.createImage(
+          info.component.graphicsConfiguration, if (width > 0) width else 500, if (height > 0) height else 500,
           BufferedImage.TYPE_INT_ARGB
         )
         val g = image.createGraphics()
         component.paint(g)
+        return image
       } else {
-        image = ImageUtil.createImage(info.component?.graphicsConfiguration, 500, 500, BufferedImage.TYPE_INT_ARGB)
+        return ImageUtil.createImage(info.component.graphicsConfiguration, 500, 500, BufferedImage.TYPE_INT_ARGB)
       }
-      return image
     }
 
     @JvmStatic
@@ -136,10 +153,8 @@ open class KrTabsImpl(
 
     @JvmStatic
     fun isSelectionClick(e: MouseEvent): Boolean {
-      if (e.clickCount == 1) {
-        if (!e.isPopupTrigger) {
-          return e.button == MouseEvent.BUTTON1 && !e.isControlDown && !e.isAltDown && !e.isMetaDown
-        }
+      if (e.clickCount == 1 && !e.isPopupTrigger) {
+        return e.button == MouseEvent.BUTTON1 && !e.isControlDown && !e.isAltDown && !e.isMetaDown
       }
       return false
     }
@@ -153,34 +168,96 @@ open class KrTabsImpl(
     }
   }
 
+  // must be defined _before_ effectiveLayout
+  @Suppress("MemberVisibilityCanBePrivate")
+  internal var tabListOptions: KrTabListOptions = tabListOptions
+    private set
+
+  private val scrollBarActivityTracker = ScrollBarActivityTracker()
+
+  private inner class ScrollBarActivityTracker {
+    var isRecentlyActive: Boolean = false
+      private set
+    private val RELAYOUT_DELAY = 2000
+    private val relayoutAlarm = Alarm(parentDisposable)
+    private var suspended = false
+
+    fun suspend() {
+      suspended = true
+    }
+
+    fun resume() {
+      suspended = false
+    }
+
+    fun reset() {
+      relayoutAlarm.cancelAllRequests()
+      isRecentlyActive = false
+    }
+
+    fun setRecentlyActive() {
+      if (suspended) return
+      relayoutAlarm.cancelAllRequests()
+      isRecentlyActive = true
+      if (!relayoutAlarm.isDisposed) {
+        relayoutAlarm.addRequest(ContextAwareRunnable {
+          isRecentlyActive = false
+          relayout(forced = false, layoutNow = false)
+        }, RELAYOUT_DELAY)
+      }
+    }
+
+    fun cancelActivityTimer() {
+      relayoutAlarm.cancelAllRequests()
+    }
+  }
+
   private val visibleInfos = ArrayList<KrTabInfo>()
+
   private val infoToPage = HashMap<KrTabInfo, AccessibleTabPage>()
+
   private val hiddenInfos = HashMap<KrTabInfo, Int>()
+
   var mySelectedInfo: KrTabInfo? = null
 
-  val infoToLabel: MutableMap<KrTabInfo, KrTabLabel> = HashMap()
+  @Internal
+  fun getInfoToLabel(): Map<KrTabInfo, KrTabLabel> = tabs.asSequence().filter { it.tabLabel != null }.associateWith { it.tabLabel!! }
+
+  @JvmField
+  internal val infoToForeToolbar: MutableMap<KrTabInfo, Toolbar> = HashMap()
+
   val infoToToolbar: MutableMap<KrTabInfo, Toolbar> = HashMap()
 
   val moreToolbar: ActionToolbar?
+
+  @JvmField
   var entryPointToolbar: ActionToolbar? = null
+
   val titleWrapper: NonOpaquePanel = NonOpaquePanel()
 
   var headerFitSize: Dimension? = null
 
   private var innerInsets: Insets = JBInsets.emptyInsets()
+
   private val tabMouseListeners = ContainerUtil.createLockFreeCopyOnWriteList<EventListener>()
+
   private val tabListeners = ContainerUtil.createLockFreeCopyOnWriteList<KrTabsListener>()
+
   private var isFocused = false
+
   private var popupGroupSupplier: (() -> ActionGroup)? = null
 
   var popupPlace: String? = null
     private set
 
   var popupInfo: KrTabInfo? = null
+
   private val myNavigationActions: DefaultActionGroup
 
   val popupListener: PopupMenuListener
+
   var activePopup: JPopupMenu? = null
+
   var horizontalSide: Boolean = true
 
   var isSideComponentOnTabs: Boolean = true
@@ -191,13 +268,18 @@ open class KrTabsImpl(
 
   @JvmField
   internal val separatorWidth: Int = JBUI.scale(1)
+
   private var dataProvider: DataProvider? = null
+
   private val deferredToRemove = WeakHashMap<Component, Component>()
-  private var tableLayout = createMultiRowLayout()
+
+  final override val tabsPosition: KrTabsPosition
+    get() = tabListOptions.tabPosition
+
+  internal var effectiveLayout: KrTabLayout? = null
 
   // it's an invisible splitter intended for changing the size of tab zone
   private val splitter = KrTabsSideSplitter(this)
-  internal var effectiveLayout: KrTabLayout? = null
 
   var lastLayoutPass: KrLayoutPassInfo? = null
     private set
@@ -206,21 +288,27 @@ open class KrTabsImpl(
     private set
 
   internal var uiDecorator: KrUiDecorator? = null
-  private var paintFocus = false
-  private var hideTabs = false
-  private var isRequestFocusOnLastFocusedComponent = false
-  private var listenerAdded = false
+    private set
+
+  private var listener: Job? = null
+
+  val isRecentlyActive: Boolean
+    get() = scrollBarActivityTracker.isRecentlyActive
 
   @JvmField
   internal val attractions: MutableSet<KrTabInfo> = HashSet()
 
   private val animator = lazy {
-    val result = object : Animator("KrTabs Attractions", 2, 500, true), Disposable {
+    val result = object : Animator(
+      name = "KrTabs Attractions",
+      totalFrames = 2,
+      cycleDuration = 500,
+      isRepeatable = true
+    ), Disposable {
       override fun paintNow(frame: Int, totalFrames: Int, cycle: Int) {
         repaintAttractions()
       }
     }
-    Disposer.register(parentDisposable, result)
     result
   }
 
@@ -240,21 +328,19 @@ open class KrTabsImpl(
     private set
 
   private var removeDeferredRequest: Long = 0
-  var position: KrTabsPosition = KrTabsPosition.top
-    private set
 
-  private val myBorder = createTabBorder()
+  private val tabBorder = createTabBorder()
   private val nextAction: BaseNavigationAction?
   private val prevAction: BaseNavigationAction?
-  var isTabDraggingEnabled: Boolean = false
-    private set
-  private var dragHelper: KrDragHelper? = null
+
+  protected var dragHelper: KrDragHelper? = null
   private var navigationActionsEnabled = true
   private var dropInfo: KrTabInfo? = null
 
   override var dropInfoIndex: Int = 0
 
   override var dropSide: Int = -1
+
   protected var showDropLocation: Boolean = true
   private var oldSelection: KrTabInfo? = null
   private var mySelectionChangeHandler: KrTabs.SelectionChangeHandler? = null
@@ -263,19 +349,21 @@ open class KrTabsImpl(
 
   @JvmField
   internal val tabPainterAdapter: KrTabPainterAdapter = createTabPainterAdapter()
-  val tabPainter: KrTabPainter = tabPainterAdapter.tabPainter
+
+  val tabPainter: KrTabPainter
+    get() = tabPainterAdapter.tabPainter
 
   private var alphabeticalMode = false
+
   open fun isAlphabeticalMode(): Boolean = alphabeticalMode
 
-  private var supportCompression = false
   private var emptyText: String? = null
 
   var isMouseInsideTabsArea: Boolean = false
     private set
 
   private var removeNotifyInProgress = false
-  private var singleRow = true
+
   protected fun createTabBorder(): KrTabsBorder = KrDefaultTabsBorder(this)
 
   protected open fun createTabPainterAdapter(): KrTabPainterAdapter = KrDefaultTabPainterAdapter(KrTabPainter.DEFAULT)
@@ -285,7 +373,25 @@ open class KrTabsImpl(
   private val scrollBarChangeListener: ChangeListener
   private var scrollBarOn = false
 
-  constructor(project: Project) : this(project, project)
+  constructor(project: Project) : this(project = project, parentDisposable = project)
+
+  constructor(project: Project?, parentDisposable: Disposable) : this(
+    project = project,
+    parentDisposable = parentDisposable,
+    coroutineScope = null,
+    tabListOptions = KrTabListOptions(),
+  )
+
+  // we expect that every production usage of JBTabsImpl passes scope
+  private val coroutineScope: CoroutineScope = if (coroutineScope == null) {
+    val orphanScope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineName("JBTabsImpl"))
+    Disposer.register(parentDisposable) {
+      orphanScope.coroutineContext.job.cancel("disposed")
+    }
+    orphanScope
+  } else {
+    coroutineScope
+  }
 
   init {
     isOpaque = true
@@ -1406,7 +1512,7 @@ open class KrTabsImpl(
   }
 
   private fun removeDeferred(): ActionCallback {
-    if (deferredToRemove.isEmpty()) {
+    if (deferredToRemove.isEmpty) {
       return ActionCallback.DONE
     }
 
@@ -1538,17 +1644,17 @@ open class KrTabsImpl(
   }
 
   private fun updateIcon(tabInfo: KrTabInfo) {
-    infoToLabel[tabInfo]!!.setIcon(tabInfo.icon)
+    infoToLabel[tabInfo]?.setIcon(tabInfo.icon)
   }
 
   fun revalidateAndRepaint() {
     revalidateAndRepaint(true)
   }
 
-  override fun isOpaque(): Boolean = !visibleInfos.isEmpty()
+  override fun isOpaque(): Boolean = !visibleInfos.isEmpty
 
   open fun revalidateAndRepaint(layoutNow: Boolean) {
-    if (visibleInfos.isEmpty() && parent != null) {
+    if (visibleInfos.isEmpty && parent != null) {
       val nonOpaque = ComponentUtil.findUltimateParent(this)
       val toRepaint = SwingUtilities.convertRectangle(parent, bounds, nonOpaque)
       nonOpaque.repaint(toRepaint.x, toRepaint.y, toRepaint.width, toRepaint.height)
@@ -1603,7 +1709,7 @@ open class KrTabsImpl(
       }
 
       mySelectedInfo == null                -> {
-        if (visibleInfos.isEmpty()) null else visibleInfos[0]
+        if (visibleInfos.isEmpty) null else visibleInfos[0]
       }
 
       visibleInfos.contains(mySelectedInfo) -> {
@@ -2018,7 +2124,7 @@ open class KrTabsImpl(
 
   override fun paintComponent(g: Graphics) {
     super.paintComponent(g)
-    if (visibleInfos.isEmpty()) {
+    if (visibleInfos.isEmpty) {
       if (emptyText != null) {
         UISettings.setupAntialiasing(g)
         UIUtil.drawCenteredString((g as Graphics2D), Rectangle(0, 0, width, height), emptyText!!)
@@ -2219,7 +2325,7 @@ open class KrTabsImpl(
       if (info == null || !tabs.contains(info)) return ActionCallback.DONE
     }
     if (isDropTarget && lastLayoutPass != null) {
-      lastLayoutPass!!.myVisibleInfos.remove(info)
+      lastLayoutPass!!.visibleInfos.remove(info)
     }
     val result = ActionCallback()
     val toSelect = if (forcedSelectionTransfer == null) {
@@ -2240,7 +2346,7 @@ open class KrTabsImpl(
       processRemove(info, true)
       removeDeferred().notifyWhenDone(result)
     }
-    if (visibleInfos.isEmpty()) {
+    if (visibleInfos.isEmpty) {
       removeDeferredNow()
     }
     revalidateAndRepaint(true)
@@ -3018,7 +3124,7 @@ open class KrTabsImpl(
   override fun processDropOver(over: KrTabInfo, point: RelativePoint) {
     val pointInMySpace = point.getPoint(this)
     val index = effectiveLayout!!.getDropIndexFor(pointInMySpace)
-    val side: Int = if (visibleInfos.isEmpty()) {
+    val side: Int = if (visibleInfos.isEmpty) {
       SwingConstants.CENTER
     } else {
       if (index != -1) -1 else effectiveLayout!!.getDropSideFor(pointInMySpace)
@@ -3034,7 +3140,7 @@ open class KrTabsImpl(
   }
 
   override val isEmptyVisible: Boolean
-    get() = visibleInfos.isEmpty()
+    get() = visibleInfos.isEmpty
 
   val tabHGap: Int
     get() = -myBorder.thickness

@@ -149,9 +149,9 @@ abstract class KrMultiRowLayout(
 
     var component = tabs.getComponentAt(point)
     if (component is KrTabsImpl) {
-      for (i in 0 until data.myVisibleInfos.size - 1) {
-        val firstInfo = data.myVisibleInfos[i]
-        val secondInfo = data.myVisibleInfos[i + 1]
+      for (i in 0 until data.visibleInfos.size - 1) {
+        val firstInfo = data.visibleInfos[i]
+        val secondInfo = data.visibleInfos[i + 1]
         val first = tabs.infoToLabel.get(firstInfo)!!
         val second = tabs.infoToLabel.get(secondInfo)!!
         val firstBounds = first.bounds
@@ -177,11 +177,11 @@ abstract class KrMultiRowLayout(
 
     if (component is KrTabLabel) {
       val info = component.info
-      val index = data.myVisibleInfos.indexOf(info)
+      val index = data.visibleInfos.indexOf(info)
       if (!tabs.isDropTarget(info)) {
-        val dropTargetBefore = data.myVisibleInfos.subList(0, index + 1).any { tabs.isDropTarget(it) }
+        val dropTargetBefore = data.visibleInfos.subList(0, index + 1).any { tabs.isDropTarget(it) }
         result = index - if (dropTargetBefore) 1 else 0
-      } else if (index < data.myVisibleInfos.size) {
+      } else if (index < data.visibleInfos.size) {
         result = index
       }
     }

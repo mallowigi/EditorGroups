@@ -68,7 +68,7 @@ public class KrScrollableSingleRowLayout extends KrSingleRowLayout {
       return;
     }
     int offset = -myScrollOffset;
-    for (KrTabInfo info : passInfo.myVisibleInfos) {
+    for (KrTabInfo info : passInfo.visibleInfos) {
       final int length = getRequiredLength(info);
       if (info == myTabs.getSelectedInfo()) {
         if (offset < 0) {

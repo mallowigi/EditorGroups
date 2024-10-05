@@ -7,13 +7,12 @@ import java.awt.Insets
 import javax.swing.border.Border
 
 abstract class KrTabsBorder(val tabs: KrTabsImpl) : Border {
-  var thickness: Int = JBUI.scale(1)
+  val thickness: Int
+    get() = tabs.tabPainter.getTabTheme().topBorderThickness
 
   override fun getBorderInsets(c: Component?): Insets = JBUI.emptyInsets()
 
-  override fun isBorderOpaque(): Boolean {
-    return true
-  }
+  override fun isBorderOpaque(): Boolean = true
 
   open val effectiveBorder: Insets
     get() = JBUI.emptyInsets()

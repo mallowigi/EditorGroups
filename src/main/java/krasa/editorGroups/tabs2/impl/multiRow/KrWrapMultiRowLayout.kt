@@ -3,9 +3,7 @@ package krasa.editorGroups.tabs2.impl.multiRow
 import krasa.editorGroups.tabs2.KrTabInfo
 import krasa.editorGroups.tabs2.impl.KrTabsImpl
 
-
-class KrWrapMultiRowLayout(tabs: KrTabsImpl, showPinnedTabsSeparately: Boolean)
-  : KrMultiRowLayout(tabs, showPinnedTabsSeparately) {
+class KrWrapMultiRowLayout(tabs: KrTabsImpl, showPinnedTabsSeparately: Boolean) : KrMultiRowLayout(tabs, showPinnedTabsSeparately) {
   override fun splitToRows(data: KrMultiRowPassInfo): List<KrTabsRow> {
     val leftmostX = data.toFitRec.x + tabs.titleWrapper.preferredSize.width
     val entryToolbarWidth = tabs.entryPointToolbar?.component?.let { toolbar ->
@@ -15,13 +13,17 @@ class KrWrapMultiRowLayout(tabs: KrTabsImpl, showPinnedTabsSeparately: Boolean)
     val firstRowWidth = rightmostX - leftmostX
     val getRowMaxLen: (Int) -> Int = { index -> if (index == 0) firstRowWidth else data.toFitRec.width }
 
-    val infos = data.myVisibleInfos
+    val infos = data.visibleInfos
     val rows = mutableListOf<KrTabsRow>()
     if (showPinnedTabsSeparately) {
       val (pinned, unpinned) = splitToPinnedUnpinned(infos)
       if (pinned.isNotEmpty()) {
-        rows.add(KrCompressibleTabsRow(pinned, withTitle = tabs.titleWrapper.preferredSize.width > 0,
-          withEntryPointToolbar = tabs.entryPointPreferredSize.width > 0))
+        rows.add(
+          KrCompressibleTabsRow(
+            pinned, withTitle = tabs.titleWrapper.preferredSize.width > 0,
+            withEntryPointToolbar = tabs.entryPointPreferredSize.width > 0
+          )
+        )
       }
       doSplitToRows(data, rows, unpinned, getRowMaxLen)
     } else {
@@ -31,10 +33,12 @@ class KrWrapMultiRowLayout(tabs: KrTabsImpl, showPinnedTabsSeparately: Boolean)
     return rows
   }
 
-  private fun doSplitToRows(data: KrMultiRowPassInfo,
-                            rows: MutableList<KrTabsRow>,
-                            infosToSplit: List<KrTabInfo>,
-                            getRowMaxLen: (index: Int) -> Int) {
+  private fun doSplitToRows(
+    data: KrMultiRowPassInfo,
+    rows: MutableList<KrTabsRow>,
+    infosToSplit: List<KrTabInfo>,
+    getRowMaxLen: (index: Int) -> Int
+  ) {
     var curRowInfos = mutableListOf<KrTabInfo>()
     var curLen = 0
     for (info in infosToSplit) {
@@ -55,8 +59,10 @@ class KrWrapMultiRowLayout(tabs: KrTabsImpl, showPinnedTabsSeparately: Boolean)
   }
 
   private fun createRow(infos: List<KrTabInfo>, isFirst: Boolean): KrTabsRow {
-    return KrSimpleTabsRow(infos,
+    return KrSimpleTabsRow(
+      infos,
       withTitle = isFirst && tabs.titleWrapper.preferredSize.width > 0,
-      withEntryPointToolbar = isFirst && tabs.entryPointPreferredSize.width > 0)
+      withEntryPointToolbar = isFirst && tabs.entryPointPreferredSize.width > 0
+    )
   }
 }

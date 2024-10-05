@@ -22,8 +22,8 @@ public class KrCompressibleSingleRowLayout extends KrSingleRowLayout {
 
   @Override
   protected void layoutLabels(KrSingleRowPassInfo data) {
-    if (myTabs.getPresentation().getTabsPosition() != KrTabsPosition.top
-      && myTabs.getPresentation().getTabsPosition() != KrTabsPosition.bottom) {
+    if (myTabs.getPresentation().tabsPosition != KrTabsPosition.top
+      && myTabs.getPresentation().tabsPosition != KrTabsPosition.bottom) {
       super.layoutLabels(data);
       return;
     }

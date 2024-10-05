@@ -106,7 +106,7 @@ public interface KrTabs extends DropAreaAware {
       @SuppressWarnings("UseDPIAwareInsets")
       Insets insets = JBUI.insets(0);
       Rectangle bounds = getTabLabel(getTabAt(0)).getBounds();
-      switch (getPresentation().getTabsPosition()) {
+      switch (getPresentation().tabsPosition) {
         case top -> insets.top = bounds.height;
         case left -> insets.left = bounds.width;
         case bottom -> insets.bottom = bounds.height;

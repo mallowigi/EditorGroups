@@ -11,9 +11,8 @@ import java.beans.PropertyChangeListener
 import kotlin.math.max
 import kotlin.math.min
 
-internal class KrTabsSideSplitter(private val myTabs: KrTabsImpl) : Splittable, PropertyChangeListener {
+internal class KrTabsSideSplitter(private val tabs: KrTabsImpl) : Splittable, PropertyChangeListener {
   private var mySideTabsLimit = KrTabsImpl.DEFAULT_MAX_TAB_WIDTH
-  private var myDragging = false
   val divider: OnePixelDivider
 
   var sideTabsLimit: Int
@@ -21,12 +20,12 @@ internal class KrTabsSideSplitter(private val myTabs: KrTabsImpl) : Splittable, 
     set(sideTabsLimit) {
       if (mySideTabsLimit != sideTabsLimit) {
         mySideTabsLimit = sideTabsLimit
-        myTabs.putClientProperty(KrTabsImpl.SIDE_TABS_SIZE_LIMIT_KEY, mySideTabsLimit)
-        myTabs.resetLayout(true)
-        myTabs.doLayout()
-        myTabs.repaint()
+        tabs.putClientProperty(KrTabsImpl.SIDE_TABS_SIZE_LIMIT_KEY, mySideTabsLimit)
+        tabs.resetLayout(true)
+        tabs.doLayout()
+        tabs.repaint()
 
-        val info = myTabs.selectedInfo
+        val info = tabs.selectedInfo
         val page = info?.component
         if (page != null) {
           page.revalidate()
@@ -36,20 +35,20 @@ internal class KrTabsSideSplitter(private val myTabs: KrTabsImpl) : Splittable, 
     }
 
   init {
-    myTabs.addPropertyChangeListener(KrTabsImpl.SIDE_TABS_SIZE_LIMIT_KEY.toString(), this)
+    tabs.addPropertyChangeListener(KrTabsImpl.SIDE_TABS_SIZE_LIMIT_KEY.toString(), this)
     divider = OnePixelDivider(false, this)
   }
 
   override fun getMinProportion(first: Boolean): Float {
     return min(
       0.5,
-      (KrTabsImpl.MIN_TAB_WIDTH.toFloat() / max(1.0, myTabs.width.toDouble())).toDouble()
+      (KrTabsImpl.MIN_TAB_WIDTH.toFloat() / max(1.0, tabs.width.toDouble())).toDouble()
     ).toFloat()
   }
 
   override fun setProportion(proportion: Float) {
-    val width = myTabs.width
-    sideTabsLimit = when (myTabs.tabsPosition) {
+    val width = tabs.width
+    sideTabsLimit = when (tabs.tabsPosition) {
       KrTabsPosition.left  -> max(KrTabsImpl.MIN_TAB_WIDTH.toDouble(), (proportion * width).toDouble())
         .toInt()
 
@@ -64,17 +63,13 @@ internal class KrTabsSideSplitter(private val myTabs: KrTabsImpl) : Splittable, 
 
   override fun setOrientation(verticalSplit: Boolean) = Unit
 
-  override fun setDragging(dragging: Boolean) {
-    myDragging = dragging
-  }
+  override fun setDragging(dragging: Boolean) {}
 
-  fun isDragging(): Boolean = myDragging
-
-  override fun asComponent(): Component = myTabs
+  override fun asComponent(): Component = tabs
 
   override fun propertyChange(evt: PropertyChangeEvent) {
-    if (evt.source !== myTabs) return
-    var limit = ClientProperty.get(myTabs, KrTabsImpl.SIDE_TABS_SIZE_LIMIT_KEY)
+    if (evt.source !== tabs) return
+    var limit = ClientProperty.get(tabs, KrTabsImpl.SIDE_TABS_SIZE_LIMIT_KEY)
     if (limit == null) limit = KrTabsImpl.DEFAULT_MAX_TAB_WIDTH
     sideTabsLimit = limit
   }

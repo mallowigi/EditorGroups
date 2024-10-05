@@ -48,7 +48,7 @@ public abstract class KrSingleRowLayout extends KrTabLayout {
   }
 
   KrSingleRowLayoutStrategy getStrategy() {
-    return switch (myTabs.getPresentation().getTabsPosition()) {
+    return switch (myTabs.getPresentation().tabsPosition) {
       case top -> myTop;
       case left -> myLeft;
       case bottom -> myBottom;
@@ -64,7 +64,7 @@ public abstract class KrSingleRowLayout extends KrTabLayout {
       lastSingleRowLayout.contentCount == myTabs.getTabCount() &&
       lastSingleRowLayout.layoutSize.equals(myTabs.getSize()) &&
       lastSingleRowLayout.scrollOffset == getScrollOffset()) {
-      for (KrTabInfo each : data.myVisibleInfos) {
+      for (KrTabInfo each : data.visibleInfos) {
         final KrTabLabel eachLabel = myTabs.getInfoToLabel().get(each);
         if (!eachLabel.isValid()) {
           layoutLabels = true;
@@ -213,7 +213,7 @@ public abstract class KrSingleRowLayout extends KrTabLayout {
   protected void calculateRequiredLength(KrSingleRowPassInfo data) {
     data.requiredLength += myTabs.isHorizontalTabs() ? data.insets.left + data.insets.right
       : data.insets.top + data.insets.bottom;
-    for (KrTabInfo eachInfo : data.myVisibleInfos) {
+    for (KrTabInfo eachInfo : data.visibleInfos) {
       data.requiredLength += getRequiredLength(eachInfo);
       data.toLayout.add(eachInfo);
     }
@@ -241,9 +241,9 @@ public abstract class KrSingleRowLayout extends KrTabLayout {
     Component c = myTabs.getComponentAt(point);
 
     if (c instanceof KrTabsImpl) {
-      for (int i = 0; i < lastSingleRowLayout.myVisibleInfos.size() - 1; i++) {
-        KrTabLabel first = myTabs.getInfoToLabel().get(lastSingleRowLayout.myVisibleInfos.get(i));
-        KrTabLabel second = myTabs.getInfoToLabel().get(lastSingleRowLayout.myVisibleInfos.get(i + 1));
+      for (int i = 0; i < lastSingleRowLayout.visibleInfos.size() - 1; i++) {
+        KrTabLabel first = myTabs.getInfoToLabel().get(lastSingleRowLayout.visibleInfos.get(i));
+        KrTabLabel second = myTabs.getInfoToLabel().get(lastSingleRowLayout.visibleInfos.get(i + 1));
 
         Rectangle firstBounds = first.getBounds();
         Rectangle secondBounds = second.getBounds();
@@ -273,17 +273,17 @@ public abstract class KrSingleRowLayout extends KrTabLayout {
 
     if (c instanceof KrTabLabel) {
       KrTabInfo info = ((KrTabLabel) c).getInfo();
-      int index = lastSingleRowLayout.myVisibleInfos.indexOf(info);
+      int index = lastSingleRowLayout.visibleInfos.indexOf(info);
       boolean isDropTarget = myTabs.isDropTarget(info);
       if (!isDropTarget) {
         for (int i = 0; i <= index; i++) {
-          if (myTabs.isDropTarget(lastSingleRowLayout.myVisibleInfos.get(i))) {
+          if (myTabs.isDropTarget(lastSingleRowLayout.visibleInfos.get(i))) {
             index -= 1;
             break;
           }
         }
         result = index;
-      } else if (index < lastSingleRowLayout.myVisibleInfos.size()) {
+      } else if (index < lastSingleRowLayout.visibleInfos.size()) {
         result = index;
       }
     }

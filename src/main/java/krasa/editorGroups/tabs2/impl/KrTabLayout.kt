@@ -3,8 +3,6 @@ package krasa.editorGroups.tabs2.impl
 
 import com.intellij.ide.ui.UISettings
 import com.intellij.openapi.options.advanced.AdvancedSettings
-import com.intellij.openapi.util.registry.Registry.Companion.doubleValue
-import com.intellij.openapi.util.registry.Registry.Companion.intValue
 import com.intellij.util.ui.JBUI
 import krasa.editorGroups.tabs2.KrTabInfo
 import org.intellij.lang.annotations.MagicConstant
@@ -15,17 +13,13 @@ import javax.swing.SwingConstants
 import kotlin.math.abs
 
 abstract class KrTabLayout {
-  open val isSideComponentOnTabs: Boolean
-    get() = false
+  open val isSideComponentOnTabs: Boolean = false
 
-  open val isScrollable: Boolean
-    get() = false
+  open val isScrollable: Boolean = false
 
-  open val isWithScrollBar: Boolean
-    get() = false
+  open val isWithScrollBar: Boolean = false
 
-  open val scrollOffset: Int
-    get() = 0
+  open val scrollOffset: Int = 0
 
   fun createShapeTransform(dimension: Dimension): KrShapeTransform =
     createShapeTransform(Rectangle(0, 0, dimension.width, dimension.height))
@@ -48,11 +42,11 @@ abstract class KrTabLayout {
   companion object {
     @JvmStatic
     val dragOutMultiplier: Double
-      get() = doubleValue("ide.tabbedPane.dragOutMultiplier")
+      get() = 0.1
 
     @JvmStatic
     val maxPinnedTabWidth: Int
-      get() = JBUI.scale(intValue("ide.editor.max.pinned.tab.width", 2000))
+      get() = JBUI.scale(2000)
 
     @JvmStatic
     protected val minTabWidth: Int

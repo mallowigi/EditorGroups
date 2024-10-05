@@ -74,7 +74,7 @@ public class KrTableLayout extends KrTabLayout {
 
     int hGap = myTabs.getTabHGap();
     int entryPointMargin = scrollable ? 0 : myTabs.getEntryPointPreferredSize().width;
-    for (KrTabInfo eachInfo : data.myVisibleInfos) {
+    for (KrTabInfo eachInfo : data.visibleInfos) {
       KrTabLabel eachLabel = myTabs.getTabLabel(eachInfo);
       boolean pinned = eachLabel.isPinned();
       int width = data.lengths.get(eachInfo);
@@ -125,7 +125,7 @@ public class KrTableLayout extends KrTabLayout {
     eachY = -1;
     KrTableRow eachTableRow = new KrTableRow(data);
 
-    for (KrTabInfo eachInfo : data.myVisibleInfos) {
+    for (KrTabInfo eachInfo : data.visibleInfos) {
       final KrTabLabel eachLabel = myTabs.getTabLabel(eachInfo);
       if (eachY == -1 || eachY != eachLabel.getY()) {
         if (eachY != -1) {
@@ -149,9 +149,9 @@ public class KrTableLayout extends KrTabLayout {
     int standardLengthToFit = data.moreRect.x - (data.titleRect.x + data.titleRect.width) - myTabs.getActionsInsets().left;
     if (compressible || showPinnedTabsSeparately) {
       if (showPinnedTabsSeparately) {
-        List<KrTabInfo> pinned = ContainerUtil.filter(data.myVisibleInfos, info -> info.isPinned());
+        List<KrTabInfo> pinned = ContainerUtil.filter(data.visibleInfos, info -> info.isPinned());
         calculateCompressibleLengths(pinned, data, standardLengthToFit);
-        List<KrTabInfo> unpinned = ContainerUtil.filter(data.myVisibleInfos, info -> !info.isPinned());
+        List<KrTabInfo> unpinned = ContainerUtil.filter(data.visibleInfos, info -> !info.isPinned());
         if (compressible) {
           Insets insets = myTabs.getActionsInsets();
           calculateCompressibleLengths(unpinned, data, pinned.isEmpty()
@@ -168,14 +168,14 @@ public class KrTableLayout extends KrTabLayout {
           }
         }
       } else {
-        calculateCompressibleLengths(data.myVisibleInfos, data, standardLengthToFit);
+        calculateCompressibleLengths(data.visibleInfos, data, standardLengthToFit);
       }
     } else {//both scrollable and multi-row
-      calculateRawLengths(data.myVisibleInfos, data);
-      if (getTotalLength(data.myVisibleInfos, data) > standardLengthToFit) {
+      calculateRawLengths(data.visibleInfos, data);
+      if (getTotalLength(data.visibleInfos, data) > standardLengthToFit) {
         int moreWidth = getMoreRectAxisSize();
         data.moreRect.setBounds(data.toFitRec.x + data.toFitRec.width - moreWidth, data.toFitRec.y, moreWidth, myTabs.getHeaderFitSize().height);
-        calculateRawLengths(data.myVisibleInfos, data);
+        calculateRawLengths(data.visibleInfos, data);
       }
     }
   }
@@ -308,8 +308,8 @@ public class KrTableLayout extends KrTabLayout {
     }
 
     Rectangle area = new Rectangle(lastTableLayout.toFitRec.width, tabLabel.getBounds().height);
-    for (int i = 0; i < lastTableLayout.myVisibleInfos.size(); i++) {
-      area = area.union(myTabs.getInfoToLabel().get(lastTableLayout.myVisibleInfos.get(i)).getBounds());
+    for (int i = 0; i < lastTableLayout.visibleInfos.size(); i++) {
+      area = area.union(myTabs.getInfoToLabel().get(lastTableLayout.visibleInfos.get(i)).getBounds());
     }
     return Math.abs(deltaY) > area.height * getDragOutMultiplier();
   }
@@ -329,9 +329,9 @@ public class KrTableLayout extends KrTabLayout {
     }
 
     if (c instanceof KrTabsImpl) {
-      for (int i = 0; i < lastTableLayout.myVisibleInfos.size() - 1; i++) {
-        KrTabInfo firstInfo = lastTableLayout.myVisibleInfos.get(i);
-        KrTabInfo secondInfo = lastTableLayout.myVisibleInfos.get(i + 1);
+      for (int i = 0; i < lastTableLayout.visibleInfos.size() - 1; i++) {
+        KrTabInfo firstInfo = lastTableLayout.visibleInfos.get(i);
+        KrTabInfo secondInfo = lastTableLayout.visibleInfos.get(i + 1);
         KrTabLabel first = myTabs.getInfoToLabel().get(firstInfo);
         KrTabLabel second = myTabs.getInfoToLabel().get(secondInfo);
 
@@ -359,17 +359,17 @@ public class KrTableLayout extends KrTabLayout {
 
     if (c instanceof KrTabLabel) {
       KrTabInfo info = ((KrTabLabel) c).getInfo();
-      int index = lastTableLayout.myVisibleInfos.indexOf(info);
+      int index = lastTableLayout.visibleInfos.indexOf(info);
       boolean isDropTarget = myTabs.isDropTarget(info);
       if (!isDropTarget) {
         for (int i = 0; i <= index; i++) {
-          if (myTabs.isDropTarget(lastTableLayout.myVisibleInfos.get(i))) {
+          if (myTabs.isDropTarget(lastTableLayout.visibleInfos.get(i))) {
             index -= 1;
             break;
           }
         }
         result = index;
-      } else if (index < lastTableLayout.myVisibleInfos.size()) {
+      } else if (index < lastTableLayout.visibleInfos.size()) {
         result = index;
       }
     }
@@ -437,7 +437,7 @@ public class KrTableLayout extends KrTabLayout {
     }
 
     int offset = -myScrollOffset;
-    for (KrTabInfo info : data.myVisibleInfos) {
+    for (KrTabInfo info : data.visibleInfos) {
       if (info.isPinned()) continue;
       final int length = data.lengths.get(info);
       if (info == myTabs.getSelectedInfo()) {

@@ -6,16 +6,12 @@ import com.intellij.notification.*
 import com.intellij.notification.Notifications.Bus.notify
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import krasa.editorGroups.model.EditorGroup
 import krasa.editorGroups.model.EditorGroupIndexValue
 
 object Notifications {
-
-  private val LOG = Logger.getInstance(Notifications::class.java)
-
   private val notificationGroup: NotificationGroup
     get() = NotificationGroupManager.getInstance().getNotificationGroup("Editor Groups")
 
@@ -56,7 +52,7 @@ object Notifications {
     show(notification)
   }
 
-  fun href(file: VirtualFile): String? = file.name.let { href(it) }
+  fun href(file: VirtualFile): String? = href(file.name)
 
   fun href(name: String): String = "<a href=\"$name\">$name<a/>"
 
