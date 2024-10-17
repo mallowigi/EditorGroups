@@ -22,7 +22,7 @@ class EditorGroupsStartup : FileEditorManagerListener {
 
     // Create editor group panel if it doesn't exist'
     for (fileEditor in editors) {
-      if (fileEditor.getUserData(EditorGroupPanel2.EDITOR_PANEL) != null) continue
+      if (fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL) != null) continue
 
       val start = System.currentTimeMillis()
 

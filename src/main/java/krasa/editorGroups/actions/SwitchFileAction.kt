@@ -15,7 +15,7 @@ import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.ui.popup.list.ListPopupImpl
 import com.intellij.util.BitUtil
 import krasa.editorGroups.EditorGroupManager
-import krasa.editorGroups.EditorGroupPanel2
+import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.Splitters
 import krasa.editorGroups.UniqueTabNameBuilder
 import krasa.editorGroups.model.Link

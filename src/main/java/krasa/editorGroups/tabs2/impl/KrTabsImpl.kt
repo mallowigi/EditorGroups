@@ -1,5 +1,3 @@
-@file:Suppress("UsePropertyAccessSyntax")
-
 package krasa.editorGroups.tabs2.impl
 
 import com.intellij.icons.AllIcons

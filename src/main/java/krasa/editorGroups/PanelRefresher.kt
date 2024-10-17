@@ -51,9 +51,9 @@ class PanelRefresher(private val project: Project) {
       override fun bookmarksOrderChanged() = refresh()
 
       fun refresh() {
-        iteratePanels(BiConsumer { panel: EditorGroupPanel2, displayedGroup: EditorGroup ->
+        iteratePanels(BiConsumer { panel: EditorGroupPanel, displayedGroup: EditorGroup ->
           if (displayedGroup is BookmarkGroup) {
-            thisLogger().debug("BookmarksListener refreshing ${panel.getFile().name}")
+            thisLogger().debug("BookmarksListener refreshing ${panel.file.name}")
             panel._refresh(true, displayedGroup)
           }
         })

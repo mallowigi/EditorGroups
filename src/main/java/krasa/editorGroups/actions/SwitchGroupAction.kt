@@ -60,7 +60,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
       val data = dataContext.getData(PlatformDataKeys.FILE_EDITOR)
-      var editorGroupPanel: EditorGroupPanel2? = null
+      var editorGroupPanel: EditorGroupPanel? = null
       var displayedGroup = EditorGroup.EMPTY
       var currentFileGroups = emptyList<EditorGroup>()
       val tempGroup = DefaultActionGroup()

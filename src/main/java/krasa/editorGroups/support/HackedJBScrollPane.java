@@ -2,7 +2,7 @@ package krasa.editorGroups.support;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBScrollPane;
-import krasa.editorGroups.EditorGroupPanel2;
+import krasa.editorGroups.EditorGroupPanel;
 
 import javax.swing.plaf.ScrollPaneUI;
 import javax.swing.plaf.basic.BasicScrollPaneUI;

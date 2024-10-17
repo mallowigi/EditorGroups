@@ -73,11 +73,13 @@ abstract class EditorGroup {
   }
 
   /**
-   * Checks if the given project contains a link with the specified current file path.
+   * Checks if the given project contains a link with the specified current
+   * file path.
    *
    * @param project the project to check for links
    * @param currentFilePath the path of the current file
-   * @return true if the project contains a link with the specified current file path, false otherwise
+   * @return true if the project contains a link with the specified current
+   *    file path, false otherwise
    */
   fun containsLink(project: Project, currentFilePath: String): Boolean {
     val links = getLinks(project)

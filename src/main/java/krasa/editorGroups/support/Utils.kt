@@ -208,8 +208,7 @@ fun toPresentableName(path: String): String {
 /**
  * Retrieves the Color instance based on the specified color name and modifiers.
  *
- * @param color the color name with optional modifiers. Format: "colorName[+/-tones]". Examples: "red", "blue+2",
- *    "green-1".
+ * @param color the color name with optional modifiers. Format: "colorName[+/-tones]". Examples: "red", "blue+2", "green-1".
  * @return the Color instance corresponding to the provided color name and modifiers, or null if not found.
  */
 fun getColorInstance(color: String): Color? {

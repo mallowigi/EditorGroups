@@ -159,6 +159,7 @@ class EditorGroupManager(private val project: Project) {
     return result
   }
 
+  /** Index throws exceptions, nothing we can do about it here, let the caller try it again later. */
   @Throws(IndexNotReady::class)
   fun getGroup(
     project: Project,
