@@ -461,43 +461,6 @@ class EditorGroupManager(private val project: Project) {
     )
   }
 
-  fun openGroupFile2(
-    groupPanel: EditorGroupPanel2,
-    fileToOpen: VirtualFile,
-    line: Int?,
-    newWindow: Boolean,
-    newTab: Boolean,
-    split: Splitters
-  ): OpenFileResult? {
-    val displayedGroup = groupPanel.getDisplayedGroup()
-    val tabs = groupPanel.getTabs()
-
-    val editorWindowHolder = UIUtil.getParentOfType(EditorWindowHolder::class.java, groupPanel)
-    var currentWindow: EditorWindow? = null
-
-    if (editorWindowHolder != null) {
-      currentWindow = editorWindowHolder.editorWindow
-    }
-
-    return open(
-      currentWindow = currentWindow,
-      currentFile = groupPanel.getFile(),
-      fileToOpen = fileToOpen,
-      line = line,
-      group = displayedGroup,
-      newWindow = newWindow,
-      newTab = newTab,
-      splitters = split,
-      switchRequest = SwitchRequest(
-        group = displayedGroup,
-        fileToOpen = fileToOpen,
-        myScrollOffset = tabs.myScrollOffset,
-        width = tabs.width,
-        line = line
-      )
-    )
-  }
-
   /**
    * Opens a specified virtual file in the editor.
    *

@@ -171,7 +171,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   private class OpenFileAction(
     private val link: Link,
     private val project: Project,
-    private val panel: EditorGroupPanel2,
+    private val panel: EditorGroupPanel,
     text: String?
   ) :
     DumbAwareAction(text, link.path, link.fileIcon) {

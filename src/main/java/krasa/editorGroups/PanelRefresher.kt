@@ -94,13 +94,13 @@ class PanelRefresher(private val project: Project) {
         val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
 
         for (selectedEditor in manager.getSelectedEditors()) {   // refreshing not selected one fucks up tabs scrolling
-          val panel = selectedEditor.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL)
+          val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
           if (panel == null) continue
 
           val displayedGroup = panel.getDisplayedGroup()
           if (displayedGroup is FolderGroup) continue
 
-          thisLogger().debug("onSmartMode: refreshing panel for ${panel.getFile()}")
+          thisLogger().debug("onSmartMode: refreshing panel for ${panel.file}")
 
           panel._refresh(false, null)
         }

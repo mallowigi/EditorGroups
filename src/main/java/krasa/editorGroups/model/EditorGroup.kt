@@ -121,7 +121,8 @@ abstract class EditorGroup {
   }
 
   /**
-   * Retrieves the first existing file from the provided project's links. Returns null if no existing file is found.
+   * Retrieves the first existing file from the provided project's links.
+   * Returns null if no existing file is found.
    *
    * @param project the project from which to retrieve the file
    * @return the first existing file, or null if not found

@@ -183,7 +183,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   private fun addBookmarkGroup(
     project: Project,
     defaultActionGroup: DefaultActionGroup,
-    panel: EditorGroupPanel2?,
+    panel: EditorGroupPanel?,
     displayedGroup: EditorGroup,
     file: VirtualFile?
   ) {

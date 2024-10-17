@@ -2417,7 +2417,10 @@ open class KrTabsImpl(
     }
   }
 
-  /** @return insets, that should be used to layout [KrTabsImpl.moreToolbar] and [KrTabsImpl.entryPointToolbar] */
+  /**
+   * @return insets, that should be used to layout [KrTabsImpl.moreToolbar]
+   *    and [KrTabsImpl.entryPointToolbar]
+   */
   fun getActionsInsets(): Insets = if (ExperimentalUI.isNewUI()) {
     if (position.isSide) JBInsets.create(Insets(4, 8, 4, 3)) else JBInsets.create(Insets(0, 5, 0, 8))
   } else {
