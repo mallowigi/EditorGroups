@@ -131,28 +131,30 @@ class PanelRefresher(private val project: Project) {
   fun refresh() {
     val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
     for (selectedEditor in manager.getAllEditors()) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL)
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
       panel?._refresh(true, null)
     }
   }
 
   fun onIndexingDone(ownerPath: String, group: EditorGroupIndexValue): EditorGroupIndexValue {
-    var group = cache.onIndexingDone(ownerPath, group)
-
-    if (DumbService.isDumb(project)) return group
+    var group = group
+    group = cache.onIndexingDone(ownerPath, group)
+    if (DumbService.isDumb(project)) { // optimization
+      return group
+    }
 
     val start = System.currentTimeMillis()
     val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
-
     for (selectedEditor in manager.getAllEditors()) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL)
-      panel?.onIndexingDone(ownerPath, group)
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
+      if (panel != null) {
+        panel.onIndexingDone(ownerPath, group)
+      }
     }
 
     thisLogger().debug(
       "onIndexingDone $ownerPath - ${System.currentTimeMillis() - start}ms ${Thread.currentThread().name}"
     )
-
     return group
   }
 

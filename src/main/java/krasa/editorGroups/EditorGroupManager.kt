@@ -493,8 +493,8 @@ class EditorGroupManager(private val project: Project) {
     )
 
   /**
-   * Opens the provided file in the editor, considering various conditions such as current file, window, group,
-   * splitters, and switching requests.
+   * Opens the provided file in the editor, considering various conditions such as current file, window, group, splitters, and switching
+   * requests.
    *
    * @param currentWindow The current editor window parameter.
    * @param currentFile The currently opened file.

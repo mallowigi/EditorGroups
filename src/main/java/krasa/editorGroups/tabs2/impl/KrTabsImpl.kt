@@ -3156,9 +3156,11 @@ private fun sortTabsAlphabetically(tabs: MutableList<KrTabInfo>) {
 /**
  * AccessibleContext implementation for a single tab page.
  *
- * A tab page has a label as the display zone, name, description, etc. A tab page exposes a child component only if it
- * corresponds to the selected tab in the tab pane. Inactive tabs don't have a child component to expose, as components
- * are created/deleted on demand. A tab page exposes one action: select and activate the panel.
+ * A tab page has a label as the display zone, name, description, etc.
+ * A tab page exposes a child component only if it corresponds to the
+ * selected tab in the tab pane. Inactive tabs don't have a child component
+ * to expose, as components are created/deleted on demand. A tab page
+ * exposes one action: select and activate the panel.
  */
 private class AccessibleTabPage(
   private val parent: KrTabsImpl,

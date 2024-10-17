@@ -255,7 +255,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   private fun fillRegexGroups(
     project: Project,
     tempGroup: DefaultActionGroup,
-    panel: EditorGroupPanel2,
+    panel: EditorGroupPanel,
     file: VirtualFile?
   ): List<RegexGroup> {
     val regexGroups = RegexGroupProvider.getInstance(project).findMatchingRegexGroups(file!!)
