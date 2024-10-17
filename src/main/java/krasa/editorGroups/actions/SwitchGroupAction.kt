@@ -409,9 +409,9 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   }
 
   /**
-   * Handles the given editor group by attempting to open the first existing file in the group within the specified
-   * project. If the file does not exist, it uses the owner path of the group to find a corresponding virtual file and
-   * attempts to open it. Displays a warning if neither the file nor the owner path exists.
+   * Handles the given editor group by attempting to open the first existing file in the group within the specified project. If the file
+   * does not exist, it uses the owner path of the group to find a corresponding virtual file and attempts to open it. Displays a warning if
+   * neither the file nor the owner path exists.
    *
    * @param project The project context within which the editor group is handled.
    * @return A newly instantiated handler for the specified editor group.
