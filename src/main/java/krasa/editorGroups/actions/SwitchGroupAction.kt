@@ -60,7 +60,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
       val data = dataContext.getData(PlatformDataKeys.FILE_EDITOR)
-      var editorGroupPanel: EditorGroupPanel? = null
+      var editorGroupPanel: EditorGroupPanel2? = null
       var displayedGroup = EditorGroup.EMPTY
       var currentFileGroups = emptyList<EditorGroup>()
       val tempGroup = DefaultActionGroup()
@@ -69,10 +69,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
       // Fill the actions
       if (data != null) {
-        editorGroupPanel = data.getUserData(EditorGroupPanel.EDITOR_PANEL)
+        editorGroupPanel = data.getUserData(EditorGroupPanel2.EDITOR_PANEL)
         if (editorGroupPanel != null) {
-          file = editorGroupPanel.file
-          displayedGroup = editorGroupPanel.displayedGroup
+          file = editorGroupPanel.getFile()
+          displayedGroup = editorGroupPanel.getDisplayedGroup()
 
           // Same file name
           defaultActionGroup.add(
@@ -161,9 +161,11 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
         }
       }
 
-      defaultActionGroup.add(Separator())
-      defaultActionGroup.add(ActionManager.getInstance().getAction(TogglePanelVisibilityAction.ID))
-      defaultActionGroup.add(ActionManager.getInstance().getAction(OpenConfigurationAction.ID))
+      defaultActionGroup.run {
+        add(Separator())
+        add(ActionManager.getInstance().getAction(TogglePanelVisibilityAction.ID))
+        add(ActionManager.getInstance().getAction(OpenConfigurationAction.ID))
+      }
     } catch (e: IndexNotReadyException) {
       thisLogger().error("That should not happen", e)
     }
@@ -183,7 +185,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   private fun addBookmarkGroup(
     project: Project,
     defaultActionGroup: DefaultActionGroup,
-    panel: EditorGroupPanel?,
+    panel: EditorGroupPanel2?,
     displayedGroup: EditorGroup,
     file: VirtualFile?
   ) {
@@ -220,10 +222,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   private fun fillCurrentFileGroups(
     project: Project,
     tempGroup: DefaultActionGroup,
-    panel: EditorGroupPanel,
+    panel: EditorGroupPanel2,
     file: VirtualFile?
   ): List<EditorGroup> {
-    val displayedGroup = panel.displayedGroup
+    val displayedGroup = panel.getDisplayedGroup()
     val manager = EditorGroupManager.getInstance(project)
     val groups = manager.getGroups(file!!)
 
@@ -255,7 +257,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   private fun fillRegexGroups(
     project: Project,
     tempGroup: DefaultActionGroup,
-    panel: EditorGroupPanel,
+    panel: EditorGroupPanel2,
     file: VirtualFile?
   ): List<RegexGroup> {
     val regexGroups = RegexGroupProvider.getInstance(project).findMatchingRegexGroups(file!!)
@@ -263,7 +265,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     regexGroups.forEach { regexGroup ->
       tempGroup.add(
         createAction(
-          displayedGroup = panel.displayedGroup,
+          displayedGroup = panel.getDisplayedGroup(),
           targetGroup = regexGroup,
           project = project,
           actionHandler = refreshHandler(panel)
@@ -318,7 +320,8 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   }
 
   /**
-   * Populates the given `defaultActionGroup` with favorite editor groups that are not already displayed in the provided `editorGroups`.
+   * Populates the given `defaultActionGroup` with favorite editor groups that are not already displayed in the provided
+   * `editorGroups`.
    *
    * TODO deprecate favorites
    *
@@ -394,7 +397,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     }
   }
 
-  private fun refreshHandler(panel: EditorGroupPanel): Handler = object : Handler() {
+  private fun refreshHandler(panel: EditorGroupPanel2): Handler = object : Handler() {
     override fun run(editorGroup: EditorGroup) {
       thisLogger().debug("switching group")
       panel._refresh(false, editorGroup)
@@ -409,9 +412,9 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   }
 
   /**
-   * Handles the given editor group by attempting to open the first existing file in the group within the specified project. If the file
-   * does not exist, it uses the owner path of the group to find a corresponding virtual file and attempts to open it. Displays a warning if
-   * neither the file nor the owner path exists.
+   * Handles the given editor group by attempting to open the first existing file in the group within the specified
+   * project. If the file does not exist, it uses the owner path of the group to find a corresponding virtual file and
+   * attempts to open it. Displays a warning if neither the file nor the owner path exists.
    *
    * @param project The project context within which the editor group is handled.
    * @return A newly instantiated handler for the specified editor group.
@@ -477,6 +480,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
     val dumbAwareAction: DumbAwareAction = object : DumbAwareAction(title, description, targetGroup.icon()) {
       override fun actionPerformed(event: AnActionEvent) = actionHandler.run(targetGroup)
+
       override fun getActionUpdateThread(): ActionUpdateThread = super.getActionUpdateThread()
 
       override fun update(e: AnActionEvent) {
@@ -523,10 +527,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     val data = e.getData(PlatformDataKeys.FILE_EDITOR) ?: return
 
     val presentation = e.presentation
-    val panel = data.getUserData(EditorGroupPanel.EDITOR_PANEL) ?: return
+    val panel = data.getUserData(EditorGroupPanel2.EDITOR_PANEL) ?: return
 
-    var displayedGroup = panel.displayedGroup
-    val toBeRendered = panel.toBeRendered
+    var displayedGroup = panel.getDisplayedGroup()
+    val toBeRendered = panel.getToBeRendered()
 
     if (displayedGroup === EditorGroup.EMPTY && toBeRendered != null) {
       displayedGroup = toBeRendered // to remove flicker when switching

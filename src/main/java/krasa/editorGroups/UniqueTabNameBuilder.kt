@@ -18,7 +18,7 @@ class UniqueTabNameBuilder(project: Project) {
     }
   }
 
-  fun getNamesByPath(paths: MutableList<Link>, currentFile: VirtualFile?, project: Project): MutableMap<Link, String> {
+  fun getNamesByPath(paths: List<Link>, currentFile: VirtualFile?, project: Project): MutableMap<Link, String> {
     val uniqueNameBuilder = UniqueNameBuilder<Link>(root, "/")
     val pathToName: MutableMap<Link, String> = HashMap<Link, String>()
     val nameToPath: MutableMap<String, Link> = HashMap<String, Link>()

@@ -1,3 +1,5 @@
+@file:Suppress("UsePropertyAccessSyntax")
+
 package krasa.editorGroups.tabs2.impl
 
 import com.intellij.icons.AllIcons
@@ -1230,11 +1232,11 @@ open class KrTabsImpl(
     setPopupGroup({ popupGroup }, place, addNavigationGroup)
 
   override fun setPopupGroup(
-    popupGroup: Supplier<out ActionGroup>,
+    supplier: Supplier<out ActionGroup>,
     place: String,
     addNavigationGroup: Boolean
   ): KrTabs {
-    popupGroupSupplier = popupGroup::get
+    popupGroupSupplier = supplier::get
     popupPlace = place
     this.addNavigationGroup = addNavigationGroup
     return this
@@ -1695,18 +1697,19 @@ open class KrTabsImpl(
 
   @RequiresEdt
   override fun getTabs(): List<KrTabInfo> {
-    allTabs?.let {
-      return it
-    }
+    // If allTabs is not null, it means that the tabs are already sorted and we can return them directly.
+    this.allTabs?.let { return it }
 
     val result = visibleInfos.toMutableList()
     for (tabInfo in hiddenInfos.keys) {
       result.add(getIndexInVisibleArray(tabInfo), tabInfo)
     }
+
     if (isAlphabeticalMode()) {
       sortTabsAlphabetically(result)
     }
-    allTabs = result
+
+    this.allTabs = result
     return result
   }
 
@@ -2417,10 +2420,7 @@ open class KrTabsImpl(
     }
   }
 
-  /**
-   * @return insets, that should be used to layout [KrTabsImpl.moreToolbar]
-   *    and [KrTabsImpl.entryPointToolbar]
-   */
+  /** @return insets, that should be used to layout [KrTabsImpl.moreToolbar] and [KrTabsImpl.entryPointToolbar] */
   fun getActionsInsets(): Insets = if (ExperimentalUI.isNewUI()) {
     if (position.isSide) JBInsets.create(Insets(4, 8, 4, 3)) else JBInsets.create(Insets(0, 5, 0, 8))
   } else {
@@ -3049,11 +3049,9 @@ open class KrTabsImpl(
   }
 
   /**
-   * Custom implementation of Accessible interface. Given JBTabsImpl is
-   * similar to the built-it JTabbedPane, we expose similar behavior. The
-   * one tricky part is that JBTabsImpl can only expose the content of the
-   * selected tab, as the content of tabs is created/deleted on demand when a
-   * tab is selected.
+   * Custom implementation of Accessible interface. Given JBTabsImpl is similar to the built-it JTabbedPane, we expose
+   * similar behavior. The one tricky part is that JBTabsImpl can only expose the content of the selected tab, as the
+   * content of tabs is created/deleted on demand when a tab is selected.
    */
   protected inner class AccessibleJBTabsImpl internal constructor() : AccessibleJComponent(), AccessibleSelection {
     init {
@@ -3156,11 +3154,9 @@ private fun sortTabsAlphabetically(tabs: MutableList<KrTabInfo>) {
 /**
  * AccessibleContext implementation for a single tab page.
  *
- * A tab page has a label as the display zone, name, description, etc.
- * A tab page exposes a child component only if it corresponds to the
- * selected tab in the tab pane. Inactive tabs don't have a child component
- * to expose, as components are created/deleted on demand. A tab page
- * exposes one action: select and activate the panel.
+ * A tab page has a label as the display zone, name, description, etc. A tab page exposes a child component only if it
+ * corresponds to the selected tab in the tab pane. Inactive tabs don't have a child component to expose, as components
+ * are created/deleted on demand. A tab page exposes one action: select and activate the panel.
  */
 private class AccessibleTabPage(
   private val parent: KrTabsImpl,
@@ -3318,10 +3314,7 @@ private class AccessibleTabPage(
     // do nothing
   }
 
-  /**
-   * Returns the bounds of tab. The bounds are with respect to the JBTabsImpl
-   * coordinate space.
-   */
+  /** Returns the bounds of tab. The bounds are with respect to the JBTabsImpl coordinate space. */
   override fun getBounds(): Rectangle = tabLabel!!.bounds
 
   override fun setBounds(r: Rectangle) {

@@ -73,13 +73,11 @@ abstract class EditorGroup {
   }
 
   /**
-   * Checks if the given project contains a link with the specified current
-   * file path.
+   * Checks if the given project contains a link with the specified current file path.
    *
    * @param project the project to check for links
    * @param currentFilePath the path of the current file
-   * @return true if the project contains a link with the specified current
-   *    file path, false otherwise
+   * @return true if the project contains a link with the specified current file path, false otherwise
    */
   fun containsLink(project: Project, currentFilePath: String): Boolean {
     val links = getLinks(project)
@@ -87,13 +85,11 @@ abstract class EditorGroup {
   }
 
   /**
-   * Checks if the given project contains a link with the specified current
-   * file.
+   * Checks if the given project contains a link with the specified current file.
    *
    * @param project the project to check for links
    * @param currentFile the current file to compare with links
-   * @return true if the project contains a link with the specified current
-   *    file, false otherwise
+   * @return true if the project contains a link with the specified current file, false otherwise
    */
   fun containsLink(project: Project, currentFile: VirtualFile): Boolean {
     val links = getLinks(project)
@@ -101,19 +97,15 @@ abstract class EditorGroup {
   }
 
   /**
-   * Checks if the provided [group] visually equals this [EditorGroup] by
-   * comparing the values of its properties.
+   * Checks if the provided [group] visually equals this [EditorGroup] by comparing the values of its properties.
    *
    * @param project the [Project] to check for links
    * @param group the [EditorGroup] to compare with this [EditorGroup]
-   * @param links the list of [Link] objects to compare with the links of
-   *    this [EditorGroup]
-   * @param stub the stub indicator to compare with the `isStub` property of
-   *    this [EditorGroup]
-   * @return true if the provided [group] visually equals this [EditorGroup],
-   *    false otherwise
+   * @param links the list of [Link] objects to compare with the links of this [EditorGroup]
+   * @param stub the stub indicator to compare with the `isStub` property of this [EditorGroup]
+   * @return true if the provided [group] visually equals this [EditorGroup], false otherwise
    */
-  fun equalsVisually(project: Project, group: EditorGroup?, links: List<Link?>, stub: Boolean): Boolean = when {
+  fun equalsVisually(project: Project, group: EditorGroup?, links: List<Link>, stub: Boolean): Boolean = when {
     group == null       -> false
     this.isStub != stub -> false
     this != group       -> false
@@ -121,8 +113,7 @@ abstract class EditorGroup {
   }
 
   /**
-   * Retrieves the first existing file from the provided project's links.
-   * Returns null if no existing file is found.
+   * Retrieves the first existing file from the provided project's links. Returns null if no existing file is found.
    *
    * @param project the project from which to retrieve the file
    * @return the first existing file, or null if not found
@@ -175,8 +166,7 @@ abstract class EditorGroup {
    * Checks if this EditorGroup is selected.
    *
    * @param editorGroup the EditorGroup to compare with this EditorGroup
-   * @return true if this EditorGroup is equal to the provided groupLink,
-   *    false otherwise
+   * @return true if this EditorGroup is equal to the provided groupLink, false otherwise
    */
   open fun isSelected(editorGroup: EditorGroup): Boolean = this == editorGroup
 

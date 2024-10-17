@@ -2,7 +2,7 @@ package krasa.editorGroups.support;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBScrollPane;
-import krasa.editorGroups.EditorGroupPanel;
+import krasa.editorGroups.EditorGroupPanel2;
 
 import javax.swing.plaf.ScrollPaneUI;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
@@ -13,7 +13,7 @@ import java.lang.reflect.Field;
 public class HackedJBScrollPane extends JBScrollPane {
   private static final Logger LOG = Logger.getInstance(JBScrollPane.class);
 
-  public HackedJBScrollPane(EditorGroupPanel panel) {
+  public HackedJBScrollPane(EditorGroupPanel2 panel) {
     super(panel);
   }
 

@@ -159,7 +159,6 @@ class EditorGroupManager(private val project: Project) {
     return result
   }
 
-  /** Index throws exceptions, nothing we can do about it here, let the caller try it again later. */
   @Throws(IndexNotReady::class)
   fun getGroup(
     project: Project,
@@ -332,8 +331,8 @@ class EditorGroupManager(private val project: Project) {
   /**
    * Stops the current switching operation.
    *
-   * This method schedules a task on the AWT event queue using `SwingUtilities.invokeLater`. Once the focus has settled down, it sets the
-   * `switching` flag to `false` and logs the action.
+   * This method schedules a task on the AWT event queue using `SwingUtilities.invokeLater`. Once the focus has settled
+   * down, it sets the `switching` flag to `false` and logs the action.
    */
   fun stopSwitching() {
     SwingUtilities.invokeLater {
@@ -431,8 +430,8 @@ class EditorGroupManager(private val project: Project) {
     newWindow: Boolean,
     newTab: Boolean,
     split: Splitters
-  ): Result? {
-    val displayedGroup = groupPanel.displayedGroup
+  ): OpenFileResult? {
+    val displayedGroup = groupPanel.getDisplayedGroupOrEmpty()
     val tabs = groupPanel.tabs
 
     val editorWindowHolder = UIUtil.getParentOfType(EditorWindowHolder::class.java, groupPanel)
@@ -445,6 +444,43 @@ class EditorGroupManager(private val project: Project) {
     return open(
       currentWindow = currentWindow,
       currentFile = groupPanel.file,
+      fileToOpen = fileToOpen,
+      line = line,
+      group = displayedGroup,
+      newWindow = newWindow,
+      newTab = newTab,
+      splitters = split,
+      switchRequest = SwitchRequest(
+        group = displayedGroup,
+        fileToOpen = fileToOpen,
+        myScrollOffset = tabs.myScrollOffset,
+        width = tabs.width,
+        line = line
+      )
+    )
+  }
+
+  fun openGroupFile2(
+    groupPanel: EditorGroupPanel2,
+    fileToOpen: VirtualFile,
+    line: Int?,
+    newWindow: Boolean,
+    newTab: Boolean,
+    split: Splitters
+  ): OpenFileResult? {
+    val displayedGroup = groupPanel.getDisplayedGroup()
+    val tabs = groupPanel.getTabs()
+
+    val editorWindowHolder = UIUtil.getParentOfType(EditorWindowHolder::class.java, groupPanel)
+    var currentWindow: EditorWindow? = null
+
+    if (editorWindowHolder != null) {
+      currentWindow = editorWindowHolder.editorWindow
+    }
+
+    return open(
+      currentWindow = currentWindow,
+      currentFile = groupPanel.getFile(),
       fileToOpen = fileToOpen,
       line = line,
       group = displayedGroup,
@@ -479,7 +515,7 @@ class EditorGroupManager(private val project: Project) {
     split: Splitters,
     group: EditorGroup,
     current: VirtualFile?
-  ): Result? =
+  ): OpenFileResult? =
     open(
       currentWindow = null,
       currentFile = current,
@@ -493,8 +529,8 @@ class EditorGroupManager(private val project: Project) {
     )
 
   /**
-   * Opens the provided file in the editor, considering various conditions such as current file, window, group, splitters, and switching
-   * requests.
+   * Opens the provided file in the editor, considering various conditions such as current file, window, group,
+   * splitters, and switching requests.
    *
    * @param currentWindow The current editor window parameter.
    * @param currentFile The currently opened file.
@@ -518,10 +554,10 @@ class EditorGroupManager(private val project: Project) {
     newTab: Boolean,
     splitters: Splitters,
     switchRequest: SwitchRequest
-  ): Result? {
+  ): OpenFileResult? {
     thisLogger().debug("open2 fileToOpen = [$fileToOpen], currentFile = [$currentFile], group = [$group], newWindow = [$newWindow], newTab = [$newTab], splitters = [$splitters], switchingRequest = [$switchRequest]")
 
-    val resultAtomicReference = AtomicReference<Result>()
+    val resultAtomicReference = AtomicReference<OpenFileResult>()
     startSwitching(switchRequest)
 
     if (!warningShown && UISettings.getInstance().reuseNotModifiedTabs) {
@@ -539,107 +575,110 @@ class EditorGroupManager(private val project: Project) {
       }
     }
 
+    CommandProcessor.getInstance().executeCommand(
+      project,
+      {
+        val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
+        var currentWindow = currentWindow ?: manager.currentWindow
+        var selectedFile = currentFile ?: currentWindow?.selectedFile
 
-    CommandProcessor.getInstance().executeCommand(project, {
-      val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
-      var currentWindow = currentWindow ?: manager.currentWindow
-      var selectedFile = currentFile ?: currentWindow?.selectedFile
-
-      // If the file is already open, scroll to it (if line is provided)
-      if (!splitters.isSplit && !newWindow && fileToOpen == selectedFile) {
-        val editors = currentWindow!!.manager.getSelectedEditor(fileToOpen)
-        val scroll = scroll(line, editors!!)
-        if (scroll) {
-          resultAtomicReference.set(Result(true))
-        }
-
-        thisLogger().debug("fileToOpen.equals(selectedFile) [fileToOpen=$fileToOpen, selectedFile=$selectedFile, currentFile=$currentFile]")
-
-        resetSwitching()
-        return@executeCommand
-      }
-
-      fileToOpen.putUserData(EditorGroupPanel.EDITOR_GROUP, group) // for project view colors
-      // Clear lock
-      if (initialEditorIndex != null) {
-        fileToOpen.putUserData(initialEditorIndex!!, null)
-      }
-
-      when {
-        // If the file is requested to open in a split
-        splitters.isSplit && currentWindow != null -> {
-          thisLogger().debug("openFileInSplit $fileToOpen")
-
-          val splitter = currentWindow.split(
-            orientation = splitters.orientation,
-            forceSplit = true,
-            virtualFile = fileToOpen,
-            focusNew = true
-          )
-          if (splitter == null) {
-            thisLogger().debug("no editors opened.")
-            resetSwitching()
+        // If the file is already open, scroll to it (if line is provided)
+        if (!splitters.isSplit && !newWindow && fileToOpen == selectedFile) {
+          val editors = currentWindow!!.manager.getSelectedEditor(fileToOpen)
+          val scroll = scroll(line, editors!!)
+          if (scroll) {
+            resultAtomicReference.set(OpenFileResult(isScrolledOnly = true))
           }
+
+          thisLogger().debug("fileToOpen.equals(selectedFile) [fileToOpen=$fileToOpen, selectedFile=$selectedFile, currentFile=$currentFile]")
+
+          resetSwitching()
+          return@executeCommand
         }
 
-        // If requested to open in a new window
-        newWindow                                  -> {
-          thisLogger().debug("openFileInNewWindow fileToOpen = $fileToOpen")
-
-          val pair = manager.openFileInNewWindow(fileToOpen)
-          val fileEditor = pair.first
-          scroll(line, *fileEditor)
-
-          if (fileEditor.isEmpty()) {
-            thisLogger().debug("no editors opened..")
-            resetSwitching()
-          }
+        fileToOpen.putUserData(EditorGroupPanel.EDITOR_GROUP, group) // for project view colors
+        // Clear lock
+        if (initialEditorIndex != null) {
+          fileToOpen.putUserData(initialEditorIndex!!, null)
         }
 
-        else                                       -> {
-          val reuseNotModifiedTabs = UISettings.getInstance().reuseNotModifiedTabs
-          try {
-            thisLogger().debug("openFile $fileToOpen")
-            // Temporarily disable the reuse not modified tabs to force open in a new tab
-            if (newTab) UISettings.getInstance().reuseNotModifiedTabs = false
+        when {
+          // If the file is requested to open in a split
+          splitters.isSplit && currentWindow != null -> {
+            thisLogger().debug("openFileInSplit $fileToOpen")
 
-            // Open the file in the current window or a new window
-            val fileEditor = manager.openFile(
-              file = fileToOpen,
-              window = currentWindow,
-              options = FileEditorOpenOptions(requestFocus = true, reuseOpen = true)
+            val splitter = currentWindow.split(
+              orientation = splitters.orientation,
+              forceSplit = true,
+              virtualFile = fileToOpen,
+              focusNew = true
             )
-            // The window's editors
-            val fileEditors = fileEditor.allEditors
-
-            if (fileEditors.isEmpty()) {  // directory or some fail
-              Notifications.showWarning("Unable to open editor for file ${fileToOpen.name}")
-              thisLogger().debug("no editors opened")
-
+            if (splitter == null) {
+              thisLogger().debug("no editors opened.")
               resetSwitching()
-              return@executeCommand
             }
+          }
 
-            fileEditors.forEach { fileEditor -> thisLogger().debug("opened fileEditor = $fileEditor") }
+          // If requested to open in a new window
+          newWindow                                  -> {
+            thisLogger().debug("openFileInNewWindow fileToOpen = $fileToOpen")
 
-            // Scroll to the line
-            scroll(line, *fileEditors.toTypedArray())
+            val pair = manager.openFileInNewWindow(fileToOpen)
+            val fileEditor = pair.first
+            scroll(line, *fileEditor)
 
-            if (reuseNotModifiedTabs) return@executeCommand
+            if (fileEditor.isEmpty()) {
+              thisLogger().debug("no editors opened..")
+              resetSwitching()
+            }
+          }
 
-            // not sure, but it seems to mess order of tabs less if we do it after opening a new tab
-            // if (selectedFile != null && !newTab) {
-            //   thisLogger().debug("closeFile $selectedFile")
-            //   checkNotNull(currentWindow)
-            //   manager.closeFile(selectedFile, currentWindow)
-            // }
-          } finally {
-            UISettings.getInstance().reuseNotModifiedTabs = reuseNotModifiedTabs
+          else                                       -> {
+            val reuseNotModifiedTabs = UISettings.getInstance().reuseNotModifiedTabs
+            try {
+              thisLogger().debug("openFile $fileToOpen")
+              // Temporarily disable the reuse not modified tabs to force open in a new tab
+              if (newTab) UISettings.getInstance().reuseNotModifiedTabs = false
+
+              // Open the file in the current window or a new window
+              val fileEditor = manager.openFile(
+                file = fileToOpen,
+                window = currentWindow,
+                options = FileEditorOpenOptions(requestFocus = true, reuseOpen = true)
+              )
+              // The window's editors
+              val fileEditors = fileEditor.allEditors
+
+              if (fileEditors.isEmpty()) {  // directory or some fail
+                Notifications.showWarning("Unable to open editor for file ${fileToOpen.name}")
+                thisLogger().debug("no editors opened")
+
+                resetSwitching()
+                return@executeCommand
+              }
+
+              fileEditors.forEach { fileEditor -> thisLogger().debug("opened fileEditor = $fileEditor") }
+
+              // Scroll to the line
+              scroll(line, *fileEditors.toTypedArray())
+
+              if (reuseNotModifiedTabs) return@executeCommand
+
+              // not sure, but it seems to mess order of tabs less if we do it after opening a new tab
+              // if (selectedFile != null && !newTab) {
+              //   thisLogger().debug("closeFile $selectedFile")
+              //   checkNotNull(currentWindow)
+              //   manager.closeFile(selectedFile, currentWindow)
+              // }
+            } finally {
+              UISettings.getInstance().reuseNotModifiedTabs = reuseNotModifiedTabs
+            }
           }
         }
-      }
-    }, null, null)
-
+      },
+      /* name = */ null,
+      /* groupId = */ null
+    )
 
     return resultAtomicReference.get()
   }
@@ -677,10 +716,10 @@ class EditorGroupManager(private val project: Project) {
   }
 
   @Suppress("detekt:UseDataClass")
-  class Result(var isScrolledOnly: Boolean)
+  class OpenFileResult(var isScrolledOnly: Boolean)
 
   companion object {
-    val COMPARATOR: Comparator<EditorGroup> = Comparator.comparing { o: EditorGroup -> o.title.lowercase(Locale.getDefault()) }
+    val COMPARATOR: Comparator<EditorGroup> = Comparator.comparing { group: EditorGroup -> group.title.lowercase(Locale.getDefault()) }
 
     @JvmStatic
     fun getInstance(project: Project): EditorGroupManager = project.getService(EditorGroupManager::class.java)

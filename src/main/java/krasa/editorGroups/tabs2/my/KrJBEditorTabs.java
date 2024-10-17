@@ -9,7 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.BitUtil;
 import krasa.editorGroups.EditorGroupManager;
-import krasa.editorGroups.EditorGroupPanel;
+import krasa.editorGroups.EditorGroupPanel2;
 import krasa.editorGroups.SwitchRequest;
 import krasa.editorGroups.tabs2.KrTabInfo;
 import krasa.editorGroups.tabs2.KrTabPainter;
@@ -26,14 +26,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-public class MyJBEditorTabs extends KrEditorTabs {
-  private static final Logger LOG = Logger.getInstance(MyJBEditorTabs.class);
+public class KrJBEditorTabs extends KrEditorTabs {
+  private static final Logger LOG = Logger.getInstance(KrJBEditorTabs.class);
 
   private final Project project;
   private final VirtualFile file;
   private final KrSingleRowLayout mySingleRowLayout = createSingleRowLayout();
 
-  public MyJBEditorTabs(Project project, @NotNull ActionManager actionManager, IdeFocusManager focusManager, @NotNull Disposable parent, VirtualFile file) {
+  public KrJBEditorTabs(Project project, @NotNull ActionManager actionManager, IdeFocusManager focusManager, @NotNull Disposable parent, VirtualFile file) {
     super(project, actionManager, focusManager, parent);
     this.project = project;
     this.file = file;
@@ -86,8 +86,8 @@ public class MyJBEditorTabs extends KrEditorTabs {
   @Override
   public KrTabInfo getSelectedInfo() {
     KrTabInfo selectedInfo = super.getSelectedInfo();
-    if (selectedInfo instanceof EditorGroupPanel.MyTabInfo) {
-      boolean selectable = ((EditorGroupPanel.MyTabInfo) selectedInfo).selectable;
+    if (selectedInfo instanceof EditorGroupPanel2.MyTabInfo) {
+      boolean selectable = ((EditorGroupPanel2.MyTabInfo) selectedInfo).selectable;
       if (!selectable) {
         return null;
       }
@@ -101,7 +101,7 @@ public class MyJBEditorTabs extends KrEditorTabs {
 
 
   /**
-   * com.intellij.util.IncorrectOperationException: Sorry but parent: EditorGroups.MyJBEditorTabs visible=[] selected=null has already been disposed (see the cause for stacktrace) so the child: Animator 'KrTabs Attractions' @1845106519 (stopped) will never be disposed
+   * com.intellij.util.IncorrectOperationException: Sorry but parent: EditorGroups.KrJBEditorTabs visible=[] selected=null has already been disposed (see the cause for stacktrace) so the child: Animator 'KrTabs Attractions' @1845106519 (stopped) will never be disposed
    * at com.intellij.openapi.util.objectTree.ObjectTree.register(ObjectTree.java:61)
    * at com.intellij.openapi.util.Disposer.register(Disposer.java:92)
    * at krasa.editorGroups.tabs2.impl.JBTabsImpl$7.initialize(JBTabsImpl.java:340)
@@ -165,7 +165,7 @@ public class MyJBEditorTabs extends KrEditorTabs {
 
   @Override
   public @NotNull String toString() {
-    return "EditorGroups.MyJBEditorTabs visible=" + getVisibleInfos() + " selected=" + getSelectedInfo();
+    return "EditorGroups.KrJBEditorTabs visible=" + getVisibleInfos() + " selected=" + getSelectedInfo();
   }
 
 

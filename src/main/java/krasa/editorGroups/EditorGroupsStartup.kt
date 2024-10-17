@@ -22,7 +22,7 @@ class EditorGroupsStartup : FileEditorManagerListener {
 
     // Create editor group panel if it doesn't exist'
     for (fileEditor in editors) {
-      if (fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL) != null) continue
+      if (fileEditor.getUserData(EditorGroupPanel2.EDITOR_PANEL) != null) continue
 
       val start = System.currentTimeMillis()
 
@@ -45,11 +45,11 @@ class EditorGroupsStartup : FileEditorManagerListener {
     val fileEditor = event.newEditor
     if (fileEditor == null) return
 
-    val panel = fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL)
+    val panel = fileEditor.getUserData(EditorGroupPanel2.EDITOR_PANEL)
     if (panel == null) return
 
     val instance = EditorGroupManager.getInstance(project)
-    val switchRequest = instance.getAndClearSwitchingRequest(panel.file)
+    val switchRequest = instance.getAndClearSwitchingRequest(panel.getFile())
 
     if (switchRequest != null) {
       val switchingGroup = switchRequest.group
@@ -85,8 +85,8 @@ class EditorGroupsStartup : FileEditorManagerListener {
       return
     }
 
-    val panel = EditorGroupPanel(fileEditor, project, switchRequest, file)
-    manager.addTopComponent(fileEditor, panel.root)
+    val panel = EditorGroupPanel2(fileEditor, project, switchRequest, file)
+    manager.addTopComponent(fileEditor, panel.getRoot())
     panel.postConstruct()
   }
 }

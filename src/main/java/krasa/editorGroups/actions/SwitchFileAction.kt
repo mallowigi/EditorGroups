@@ -15,7 +15,7 @@ import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.ui.popup.list.ListPopupImpl
 import com.intellij.util.BitUtil
 import krasa.editorGroups.EditorGroupManager
-import krasa.editorGroups.EditorGroupPanel
+import krasa.editorGroups.EditorGroupPanel2
 import krasa.editorGroups.Splitters
 import krasa.editorGroups.UniqueTabNameBuilder
 import krasa.editorGroups.model.Link
@@ -122,9 +122,9 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
       val data = dataContext.getData<FileEditor?>(PlatformDataKeys.FILE_EDITOR) ?: return
-      var panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return
+      var panel: EditorGroupPanel2 = data.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL) ?: return
 
-      val currentFile = panel.file.path
+      val currentFile = panel.getFile().path
       val group = panel.getDisplayedGroup()
 
       val links: MutableList<Link> = group.getLinks(project) as MutableList<Link>
@@ -152,7 +152,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
     }
   }
 
-  private fun newAction(project: Project, panel: EditorGroupPanel, currentFile: String?, link: Link, text: String?): OpenFileAction {
+  private fun newAction(project: Project, panel: EditorGroupPanel2, currentFile: String?, link: Link, text: String?): OpenFileAction {
     val action = OpenFileAction(
       link = link,
       project = project,
@@ -171,7 +171,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   private class OpenFileAction(
     private val link: Link,
     private val project: Project,
-    private val panel: EditorGroupPanel,
+    private val panel: EditorGroupPanel2,
     text: String?
   ) :
     DumbAwareAction(text, link.path, link.fileIcon) {
@@ -190,7 +190,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
       val openInNewTab = BitUtil.isSet(e.modifiers, InputEvent.CTRL_DOWN_MASK)
       val openInNewWindow = BitUtil.isSet(e.modifiers, InputEvent.SHIFT_DOWN_MASK)
 
-      EditorGroupManager.getInstance(project).openGroupFile(
+      EditorGroupManager.getInstance(project).openGroupFile2(
         groupPanel = panel,
         fileToOpen = virtualFile,
         line = null,

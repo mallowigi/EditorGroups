@@ -208,7 +208,8 @@ fun toPresentableName(path: String): String {
 /**
  * Retrieves the Color instance based on the specified color name and modifiers.
  *
- * @param color the color name with optional modifiers. Format: "colorName[+/-tones]". Examples: "red", "blue+2", "green-1".
+ * @param color the color name with optional modifiers. Format: "colorName[+/-tones]". Examples: "red", "blue+2",
+ *    "green-1".
  * @return the Color instance corresponding to the provided color name and modifiers, or null if not found.
  */
 fun getColorInstance(color: String): Color? {
@@ -359,7 +360,7 @@ fun getNullableFileByPath(path: String?): VirtualFile? {
 fun getVirtualFileByAbsolutePath(path: String): VirtualFile? = if (File(path).exists()) getFileByPath(path) else null
 
 /** Get file from text editor. */
-fun getFileFromTextEditor(project: Project?, textEditor: FileEditor): VirtualFile =
+fun getFileFromTextEditor(textEditor: FileEditor): VirtualFile =
   unwrapPreview(textEditor.file) ?: throw RuntimeException("File not found for $textEditor")
 
 /** Return the file after trying to unwrap it from another plugin's wrap, if necessary. */
