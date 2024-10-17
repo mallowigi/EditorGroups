@@ -62,16 +62,14 @@ class PanelRefresher(private val project: Project) {
   }
 
   /**
-   * Iterates over all editor panels in the current project and applies the given bi-consumer to each panel and its
-   * displayed group.
+   * Iterates over all editor panels in the current project and applies the given bi-consumer to each panel and its displayed group.
    *
-   * @param biConsumer a BiConsumer that accepts an EditorGroupPanel and an EditorGroup and performs an operation on
-   *    them
+   * @param biConsumer a BiConsumer that accepts an EditorGroupPanel and an EditorGroup and performs an operation on them
    */
-  private fun iteratePanels(biConsumer: BiConsumer<EditorGroupPanel2, EditorGroup>) {
+  private fun iteratePanels(biConsumer: BiConsumer<EditorGroupPanel, EditorGroup>) {
     val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
     for (selectedEditor in manager.getAllEditors()) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL)
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
       if (panel == null) continue
 
       val displayedGroup = panel.getDisplayedGroup()

@@ -1230,11 +1230,11 @@ open class KrTabsImpl(
     setPopupGroup({ popupGroup }, place, addNavigationGroup)
 
   override fun setPopupGroup(
-    supplier: Supplier<out ActionGroup>,
+    popupGroup: Supplier<out ActionGroup>,
     place: String,
     addNavigationGroup: Boolean
   ): KrTabs {
-    popupGroupSupplier = supplier::get
+    popupGroupSupplier = popupGroup::get
     popupPlace = place
     this.addNavigationGroup = addNavigationGroup
     return this

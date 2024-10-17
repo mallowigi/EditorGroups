@@ -45,11 +45,11 @@ class EditorGroupsStartup : FileEditorManagerListener {
     val fileEditor = event.newEditor
     if (fileEditor == null) return
 
-    val panel = fileEditor.getUserData(EditorGroupPanel2.EDITOR_PANEL)
+    val panel = fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL)
     if (panel == null) return
 
     val instance = EditorGroupManager.getInstance(project)
-    val switchRequest = instance.getAndClearSwitchingRequest(panel.getFile())
+    val switchRequest = instance.getAndClearSwitchingRequest(panel.file)
 
     if (switchRequest != null) {
       val switchingGroup = switchRequest.group

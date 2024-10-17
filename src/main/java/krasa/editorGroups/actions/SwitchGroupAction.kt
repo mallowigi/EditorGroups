@@ -69,10 +69,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
       // Fill the actions
       if (data != null) {
-        editorGroupPanel = data.getUserData(EditorGroupPanel2.EDITOR_PANEL)
+        editorGroupPanel = data.getUserData(EditorGroupPanel.EDITOR_PANEL)
         if (editorGroupPanel != null) {
-          file = editorGroupPanel.getFile()
-          displayedGroup = editorGroupPanel.getDisplayedGroup()
+          file = editorGroupPanel.file
+          displayedGroup = editorGroupPanel.displayedGroup
 
           // Same file name
           defaultActionGroup.add(

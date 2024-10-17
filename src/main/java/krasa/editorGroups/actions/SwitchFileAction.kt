@@ -122,9 +122,9 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
       val data = dataContext.getData<FileEditor?>(PlatformDataKeys.FILE_EDITOR) ?: return
-      var panel: EditorGroupPanel2 = data.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL) ?: return
+      var panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return
 
-      val currentFile = panel.getFile().path
+      val currentFile = panel.file.path
       val group = panel.getDisplayedGroup()
 
       val links: MutableList<Link> = group.getLinks(project) as MutableList<Link>

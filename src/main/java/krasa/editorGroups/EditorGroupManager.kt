@@ -332,8 +332,8 @@ class EditorGroupManager(private val project: Project) {
   /**
    * Stops the current switching operation.
    *
-   * This method schedules a task on the AWT event queue using `SwingUtilities.invokeLater`. Once the focus has settled
-   * down, it sets the `switching` flag to `false` and logs the action.
+   * This method schedules a task on the AWT event queue using `SwingUtilities.invokeLater`. Once the focus has settled down, it sets the
+   * `switching` flag to `false` and logs the action.
    */
   fun stopSwitching() {
     SwingUtilities.invokeLater {

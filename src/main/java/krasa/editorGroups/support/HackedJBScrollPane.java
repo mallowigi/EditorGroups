@@ -13,7 +13,7 @@ import java.lang.reflect.Field;
 public class HackedJBScrollPane extends JBScrollPane {
   private static final Logger LOG = Logger.getInstance(JBScrollPane.class);
 
-  public HackedJBScrollPane(EditorGroupPanel2 panel) {
+  public HackedJBScrollPane(EditorGroupPanel panel) {
     super(panel);
   }
 
