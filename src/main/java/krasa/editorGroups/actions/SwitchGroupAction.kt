@@ -523,10 +523,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     val data = e.getData(PlatformDataKeys.FILE_EDITOR) ?: return
 
     val presentation = e.presentation
-    val panel = data.getUserData(EditorGroupPanel2.EDITOR_PANEL) ?: return
+    val panel = data.getUserData(EditorGroupPanel.EDITOR_PANEL) ?: return
 
-    var displayedGroup = panel.getDisplayedGroup()
-    val toBeRendered = panel.getToBeRendered()
+    var displayedGroup = panel.displayedGroup
+    val toBeRendered = panel.toBeRendered
 
     if (displayedGroup === EditorGroup.EMPTY && toBeRendered != null) {
       displayedGroup = toBeRendered // to remove flicker when switching
