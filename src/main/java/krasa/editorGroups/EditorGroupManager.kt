@@ -677,10 +677,10 @@ class EditorGroupManager(private val project: Project) {
   }
 
   @Suppress("detekt:UseDataClass")
-  class OpenFileResult(var isScrolledOnly: Boolean)
+  class Result(var isScrolledOnly: Boolean)
 
   companion object {
-    val COMPARATOR: Comparator<EditorGroup> = Comparator.comparing { group: EditorGroup -> group.title.lowercase(Locale.getDefault()) }
+    val COMPARATOR: Comparator<EditorGroup> = Comparator.comparing { o: EditorGroup -> o.title.lowercase(Locale.getDefault()) }
 
     @JvmStatic
     fun getInstance(project: Project): EditorGroupManager = project.getService(EditorGroupManager::class.java)

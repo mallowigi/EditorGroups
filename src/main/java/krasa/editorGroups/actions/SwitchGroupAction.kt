@@ -394,7 +394,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     }
   }
 
-  private fun refreshHandler(panel: EditorGroupPanel2): Handler = object : Handler() {
+  private fun refreshHandler(panel: EditorGroupPanel): Handler = object : Handler() {
     override fun run(editorGroup: EditorGroup) {
       thisLogger().debug("switching group")
       panel._refresh(false, editorGroup)
