@@ -477,7 +477,6 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
     val dumbAwareAction: DumbAwareAction = object : DumbAwareAction(title, description, targetGroup.icon()) {
       override fun actionPerformed(event: AnActionEvent) = actionHandler.run(targetGroup)
-
       override fun getActionUpdateThread(): ActionUpdateThread = super.getActionUpdateThread()
 
       override fun update(e: AnActionEvent) {
