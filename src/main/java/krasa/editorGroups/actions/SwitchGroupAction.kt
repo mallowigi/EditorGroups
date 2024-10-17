@@ -318,8 +318,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   }
 
   /**
-   * Populates the given `defaultActionGroup` with favorite editor groups that are not already displayed in the provided
-   * `editorGroups`.
+   * Populates the given `defaultActionGroup` with favorite editor groups that are not already displayed in the provided `editorGroups`.
    *
    * TODO deprecate favorites
    *
