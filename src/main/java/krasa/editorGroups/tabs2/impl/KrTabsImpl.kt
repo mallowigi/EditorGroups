@@ -1695,19 +1695,18 @@ open class KrTabsImpl(
 
   @RequiresEdt
   override fun getTabs(): List<KrTabInfo> {
-    // If allTabs is not null, it means that the tabs are already sorted and we can return them directly.
-    this.allTabs?.let { return it }
+    allTabs?.let {
+      return it
+    }
 
     val result = visibleInfos.toMutableList()
     for (tabInfo in hiddenInfos.keys) {
       result.add(getIndexInVisibleArray(tabInfo), tabInfo)
     }
-
     if (isAlphabeticalMode()) {
       sortTabsAlphabetically(result)
     }
-
-    this.allTabs = result
+    allTabs = result
     return result
   }
 

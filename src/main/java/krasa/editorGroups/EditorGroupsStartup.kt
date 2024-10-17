@@ -85,8 +85,8 @@ class EditorGroupsStartup : FileEditorManagerListener {
       return
     }
 
-    val panel = EditorGroupPanel2(fileEditor, project, switchRequest, file)
-    manager.addTopComponent(fileEditor, panel.getRoot())
+    val panel = EditorGroupPanel(fileEditor, project, switchRequest, file)
+    manager.addTopComponent(fileEditor, panel.root)
     panel.postConstruct()
   }
 }

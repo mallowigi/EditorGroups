@@ -161,11 +161,9 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
         }
       }
 
-      defaultActionGroup.run {
-        add(Separator())
-        add(ActionManager.getInstance().getAction(TogglePanelVisibilityAction.ID))
-        add(ActionManager.getInstance().getAction(OpenConfigurationAction.ID))
-      }
+      defaultActionGroup.add(Separator())
+      defaultActionGroup.add(ActionManager.getInstance().getAction(TogglePanelVisibilityAction.ID))
+      defaultActionGroup.add(ActionManager.getInstance().getAction(OpenConfigurationAction.ID))
     } catch (e: IndexNotReadyException) {
       thisLogger().error("That should not happen", e)
     }

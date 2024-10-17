@@ -101,15 +101,19 @@ abstract class EditorGroup {
   }
 
   /**
-   * Checks if the provided [group] visually equals this [EditorGroup] by comparing the values of its properties.
+   * Checks if the provided [group] visually equals this [EditorGroup] by
+   * comparing the values of its properties.
    *
    * @param project the [Project] to check for links
    * @param group the [EditorGroup] to compare with this [EditorGroup]
-   * @param links the list of [Link] objects to compare with the links of this [EditorGroup]
-   * @param stub the stub indicator to compare with the `isStub` property of this [EditorGroup]
-   * @return true if the provided [group] visually equals this [EditorGroup], false otherwise
+   * @param links the list of [Link] objects to compare with the links of
+   *    this [EditorGroup]
+   * @param stub the stub indicator to compare with the `isStub` property of
+   *    this [EditorGroup]
+   * @return true if the provided [group] visually equals this [EditorGroup],
+   *    false otherwise
    */
-  fun equalsVisually(project: Project, group: EditorGroup?, links: List<Link>, stub: Boolean): Boolean = when {
+  fun equalsVisually(project: Project, group: EditorGroup?, links: List<Link?>, stub: Boolean): Boolean = when {
     group == null       -> false
     this.isStub != stub -> false
     this != group       -> false

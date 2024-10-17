@@ -431,8 +431,8 @@ class EditorGroupManager(private val project: Project) {
     newWindow: Boolean,
     newTab: Boolean,
     split: Splitters
-  ): OpenFileResult? {
-    val displayedGroup = groupPanel.getDisplayedGroupOrEmpty()
+  ): Result? {
+    val displayedGroup = groupPanel.displayedGroup
     val tabs = groupPanel.tabs
 
     val editorWindowHolder = UIUtil.getParentOfType(EditorWindowHolder::class.java, groupPanel)

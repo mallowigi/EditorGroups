@@ -152,7 +152,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
     }
   }
 
-  private fun newAction(project: Project, panel: EditorGroupPanel2, currentFile: String?, link: Link, text: String?): OpenFileAction {
+  private fun newAction(project: Project, panel: EditorGroupPanel, currentFile: String?, link: Link, text: String?): OpenFileAction {
     val action = OpenFileAction(
       link = link,
       project = project,

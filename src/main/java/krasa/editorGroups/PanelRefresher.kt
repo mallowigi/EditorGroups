@@ -78,8 +78,8 @@ class PanelRefresher(private val project: Project) {
   }
 
   /**
-   * Refreshes the panels for the selected editors if the cache is ready and the project is not disposed. This method is
-   * typically used to handle changes when switching to smart mode in the application.
+   * Refreshes the panels for the selected editors if the cache is ready and the project is not disposed. This method is typically used to
+   * handle changes when switching to smart mode in the application.
    */
   fun onSmartMode() {
     if (!cacheReady.get()) return
