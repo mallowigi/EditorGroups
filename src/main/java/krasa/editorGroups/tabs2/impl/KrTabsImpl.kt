@@ -3318,7 +3318,10 @@ private class AccessibleTabPage(
     // do nothing
   }
 
-  /** Returns the bounds of tab. The bounds are with respect to the JBTabsImpl coordinate space. */
+  /**
+   * Returns the bounds of tab. The bounds are with respect to the JBTabsImpl
+   * coordinate space.
+   */
   override fun getBounds(): Rectangle = tabLabel!!.bounds
 
   override fun setBounds(r: Rectangle) {

@@ -518,10 +518,10 @@ class EditorGroupManager(private val project: Project) {
     newTab: Boolean,
     splitters: Splitters,
     switchRequest: SwitchRequest
-  ): OpenFileResult? {
+  ): Result? {
     thisLogger().debug("open2 fileToOpen = [$fileToOpen], currentFile = [$currentFile], group = [$group], newWindow = [$newWindow], newTab = [$newTab], splitters = [$splitters], switchingRequest = [$switchRequest]")
 
-    val resultAtomicReference = AtomicReference<OpenFileResult>()
+    val resultAtomicReference = AtomicReference<Result>()
     startSwitching(switchRequest)
 
     if (!warningShown && UISettings.getInstance().reuseNotModifiedTabs) {

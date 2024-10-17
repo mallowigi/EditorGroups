@@ -263,7 +263,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     regexGroups.forEach { regexGroup ->
       tempGroup.add(
         createAction(
-          displayedGroup = panel.getDisplayedGroup(),
+          displayedGroup = panel.displayedGroup,
           targetGroup = regexGroup,
           project = project,
           actionHandler = refreshHandler(panel)
