@@ -118,7 +118,7 @@ class PanelRefresher(private val project: Project) {
   fun refresh(owner: String) {
     val manager = FileEditorManager.getInstance(project) as FileEditorManagerImpl
     for (selectedEditor in manager.getAllEditors()) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel2?>(EditorGroupPanel2.EDITOR_PANEL)
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
       if (panel == null) continue
 
       if (panel.getDisplayedGroup().isOwner(owner)) {

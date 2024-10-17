@@ -3049,9 +3049,11 @@ open class KrTabsImpl(
   }
 
   /**
-   * Custom implementation of Accessible interface. Given JBTabsImpl is similar to the built-it JTabbedPane, we expose
-   * similar behavior. The one tricky part is that JBTabsImpl can only expose the content of the selected tab, as the
-   * content of tabs is created/deleted on demand when a tab is selected.
+   * Custom implementation of Accessible interface. Given JBTabsImpl is
+   * similar to the built-it JTabbedPane, we expose similar behavior. The
+   * one tricky part is that JBTabsImpl can only expose the content of the
+   * selected tab, as the content of tabs is created/deleted on demand when a
+   * tab is selected.
    */
   protected inner class AccessibleJBTabsImpl internal constructor() : AccessibleJComponent(), AccessibleSelection {
     init {

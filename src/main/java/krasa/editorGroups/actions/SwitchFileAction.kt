@@ -190,7 +190,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
       val openInNewTab = BitUtil.isSet(e.modifiers, InputEvent.CTRL_DOWN_MASK)
       val openInNewWindow = BitUtil.isSet(e.modifiers, InputEvent.SHIFT_DOWN_MASK)
 
-      EditorGroupManager.getInstance(project).openGroupFile2(
+      EditorGroupManager.getInstance(project).openGroupFile(
         groupPanel = panel,
         fileToOpen = virtualFile,
         line = null,

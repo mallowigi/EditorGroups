@@ -175,7 +175,8 @@ abstract class EditorGroup {
    * Checks if this EditorGroup is selected.
    *
    * @param editorGroup the EditorGroup to compare with this EditorGroup
-   * @return true if this EditorGroup is equal to the provided groupLink, false otherwise
+   * @return true if this EditorGroup is equal to the provided groupLink,
+   *    false otherwise
    */
   open fun isSelected(editorGroup: EditorGroup): Boolean = this == editorGroup
 

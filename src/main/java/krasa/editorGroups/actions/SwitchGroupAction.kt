@@ -220,10 +220,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   private fun fillCurrentFileGroups(
     project: Project,
     tempGroup: DefaultActionGroup,
-    panel: EditorGroupPanel2,
+    panel: EditorGroupPanel,
     file: VirtualFile?
   ): List<EditorGroup> {
-    val displayedGroup = panel.getDisplayedGroup()
+    val displayedGroup = panel.displayedGroup
     val manager = EditorGroupManager.getInstance(project)
     val groups = manager.getGroups(file!!)
 

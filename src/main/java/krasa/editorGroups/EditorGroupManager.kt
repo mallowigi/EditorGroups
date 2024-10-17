@@ -479,7 +479,7 @@ class EditorGroupManager(private val project: Project) {
     split: Splitters,
     group: EditorGroup,
     current: VirtualFile?
-  ): OpenFileResult? =
+  ): Result? =
     open(
       currentWindow = null,
       currentFile = current,
