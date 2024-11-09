@@ -23,6 +23,7 @@ import krasa.editorGroups.services.RegexGroupProvider
 import krasa.editorGroups.settings.EditorGroupsSettings
 import krasa.editorGroups.support.Notifications.showWarning
 import krasa.editorGroups.support.Splitters
+import krasa.editorGroups.support.getEditorPanelDataKey
 import krasa.editorGroups.support.getVirtualFileByAbsolutePath
 import java.awt.Component
 import java.awt.event.MouseEvent
@@ -73,7 +74,8 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
       // Fill the actions
       if (data != null) {
-        editorGroupPanel = data.getUserData(EditorGroupPanel.EDITOR_PANEL)
+        val key = getEditorPanelDataKey() ?: return
+        editorGroupPanel = data.getUserData(key)
         if (editorGroupPanel != null) {
           file = editorGroupPanel.file
           displayedGroup = editorGroupPanel.getDisplayedGroupOrEmpty()
@@ -591,7 +593,8 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
     val data = e.getData(PlatformDataKeys.FILE_EDITOR) ?: return
 
     val presentation = e.presentation
-    val panel = data.getUserData(EditorGroupPanel.EDITOR_PANEL) ?: return
+    val key = getEditorPanelDataKey() ?: return
+    val panel = data.getUserData(key) ?: return
 
     var displayedGroup = panel.getDisplayedGroupOrEmpty()
     val toBeRendered = panel.groupToBeRendered

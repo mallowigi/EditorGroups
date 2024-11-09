@@ -10,6 +10,7 @@ import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.io.OSAgnosticPathUtil
 import com.intellij.openapi.util.text.StringUtil
@@ -18,6 +19,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.IconUtil.computeFileIcon
 import com.intellij.util.ReflectionUtil
+import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.model.Link
 import java.awt.Component
 import java.io.File
@@ -25,6 +27,7 @@ import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutionException
 import javax.swing.Icon
+import javax.swing.SwingConstants
 
 const val EDITOR_GROUP_TAB_MENU: String = "krasa.editorGroups.EditorGroupsTabPopupMenu"
 
@@ -221,4 +224,13 @@ fun getSettings(component: Component): Settings? = Settings.KEY.getData(DataMana
 fun navigateToSettingsPage(component: Component, name: String) {
   val settings = getSettings(component) ?: return
   settings.select(settings.find(name))
+}
+
+fun getEditorPanelDataKey(): Key<EditorGroupPanel?>? {
+  val editorTabPlacement = UISettings.getInstance().editorTabPlacement
+  return when (editorTabPlacement) {
+    SwingConstants.TOP    -> EditorGroupPanel.EDITOR_PANEL_TOP
+    SwingConstants.BOTTOM -> EditorGroupPanel.EDITOR_PANEL_BOTTOM
+    else                  -> null
+  }
 }

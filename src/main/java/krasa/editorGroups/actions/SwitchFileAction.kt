@@ -21,6 +21,7 @@ import krasa.editorGroups.model.Link
 import krasa.editorGroups.support.Notifications.showWarning
 import krasa.editorGroups.support.Splitters
 import krasa.editorGroups.support.UniqueTabNameBuilder
+import krasa.editorGroups.support.getEditorPanelDataKey
 import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
@@ -117,7 +118,8 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
       val data = dataContext.getData<FileEditor?>(PlatformDataKeys.FILE_EDITOR) ?: return
-      var panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return
+      val key = getEditorPanelDataKey() ?: return
+      var panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(key) ?: return
 
       val currentFile = panel.file.path
       val group = panel.getDisplayedGroupOrEmpty()

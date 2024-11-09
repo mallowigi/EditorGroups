@@ -164,7 +164,8 @@ class EditorGroupPanel(
     Disposer.register(fileEditor, this)
 
     // Add this editor panel to the context of the file editor
-    this.fileEditor.putUserData<EditorGroupPanel?>(EDITOR_PANEL, this)
+    // this.fileEditor.putUserData<EditorGroupPanel?>(EDITOR_PANEL_TOP, this)
+    this.setEditorPanelData()
 
     // If the selected tab is an editor tab, add a listener to refresh the panel when focused
     if (fileEditor is TextEditorImpl) {
@@ -222,6 +223,13 @@ class EditorGroupPanel(
           override fun configChanged(config: EditorGroupsSettings) = refreshHeight()
         }
       )
+  }
+
+  fun setEditorPanelData() {
+    when (currentTabPlacement) {
+      SwingConstants.TOP    -> this.fileEditor.putUserData<EditorGroupPanel?>(EDITOR_PANEL_TOP, this)
+      SwingConstants.BOTTOM -> this.fileEditor.putUserData<EditorGroupPanel?>(EDITOR_PANEL_BOTTOM, this)
+    }
   }
 
   fun refreshHeight() {
@@ -1233,7 +1241,8 @@ class EditorGroupPanel(
     const val TAB_PLACE: String = "EditorGroupsTabPopup"
     const val COMPACT_TAB_HEIGHT: Int = 30
     val BOOKMARK_GROUP: DataKey<BookmarksGroup> = DataKey.create<BookmarksGroup>("krasa.BookmarksGroup")
-    val EDITOR_PANEL: Key<EditorGroupPanel?> = Key.create<EditorGroupPanel?>("EDITOR_GROUPS_PANEL")
+    val EDITOR_PANEL_TOP: Key<EditorGroupPanel?> = Key.create<EditorGroupPanel?>("EDITOR_GROUPS_PANEL_TOP")
+    val EDITOR_PANEL_BOTTOM: Key<EditorGroupPanel?> = Key.create<EditorGroupPanel?>("EDITOR_GROUPS_PANEL_BOTTOM")
     val EDITOR_GROUP: Key<EditorGroup?> = Key.create<EditorGroup?>("EDITOR_GROUP")
   }
 }

@@ -7,8 +7,8 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import krasa.editorGroups.EditorGroupManager
-import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.services.TabGroupColorizer
+import krasa.editorGroups.support.getEditorPanelDataKey
 
 class EditorGroupsEditorManagerListener : FileEditorManagerListener {
   override fun fileOpened(manager: FileEditorManager, file: VirtualFile) {
@@ -23,7 +23,8 @@ class EditorGroupsEditorManagerListener : FileEditorManagerListener {
     val fileEditor = event.newEditor
     if (fileEditor == null) return
 
-    val panel = fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL)
+    val key = getEditorPanelDataKey() ?: return
+    val panel = fileEditor.getUserData(key)
     if (panel == null) return
 
     val instance = EditorGroupManager.getInstance(project)

@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import krasa.editorGroups.EditorGroupManager
 import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.model.SwitchRequest
+import krasa.editorGroups.support.getEditorPanelDataKey
 import krasa.editorGroups.support.unwrapPreview
 import javax.swing.SwingConstants
 
@@ -33,7 +34,8 @@ class EditorGroupsPanelBuilder {
 
     // Create editor group panel if it doesn't exist'
     for (fileEditor in editors) {
-      if (fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL) != null) continue
+      val key = getEditorPanelDataKey() ?: continue
+      if (fileEditor.getUserData(key) != null) continue
 
       val start = System.currentTimeMillis()
 

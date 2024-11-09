@@ -14,6 +14,7 @@ import krasa.editorGroups.model.BookmarksGroup
 import krasa.editorGroups.support.Notifications
 import krasa.editorGroups.support.Notifications.showWarning
 import krasa.editorGroups.support.Splitters
+import krasa.editorGroups.support.getEditorPanelDataKey
 
 class RemoveFromCurrentBookmarksAction : EditorGroupsAction() {
   override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
@@ -97,7 +98,8 @@ class RemoveFromCurrentBookmarksAction : EditorGroupsAction() {
     val editor = currentWindow.getSelectedComposite(ignorePopup = true) ?: return null
 
     val selectedEditor = editor.selectedWithProvider?.fileEditor
-    val editorGroupPanel = selectedEditor?.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return null
+    val key = getEditorPanelDataKey() ?: return null
+    val editorGroupPanel = selectedEditor?.getUserData<EditorGroupPanel?>(key) ?: return null
 
     // If there is an editor group panel, get the displayed group. If it's the favorites group, return it.
     return editorGroupPanel.getDisplayedGroupOrEmpty() as? BookmarksGroup

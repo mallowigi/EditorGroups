@@ -23,6 +23,7 @@ import krasa.editorGroups.model.BookmarksGroup
 import krasa.editorGroups.model.EditorGroup
 import krasa.editorGroups.model.EditorGroupIndexValue
 import krasa.editorGroups.model.FolderGroup
+import krasa.editorGroups.support.getEditorPanelDataKey
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.BiConsumer
 
@@ -94,7 +95,8 @@ class PanelRefresher(private val project: Project) : Disposable {
   private fun iteratePanels(biConsumer: BiConsumer<EditorGroupPanel, EditorGroup>) {
     val manager = FileEditorManager.getInstance(project)
     for (selectedEditor in manager.allEditors) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
+      val key = getEditorPanelDataKey() ?: continue
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(key)
       if (panel == null) continue
 
       val displayedGroup = panel.getDisplayedGroupOrEmpty()
@@ -119,7 +121,8 @@ class PanelRefresher(private val project: Project) : Disposable {
         val manager = FileEditorManager.getInstance(project)
 
         for (selectedEditor in manager.selectedEditors) {   // refreshing not selected one fucks up tabs scrolling
-          val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
+          val key = getEditorPanelDataKey() ?: continue
+          val panel = selectedEditor.getUserData<EditorGroupPanel?>(key)
           if (panel == null) continue
 
           val displayedGroup = panel.getDisplayedGroupOrEmpty()
@@ -143,7 +146,8 @@ class PanelRefresher(private val project: Project) : Disposable {
   fun refresh(owner: String) {
     val manager = FileEditorManager.getInstance(project)
     for (selectedEditor in manager.allEditors) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
+      val key = getEditorPanelDataKey() ?: continue
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(key)
       if (panel == null) continue
 
       if (panel.getDisplayedGroupOrEmpty().isOwner(owner)) {
@@ -156,7 +160,8 @@ class PanelRefresher(private val project: Project) : Disposable {
   fun refresh() {
     val manager = FileEditorManager.getInstance(project)
     for (selectedEditor in manager.allEditors) {
-      selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
+      val key = getEditorPanelDataKey() ?: continue
+      selectedEditor.getUserData<EditorGroupPanel?>(key)
         ?.refreshPane(refresh = true, newGroup = null)
     }
   }
@@ -170,7 +175,8 @@ class PanelRefresher(private val project: Project) : Disposable {
     val manager = FileEditorManager.getInstance(project)
 
     for (selectedEditor in manager.allEditors) {
-      selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
+      val key = getEditorPanelDataKey() ?: continue
+      selectedEditor.getUserData<EditorGroupPanel?>(key)
         ?.onIndexingDone(ownerPath = ownerPath, group = resultGroup)
     }
 
