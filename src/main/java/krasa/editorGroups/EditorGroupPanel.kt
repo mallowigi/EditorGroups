@@ -89,7 +89,6 @@ class EditorGroupPanel(
   var disposed: Boolean = false
 
   var currentTabPlacement: Int = SwingConstants.TOP
-  var isLaidOut: Boolean = false
 
   /**
    * A thread-safe reference to the current refresh request.
@@ -1000,6 +999,7 @@ class EditorGroupPanel(
     var visible: Boolean
     val editorGroupsSettingsState = EditorGroupsSettings.instance
     val dontShowPanel = !editorGroupsSettingsState.isShowPanel
+    val editorTabPlacement = UISettings.getInstance().editorTabPlacement
 
     this.hideGlobally = dontShowPanel
 
@@ -1015,6 +1015,22 @@ class EditorGroupPanel(
       else                                                           -> visible = true
     }
 
+    thisLogger().debug("updateVisibility=$visible")
+
+    if (editorTabPlacement != this.currentTabPlacement) {
+      visible = false
+    }
+
+    this.isVisible = visible
+    return visible
+  }
+
+  /** Hide the panel according to§ different conditions. */
+  fun updateVisibility(): Boolean {
+    var visible: Boolean
+    val editorTabPlacement = UISettings.getInstance().editorTabPlacement
+
+    visible = editorTabPlacement == this.currentTabPlacement
     thisLogger().debug("updateVisibility=$visible")
 
     this.isVisible = visible

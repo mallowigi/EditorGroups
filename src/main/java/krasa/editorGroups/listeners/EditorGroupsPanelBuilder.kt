@@ -19,6 +19,8 @@ import javax.swing.SwingConstants
 
 @Service(Service.Level.APP)
 class EditorGroupsPanelBuilder {
+  var currentTabPlacement: Int = SwingConstants.TOP
+
   fun addPanelToEditor(manager: FileEditorManager, file: VirtualFile) {
     val project = manager.project
     thisLogger().debug(">fileOpenedSync [$file]")
@@ -43,7 +45,9 @@ class EditorGroupsPanelBuilder {
         fileEditor = fileEditor
       )
 
-      thisLogger().debug("<fileOpenedSync EditorGroupPanel created, file=$fileToOpen in ${System.currentTimeMillis() - start}ms, fileEditor=$fileEditor")
+      thisLogger().debug(
+        "<fileOpenedSync EditorGroupPanel created, file=$fileToOpen in ${System.currentTimeMillis() - start}ms, fileEditor=$fileEditor"
+      )
     }
   }
 
@@ -56,20 +60,24 @@ class EditorGroupsPanelBuilder {
    * @param switchRequest The request that triggered the panel creation, can be null.
    * @param fileEditor The [FileEditor] for which the panel is being created.
    */
-  fun createPanel(
-    project: Project,
-    manager: FileEditorManager,
-    file: VirtualFile,
-    switchRequest: SwitchRequest?,
-    fileEditor: FileEditor
-  ) {
+  fun createPanel(project: Project, manager: FileEditorManager, file: VirtualFile, switchRequest: SwitchRequest?, fileEditor: FileEditor) {
     if (!fileEditor.isValid) {
       thisLogger().debug(">createPanel: fileEditor already disposed")
       return
     }
 
-    var panel = renderPanel(
+    var topPanel = renderPanel(
       project = project,
+      placement = SwingConstants.TOP,
+      manager = manager,
+      file = file,
+      switchRequest = switchRequest,
+      fileEditor = fileEditor
+    )
+
+    val bottomPanel = renderPanel(
+      project = project,
+      placement = SwingConstants.BOTTOM,
       manager = manager,
       file = file,
       switchRequest = switchRequest,
@@ -77,35 +85,27 @@ class EditorGroupsPanelBuilder {
     )
 
     // Listen for UI settings changes on this panel
-    ApplicationManager.getApplication().messageBus.connect(panel)
-      .subscribe(
-        TOPIC,
-        object : UISettingsListener {
-          override fun uiSettingsChanged(uiSettings: UISettings) {
-            when {
-              panel.disposed                                             -> return
-              panel.currentTabPlacement == uiSettings.editorTabPlacement -> return
-              else                                                       -> {
-                panel.currentTabPlacement = uiSettings.editorTabPlacement
+    setOf(topPanel, bottomPanel).forEach { panel ->
+      panel.updateVisibility()
 
-                if (panel.isLaidOut) {
-                  manager.removeTopComponent(fileEditor, panel.root)
-                  manager.removeBottomComponent(fileEditor, panel.root)
+      ApplicationManager.getApplication().messageBus.connect(panel)
+        .subscribe(
+          TOPIC,
+          object : UISettingsListener {
+            override fun uiSettingsChanged(uiSettings: UISettings) {
+              val editorTabPlacement = UISettings.getInstance().editorTabPlacement
+              when {
+                panel.disposed                            -> return
+                currentTabPlacement == editorTabPlacement -> return
+                else                                      -> {
+                  currentTabPlacement = uiSettings.editorTabPlacement
+                  panel.updateVisibility()
                 }
-
-                panel.dispose()
-                panel = renderPanel(
-                  project = project,
-                  manager = manager,
-                  file = file,
-                  switchRequest = switchRequest,
-                  fileEditor = fileEditor
-                )
               }
             }
           }
-        }
-      )
+        )
+    }
   }
 
   fun renderPanel(
@@ -113,26 +113,16 @@ class EditorGroupsPanelBuilder {
     manager: FileEditorManager,
     file: VirtualFile,
     switchRequest: SwitchRequest?,
-    fileEditor: FileEditor
+    fileEditor: FileEditor,
+    placement: Int
   ): EditorGroupPanel {
     val panel = EditorGroupPanel(fileEditor, project, switchRequest, file)
-    val editorTabPlacement = UISettings.getInstance().editorTabPlacement
-    when (editorTabPlacement) {
-      SwingConstants.TOP    -> {
-        manager.addTopComponent(fileEditor, panel.root)
-        panel.isLaidOut = true
-      }
-
-      SwingConstants.BOTTOM -> {
-        manager.addBottomComponent(fileEditor, panel.root)
-        panel.isLaidOut = true
-      }
-
-      else                  -> {
-        thisLogger().warn("Unsupported tab placement: $editorTabPlacement")
-        panel.isLaidOut = false
-      }
+    when (placement) {
+      SwingConstants.TOP    -> manager.addTopComponent(fileEditor, panel.root)
+      SwingConstants.BOTTOM -> manager.addBottomComponent(fileEditor, panel.root)
     }
+
+    panel.currentTabPlacement = placement
     panel.postConstruct()
     return panel
   }
