@@ -2,7 +2,6 @@
 
 package krasa.editorGroups.tabs2.impl
 
-import com.intellij.concurrency.ContextAwareRunnable
 import com.intellij.ide.ui.UISettings
 import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
@@ -83,7 +82,7 @@ open class KrTabsImpl(
   private var project: Project?,
   private val parentDisposable: Disposable,
   coroutineScope: CoroutineScope? = null,
-  tabListOptions: EditorGroupsTabListOptions,
+  val tabListOptions: EditorGroupsTabListOptions,
 ) : JComponent(),
   EditorGroupsTabsEx,
   PropertyChangeListener,
@@ -96,8 +95,9 @@ open class KrTabsImpl(
   MorePopupAware,
   Accessible {
   private val visibleTabInfos = ArrayList<EditorGroupTabInfo>()
-  private val infoToPage = HashMap<EditorGroupTabInfo, AccessibleTabPage>()
   private val hiddenInfos = HashMap<EditorGroupTabInfo, Int>()
+  var mySelectedInfo: EditorGroupTabInfo? = null
+  val infoToToolbar: MutableMap<EditorGroupTabInfo, Toolbar> = HashMap()
 
   val navigationActions: ActionGroup
     get() = myNavigationActions
@@ -118,8 +118,6 @@ open class KrTabsImpl(
       this.allTabs = result
       return result
     }
-
-  var mySelectedInfo: EditorGroupTabInfo? = null
 
   override val selectedInfo: EditorGroupTabInfo?
     get() = when {
@@ -149,7 +147,6 @@ open class KrTabsImpl(
     get() = visibleTabInfos.size > 1
 
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
-  val infoToToolbar: MutableMap<EditorGroupTabInfo, Toolbar> = HashMap()
 
   val moreToolbar: ActionToolbar?
   var entryPointToolbar: ActionToolbar? = null
@@ -181,11 +178,6 @@ open class KrTabsImpl(
 
   val popupListener: PopupMenuListener
   var activePopup: JPopupMenu? = null
-
-  private val scrollBarActivityTracker = ScrollBarActivityTracker()
-
-  val isRecentlyActive: Boolean
-    get() = scrollBarActivityTracker.isRecentlyActive
 
   private var dataProvider: DataProvider? = null
   private val deferredToRemove = WeakHashMap<Component, Component>()
@@ -1044,7 +1036,6 @@ open class KrTabsImpl(
     info.changeSupport.addPropertyChangeListener(this)
     val label = createTabLabel(info)
     infoToLabel.put(info, label)
-    infoToPage.put(info, AccessibleTabPage(parent = this, tabInfo = info))
     if (!isDropTarget) {
       if (index < 0 || index > visibleTabInfos.size - 1) {
         visibleTabInfos.add(info)
@@ -1958,7 +1949,6 @@ open class KrTabsImpl(
     visibleTabInfos.remove(info)
     hiddenInfos.remove(info)
     infoToLabel.remove(info)
-    infoToPage.remove(info)
     infoToToolbar.remove(info)
 
     if (tabLabelAtMouse === tabLabel) {
@@ -2370,46 +2360,6 @@ open class KrTabsImpl(
     return true
   }
 
-  private inner class ScrollBarActivityTracker {
-    var isRecentlyActive: Boolean = false
-      private set
-    private val RELAYOUT_DELAY = 2000
-    private val relayoutAlarm = Alarm(parentDisposable)
-    private var suspended = false
-
-    fun suspend() {
-      suspended = true
-    }
-
-    fun resume() {
-      suspended = false
-    }
-
-    fun reset() {
-      relayoutAlarm.cancelAllRequests()
-      isRecentlyActive = false
-    }
-
-    fun setRecentlyActive() {
-      if (suspended) return
-      relayoutAlarm.cancelAllRequests()
-      isRecentlyActive = true
-      if (!relayoutAlarm.isDisposed) {
-        relayoutAlarm.addRequest(
-          ContextAwareRunnable {
-            isRecentlyActive = false
-            relayout(forced = false, layoutNow = false)
-          },
-          RELAYOUT_DELAY
-        )
-      }
-    }
-
-    fun cancelActivityTimer() {
-      relayoutAlarm.cancelAllRequests()
-    }
-  }
-
   override fun setUiDecorator(decorator: TabUiDecorator?): KrTabsPresentation {
     uiDecorator = decorator ?: defaultDecorator
     applyDecoration()
@@ -2522,77 +2472,6 @@ open class KrTabsImpl(
   }
 
   override fun toString(): String = "KrTabs visible=$visibleTabInfos selected=$mySelectedInfo"
-
-  override fun getAccessibleContext(): AccessibleContext {
-    if (accessibleContext == null) {
-      accessibleContext = AccessibleJBTabsImpl()
-    }
-    return accessibleContext
-  }
-
-  /**
-   * Custom implementation of Accessible interface. Given JBTabsImpl is similar to the built-it JTabbedPane, we expose similar behavior. The
-   * one tricky part is that JBTabsImpl can only expose the content of the selected tab, as the content of tabs is created/deleted on demand
-   * when a tab is selected.
-   */
-  protected inner class AccessibleJBTabsImpl internal constructor() : AccessibleJComponent(), AccessibleSelection {
-    init {
-      accessibleComponent
-      addListener(object : EditorGroupsTabsListener {
-        override fun selectionChanged(oldSelection: EditorGroupTabInfo?, newSelection: EditorGroupTabInfo?) {
-          firePropertyChange(ACCESSIBLE_SELECTION_PROPERTY, null, null)
-        }
-      })
-    }
-
-    override fun getAccessibleName(): String {
-      var name = accessibleName ?: getClientProperty(ACCESSIBLE_NAME_PROPERTY) as? String
-      if (name == null) {
-        // Similar to JTabbedPane, we return the name of our selected tab as our own name.
-        val selectedLabel = selectedLabel
-        if (selectedLabel != null && selectedLabel.accessibleContext != null) {
-          name = selectedLabel.accessibleContext.accessibleName
-        }
-      }
-      return name ?: super.getAccessibleName()
-    }
-
-    override fun getAccessibleRole(): AccessibleRole = AccessibleRole.PAGE_TAB_LIST
-
-    override fun getAccessibleChild(i: Int): Accessible? {
-      val accessibleChild = super.getAccessibleChild(i)
-      // Note: Unlike a JTabbedPane, JBTabsImpl has many more child types than just pages.
-      // So we wrap KrTabLabel instances with their corresponding AccessibleTabPage, while
-      // leaving other types of children untouched.
-      return if (accessibleChild is EditorGroupTabLabel) infoToPage[accessibleChild.info] else accessibleChild
-    }
-
-    override fun getAccessibleSelection(): AccessibleSelection = this
-
-    override fun getAccessibleSelectionCount(): Int = if (selectedInfo == null) 0 else 1
-
-    override fun getAccessibleSelection(i: Int): Accessible? {
-      return infoToPage[selectedInfo ?: return null]
-    }
-
-    override fun isAccessibleChildSelected(i: Int): Boolean = i == getIndexOf(selectedInfo)
-
-    override fun addAccessibleSelection(i: Int) {
-      select(getTabAt(tabIndex = i), false)
-    }
-
-    override fun removeAccessibleSelection(i: Int) {
-      // can't do
-    }
-
-    override fun clearAccessibleSelection() {
-      // can't do
-    }
-
-    override fun selectAllAccessibleSelection() {
-      // can't do
-    }
-  }
 
   private class DefaultTabDecorator : TabUiDecorator {
     override val decoration = TabUiDecorator.TabUiDecoration(

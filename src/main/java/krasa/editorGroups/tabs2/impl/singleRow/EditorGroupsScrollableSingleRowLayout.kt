@@ -53,7 +53,7 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
    */
   @Suppress("detekt:NestedBlockDepth")
   private fun doScrollToSelectedTab(passInfo: EditorGroupsSingleRowPassInfo) {
-    if (tabs.isMouseInsideTabsArea || tabs.isScrollBarAdjusting() || tabs.isRecentlyActive) return
+    if (tabs.isMouseInsideTabsArea || tabs.isScrollBarAdjusting()) return
 
     var offset = -this.scrollOffset
     for (info in passInfo.visibleTabInfos) {
