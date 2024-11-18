@@ -97,7 +97,7 @@ open class KrTabsImpl(
   private val visibleTabInfos = ArrayList<EditorGroupTabInfo>()
   private val hiddenInfos = HashMap<EditorGroupTabInfo, Int>()
   var mySelectedInfo: EditorGroupTabInfo? = null
-  val infoToToolbar: MutableMap<EditorGroupTabInfo, Toolbar> = HashMap()
+  val moreToolbar: ActionToolbar?
 
   val navigationActions: ActionGroup
     get() = myNavigationActions
@@ -148,7 +148,6 @@ open class KrTabsImpl(
 
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
 
-  val moreToolbar: ActionToolbar?
   var entryPointToolbar: ActionToolbar? = null
   val titleWrapper: NonOpaquePanel = NonOpaquePanel()
 
@@ -1046,7 +1045,6 @@ open class KrTabsImpl(
     resetTabsCache()
     updateText(info)
     updateIcon(info)
-    updateSideComponent(info)
     info.tabLabel = label
     add(label)
     adjust(info)
@@ -1274,7 +1272,6 @@ open class KrTabsImpl(
     val tabInfo = evt.source as EditorGroupTabInfo
     when (evt.propertyName) {
       EditorGroupTabInfo.ACTION_GROUP -> {
-        updateSideComponent(tabInfo)
         relayout(false, false)
       }
 
@@ -1385,19 +1382,8 @@ open class KrTabsImpl(
     label.toolTipText = tabInfo.tooltipText
   }
 
-  private fun updateSideComponent(tabInfo: EditorGroupTabInfo) {
-    val old = infoToToolbar[tabInfo]
-    old?.let { remove(it) }
-    val toolbar = createToolbarComponent(tabInfo)
-    infoToToolbar.put(tabInfo, toolbar)
-    add(toolbar)
-  }
-
   fun setSelectedInfo(info: EditorGroupTabInfo?) {
     mySelectedInfo = info
-    for ((tabInfo, toolbar) in infoToToolbar) {
-      toolbar.isVisible = info == tabInfo
-    }
   }
 
   override fun getToSelectOnRemoveOf(info: EditorGroupTabInfo): EditorGroupTabInfo? {
@@ -1702,7 +1688,6 @@ open class KrTabsImpl(
     if (c != null) {
       resetLayout(c)
     }
-    resetLayout(infoToToolbar[tabInfo])
     if (shouldResetLabels) {
       resetLayout(infoToLabel[tabInfo])
     }
@@ -1719,31 +1704,6 @@ open class KrTabsImpl(
     }
     tabPainter.fillBackground(g as Graphics2D, Rectangle(0, 0, width, height))
     drawBorder(g)
-    drawToolbarSeparator(g)
-  }
-
-  private fun drawToolbarSeparator(g: Graphics) {
-    // val toolbar = infoToToolbar[selectedInfo]
-    // if (toolbar != null && toolbar.parent === this && isHideTabs) {
-    //   val bounds = toolbar.bounds
-    //   if (bounds.width > 0) {
-    //     if (isSideComponentBefore) {
-    //       tabPainter.paintBorderLine(
-    //         g as Graphics2D,
-    //         separatorWidth,
-    //         Point(bounds.x + bounds.width, bounds.y),
-    //         Point(bounds.x + bounds.width, bounds.y + bounds.height)
-    //       )
-    //     } else {
-    //       tabPainter.paintBorderLine(
-    //         g as Graphics2D,
-    //         separatorWidth,
-    //         Point(bounds.x - separatorWidth, bounds.y),
-    //         Point(bounds.x - separatorWidth, bounds.y + bounds.height)
-    //       )
-    //     }
-    //   }
-    // }
   }
 
   open fun getVisibleInfos(): List<EditorGroupTabInfo> {
@@ -1912,12 +1872,11 @@ open class KrTabsImpl(
 
   private fun isFocused(info: EditorGroupTabInfo): Boolean {
     val label = infoToLabel[info]
-    val toolbar = infoToToolbar[info]
     val component = info.component
     val ancestorChecker = Predicate<Component?> { focusOwner ->
       var focusOwner = focusOwner
       while (focusOwner != null) {
-        if (focusOwner === label || focusOwner === toolbar || focusOwner === component) {
+        if (focusOwner === label || focusOwner === component) {
           return@Predicate true
         }
         focusOwner = focusOwner.parent
@@ -1935,9 +1894,6 @@ open class KrTabsImpl(
     val tabLabel = infoToLabel[info]
     tabLabel?.let { remove(it) }
 
-    val toolbar = infoToToolbar[info]
-    toolbar?.let { remove(it) }
-
     val tabComponent = info!!.component!!
 
     if (forcedNow || !isToDeferRemoveForLater(tabComponent)) {
@@ -1949,7 +1905,6 @@ open class KrTabsImpl(
     visibleTabInfos.remove(info)
     hiddenInfos.remove(info)
     infoToLabel.remove(info)
-    infoToToolbar.remove(info)
 
     if (tabLabelAtMouse === tabLabel) {
       tabLabelAtMouse = null

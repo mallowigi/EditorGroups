@@ -127,14 +127,6 @@ abstract class EditorGroupsSingleRowLayout(
     // Add offset left
     passInfo.insets!!.left += tabs.firstTabOffset
 
-    // Horizontal toolbar
-    val selectedToolbar = tabs.infoToToolbar[selected]
-    if (selectedToolbar == null || selectedToolbar.isEmpty) {
-      passInfo.hToolbar = null
-    } else {
-      passInfo.hToolbar = WeakReference<JComponent?>(selectedToolbar)
-    }
-
     // Set the fit length
     passInfo.toFitLength = strategy.getToFitLength(passInfo)
   }
