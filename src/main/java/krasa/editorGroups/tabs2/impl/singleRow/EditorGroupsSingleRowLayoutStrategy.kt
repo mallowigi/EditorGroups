@@ -39,8 +39,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
   abstract fun getFixedPosition(passInfo: EditorGroupsSingleRowPassInfo): Int
 
-  abstract fun getTitleRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle
-
   abstract fun getMoreRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle
 
   abstract fun getEntryPointRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle?
@@ -151,13 +149,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
       )
     }
 
-    override fun getTitleRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle = Rectangle(
-      0,
-      0,
-      myTabs.titleWrapper.preferredSize.width,
-      myTabs.headerFitSize!!.height
-    )
-
     override fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo) {
       if (myTabs.isHideTabs) {
         myTabs.layoutComp(
@@ -266,17 +257,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
         myTabs.headerFitSize!!.height
       )
     }
-
-    override fun getTitleRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle = Rectangle(
-      /* x = */
-      0,
-      /* y = */
-      getFixedPosition(passInfo),
-      /* width = */
-      myTabs.titleWrapper.preferredSize.width,
-      /* height = */
-      myTabs.headerFitSize!!.height
-    )
   }
 
   companion object {

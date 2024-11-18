@@ -26,7 +26,6 @@ import com.intellij.ui.*
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBScrollBar
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.panels.NonOpaquePanel
 import com.intellij.ui.hover.HoverListener
 import com.intellij.ui.popup.list.GroupedItemsListRenderer
 import com.intellij.ui.popup.list.SelectablePanel
@@ -98,6 +97,7 @@ open class KrTabsImpl(
   private val hiddenInfos = HashMap<EditorGroupTabInfo, Int>()
   var mySelectedInfo: EditorGroupTabInfo? = null
   val moreToolbar: ActionToolbar?
+  var entryPointToolbar: ActionToolbar? = null
 
   val navigationActions: ActionGroup
     get() = myNavigationActions
@@ -147,9 +147,6 @@ open class KrTabsImpl(
     get() = visibleTabInfos.size > 1
 
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
-
-  var entryPointToolbar: ActionToolbar? = null
-  val titleWrapper: NonOpaquePanel = NonOpaquePanel()
 
   var headerFitSize: Dimension? = null
 
@@ -354,7 +351,7 @@ open class KrTabsImpl(
       entryPointToolbar = createToolbar(entryPointActionGroup, targetComponent = this, actionManager = actionManager)
       add(entryPointToolbar!!.component)
     }
-    add(titleWrapper)
+    // add(titleWrapper)
     Disposer.register(parentDisposable) { setTitleProducer(null) }
 
     // This scroll pane won't be shown on screen, it is needed only to handle scrolling events and properly update a scrolling model
@@ -730,7 +727,6 @@ open class KrTabsImpl(
   }
 
   override fun setTitleProducer(titleProducer: (() -> Pair<Icon, @Nls String>)?) {
-    titleWrapper.removeAll()
     if (titleProducer != null) {
       val toolbar = ActionManager.getInstance().createActionToolbar(/* place = */
         ActionPlaces.TABS_MORE_TOOLBAR,
@@ -741,7 +737,6 @@ open class KrTabsImpl(
       )
       toolbar.targetComponent = null
       toolbar.setMiniMode(true)
-      titleWrapper.setContent(toolbar.component)
     }
   }
 
@@ -1544,21 +1539,6 @@ open class KrTabsImpl(
       val effectiveLayout = effectiveLayout
       if (effectiveLayout is EditorGroupsSingleRowLayout) {
         lastLayoutPass = effectiveLayout.layoutSingleRow(visible)
-        val titleRect = lastLayoutPass!!.titleRect
-        if (!titleRect.isEmpty) {
-          val preferredSize = titleWrapper.preferredSize
-          val bounds = Rectangle(titleRect)
-          JBInsets.removeFrom(bounds, layoutInsets)
-          val xDiff = (bounds.width - preferredSize.width) / 2
-          val yDiff = (bounds.height - preferredSize.height) / 2
-          bounds.x += xDiff
-          bounds.width -= 2 * xDiff
-          bounds.y += yDiff
-          bounds.height -= 2 * yDiff
-          titleWrapper.bounds = bounds
-        } else {
-          titleWrapper.bounds = Rectangle()
-        }
       }
 
       centerizeEntryPointToolbarPosition()

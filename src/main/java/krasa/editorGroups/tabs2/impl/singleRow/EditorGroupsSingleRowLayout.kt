@@ -77,9 +77,6 @@ abstract class EditorGroupsSingleRowLayout(
       // Sets the left position
       passInfo.position = strategy.getStartPosition(passInfo) - scrollOffset
 
-      // Compute the tab title
-      layoutTitle(passInfo)
-
       // Layout the labels
       layoutLabels(passInfo)
 
@@ -129,12 +126,6 @@ abstract class EditorGroupsSingleRowLayout(
 
     // Set the fit length
     passInfo.toFitLength = strategy.getToFitLength(passInfo)
-  }
-
-  /** Sets the title bounds. */
-  protected fun layoutTitle(passInfo: EditorGroupsSingleRowPassInfo) {
-    passInfo.titleRect = strategy.getTitleRect(passInfo)
-    passInfo.position += passInfo.titleRect.width
   }
 
   protected open fun layoutMoreButton(passInfo: EditorGroupsSingleRowPassInfo) {
