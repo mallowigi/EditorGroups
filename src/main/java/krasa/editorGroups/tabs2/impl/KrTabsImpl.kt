@@ -20,7 +20,6 @@ import com.intellij.openapi.ui.popup.*
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.openapi.util.*
 import com.intellij.openapi.wm.IdeFocusManager
-import com.intellij.openapi.wm.IdeGlassPane
 import com.intellij.openapi.wm.IdeGlassPaneUtil
 import com.intellij.ui.*
 import com.intellij.ui.awt.RelativePoint
@@ -166,6 +165,12 @@ open class KrTabsImpl(
   // Focus manager
   private var focusManager = IdeFocusManager.getGlobalInstance()
 
+  // Number of deferred tabs to remove
+  private var removeDeferredRequest: Long = 0
+
+  // Tab Border
+  private val tabBorder = createTabBorder()
+
   // Cache the tab size
   override val tabCount: Int
     get() = tabs.size
@@ -208,9 +213,6 @@ open class KrTabsImpl(
       return if (tabs === this) owner else null
     }
 
-  private val isNavigationVisible: Boolean
-    get() = visibleTabInfos.size > 1
-
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
 
   private val isMyChildIsFocusedNow: Boolean
@@ -231,17 +233,8 @@ open class KrTabsImpl(
   private var isRequestFocusOnLastFocusedComponent = false
   private var listenerAdded = false
 
-  protected val isNavigatable: Boolean
-    get() {
-      val selectedIndex = getVisibleInfos().indexOf(selectedInfo)
-      return isNavigationVisible && selectedIndex >= 0 && navigationActionsEnabled
-    }
-
   private var activeTabFillIn: Color? = null
 
-  private var glassPane: IdeGlassPane? = null
-
-  private var removeDeferredRequest: Long = 0
   var position: EditorGroupsTabsPosition = EditorGroupsTabsPosition.TOP
     private set
 
@@ -251,24 +244,19 @@ open class KrTabsImpl(
   val selectedLabel: EditorGroupTabLabel?
     get() = infoToLabel[selectedInfo]
 
-  private val myBorder = createTabBorder()
-  private val nextAction: BaseNavigationAction?
-  private val prevAction: BaseNavigationAction?
-  private var navigationActionsEnabled = true
-
   private var oldSelection: EditorGroupTabInfo? = null
   private var mySelectionChangeHandler: EditorGroupsTabsBase.SelectionChangeHandler? = null
   private var deferredFocusRequest: Runnable? = null
   internal var firstTabOffset = 0
 
   val borderThickness: Int
-    get() = myBorder.thickness
+    get() = tabBorder.thickness
 
   override val isEmptyVisible: Boolean
     get() = visibleTabInfos.isEmpty()
 
   val tabHGap: Int
-    get() = -myBorder.thickness
+    get() = -tabBorder.thickness
 
   /** The tab painter adapter. */
   @JvmField
@@ -296,7 +284,7 @@ open class KrTabsImpl(
     get() = true
 
   val layoutInsets: Insets
-    get() = myBorder.effectiveBorder
+    get() = tabBorder.effectiveBorder
 
   val moreToolbarPreferredSize: Dimension
     // Returns default one action horizontal toolbar size (26x24)
@@ -330,9 +318,7 @@ open class KrTabsImpl(
   init {
     isOpaque = true
     background = tabPainter.getBackgroundColor()
-    border = myBorder
-    nextAction = SelectNextAction(this, parentDisposable)
-    prevAction = SelectPreviousAction(this, parentDisposable)
+    border = tabBorder
     setUiDecorator(null)
     setLayout(createRowLayout())
     popupListener = object : PopupMenuListener {
@@ -393,7 +379,6 @@ open class KrTabsImpl(
 
       Disposer.register(parentDisposable) { removeTimerUpdate() }
       val gp = IdeGlassPaneUtil.find(child)
-      glassPane = gp
       StartupUiUtil.addAwtListener({
         if (JBPopupFactory.getInstance().getChildPopups(this@KrTabsImpl).isEmpty()) {
           processFocusChange()
@@ -520,8 +505,6 @@ open class KrTabsImpl(
   protected open fun createRowLayout(): EditorGroupsSingleRowLayout = EditorGroupsScrollableSingleRowLayout(this)
 
   override fun setNavigationActionBinding(prevActionId: String, nextActionId: String) {
-    nextAction?.reconnect(nextActionId)
-    prevAction?.reconnect(prevActionId)
   }
 
   fun setHovered(label: EditorGroupTabLabel?) {
@@ -603,9 +586,6 @@ open class KrTabsImpl(
     setFocused(false)
     removeTimerUpdate()
     scrollBarModel.removeChangeListener(scrollBarChangeListener)
-    if (ScreenUtil.isStandardAddRemoveNotify(this) && glassPane != null) {
-      glassPane = null
-    }
   }
 
   public override fun processMouseEvent(e: MouseEvent) {
@@ -1626,7 +1606,7 @@ open class KrTabsImpl(
 
   protected fun drawBorder(g: Graphics) {
     if (!isHideTabs) {
-      myBorder.paintBorder(this, g, 0, 0, width, height)
+      tabBorder.paintBorder(this, g, 0, 0, width, height)
     }
   }
 
@@ -1705,9 +1685,9 @@ open class KrTabsImpl(
       currentTab++
     }
     if (horizontal) {
-      size.height += myBorder.thickness
+      size.height += tabBorder.thickness
     } else {
-      size.width += myBorder.thickness
+      size.width += tabBorder.thickness
     }
     return size
   }
@@ -2033,21 +2013,7 @@ open class KrTabsImpl(
       if (tabs == null || tabs !== this.tabs) {
         return null
       }
-      if (tabs.isNavigatable) {
-        return tabs
-      }
-      var c: Component? = tabs.parent
-      while (c != null) {
-        if (c is KrTabsImpl && c.isNavigatable) {
-          return c
-        }
-        c = c.parent
-      }
-      return null
-    }
-
-    fun reconnect(actionId: String?) {
-      shadowAction.reconnect(ActionManager.getInstance().getAction(actionId!!))
+      return tabs
     }
 
     abstract fun doUpdate(e: AnActionEvent, tabs: KrTabsImpl, selectedIndex: Int)
@@ -2102,32 +2068,12 @@ open class KrTabsImpl(
   private fun navigatableParent(): KrTabsImpl? {
     var c: Component? = parent
     while (c != null) {
-      if (c is KrTabsImpl && c.isNavigatable) {
+      if (c is KrTabsImpl) {
         return c
       }
       c = c.parent
     }
     return null
-  }
-
-  private class SelectPreviousAction(tabs: KrTabsImpl, parentDisposable: Disposable) : BaseNavigationAction(
-    IdeActions.ACTION_PREVIOUS_TAB,
-    tabs,
-    parentDisposable
-  ) {
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
-
-    override fun doUpdate(e: AnActionEvent, tabs: KrTabsImpl, selectedIndex: Int) {
-      e.presentation.isEnabled = tabs.findEnabledBackward(selectedIndex, true) != null
-    }
-
-    override fun borderIndex(infos: List<EditorGroupTabInfo?>, index: Int): Boolean = index == 0
-
-    override fun doActionPerformed(e: AnActionEvent?, tabs: KrTabsImpl?, selectedIndex: Int) {
-      val tabInfo = tabs!!.findEnabledBackward(selectedIndex, true) ?: return
-      tabInfo.lastFocusOwner
-      tabs.select(tabInfo, true)
-    }
   }
 
   private fun disposePopupListener() {
