@@ -238,11 +238,7 @@ open class KrTabsImpl(
     }
 
   private var activeTabFillIn: Color? = null
-  private var tabLabelActionsAutoHide = false
 
-  @Suppress("DEPRECATION")
-  private val tabActionsAutoHideListener = TabActionsAutoHideListener()
-  private var tabActionsAutoHideListenerDisposable = Disposer.newDisposable()
   private var glassPane: IdeGlassPane? = null
 
   private var removeDeferredRequest: Long = 0
@@ -397,9 +393,6 @@ open class KrTabsImpl(
 
       Disposer.register(parentDisposable) { removeTimerUpdate() }
       val gp = IdeGlassPaneUtil.find(child)
-      tabActionsAutoHideListenerDisposable = Disposer.newDisposable("myTabActionsAutoHideListener")
-      Disposer.register(parentDisposable, tabActionsAutoHideListenerDisposable)
-      gp.addMouseMotionPreprocessor(tabActionsAutoHideListener, tabActionsAutoHideListenerDisposable)
       glassPane = gp
       StartupUiUtil.addAwtListener({
         if (JBPopupFactory.getInstance().getChildPopups(this@KrTabsImpl).isEmpty()) {
@@ -611,8 +604,6 @@ open class KrTabsImpl(
     removeTimerUpdate()
     scrollBarModel.removeChangeListener(scrollBarChangeListener)
     if (ScreenUtil.isStandardAddRemoveNotify(this) && glassPane != null) {
-      Disposer.dispose(tabActionsAutoHideListenerDisposable)
-      tabActionsAutoHideListenerDisposable = Disposer.newDisposable()
       glassPane = null
     }
   }
@@ -671,42 +662,6 @@ open class KrTabsImpl(
   override fun setEmptyText(text: String?): KrTabsPresentation {
     emptyText = text
     return this
-  }
-
-  /** TODO use RdGraphicsExKt#childAtMouse(IdeGlassPane, Container) */
-  @Deprecated("")
-  internal inner class TabActionsAutoHideListener : MouseMotionAdapter(), Weighted {
-    private var currentOverLabel: EditorGroupTabLabel? = null
-    private var lastOverPoint: Point? = null
-    override fun getWeight(): Double = 1.0
-
-    override fun mouseMoved(e: MouseEvent) {
-      if (!tabLabelActionsAutoHide) return
-      lastOverPoint = SwingUtilities.convertPoint(e.component, e.x, e.y, this@KrTabsImpl)
-      processMouseOver()
-    }
-
-    fun processMouseOver() {
-      if (!tabLabelActionsAutoHide || lastOverPoint == null) {
-        return
-      }
-
-      if (lastOverPoint!!.x in 0 until width && lastOverPoint!!.y > 0 && lastOverPoint!!.y < height) {
-        val label = infoToLabel[doFindInfo(lastOverPoint!!, true)]
-        if (label != null) {
-          // if (currentOverLabel != null) {
-          //   currentOverLabel!!.toggleShowActions(false)
-          // }
-          // label.toggleShowActions(true)
-          currentOverLabel = label
-          return
-        }
-      }
-      if (currentOverLabel != null) {
-        // currentOverLabel!!.toggleShowActions(false)
-        currentOverLabel = null
-      }
-    }
   }
 
   override fun getModalityState(): ModalityState = ModalityState.stateForComponent(this)
@@ -1531,8 +1486,6 @@ open class KrTabsImpl(
       }
 
       centerizeMoreToolbarPosition()
-
-      tabActionsAutoHideListener.processMouseOver()
 
       applyResetComponents()
 
