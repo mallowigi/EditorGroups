@@ -191,8 +191,7 @@ class EditorGroupPanel(
       supplier = {
         CustomActionsSchema.getInstance().getCorrectedAction(EDITOR_GROUP_TAB_MENU) as ActionGroup
       },
-      place = TAB_PLACE,
-      addNavigationGroup = false
+      place = TAB_PLACE
     )
 
     // Listen to tab selection

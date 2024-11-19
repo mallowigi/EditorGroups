@@ -127,9 +127,6 @@ open class KrTabsImpl(
   var popupPlace: String? = null
   var popupInfo: EditorGroupTabInfo? = null
 
-  // TODO ???
-  private val myNavigationActions: DefaultActionGroup
-
   // Listener on the tabs popup
   val popupListener: PopupMenuListener
 
@@ -165,14 +162,11 @@ open class KrTabsImpl(
 
   // tabs cache
   private var allTabs: List<EditorGroupTabInfo>? = null
+
+  // Focus manager
   private var focusManager = IdeFocusManager.getGlobalInstance()
 
-  /** Adds the navigation action. */
-  var addNavigationGroup: Boolean = true
-
-  val navigationActions: ActionGroup
-    get() = myNavigationActions
-
+  // Cache the tab size
   override val tabCount: Int
     get() = tabs.size
 
@@ -341,11 +335,8 @@ open class KrTabsImpl(
     isOpaque = true
     background = tabPainter.getBackgroundColor()
     border = myBorder
-    myNavigationActions = DefaultActionGroup()
     nextAction = SelectNextAction(this, parentDisposable)
     prevAction = SelectPreviousAction(this, parentDisposable)
-    myNavigationActions.add(nextAction)
-    myNavigationActions.add(prevAction)
     setUiDecorator(null)
     setLayout(createRowLayout())
     popupListener = object : PopupMenuListener {
@@ -1072,16 +1063,14 @@ open class KrTabsImpl(
   override fun getTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel? = infoToLabel[info]
 
   override fun setPopupGroup(popupGroup: ActionGroup, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase =
-    setPopupGroupWithSupplier({ popupGroup }, place, addNavigationGroup)
+    setPopupGroupWithSupplier({ popupGroup }, place)
 
   override fun setPopupGroupWithSupplier(
     supplier: Supplier<out ActionGroup>,
-    place: String,
-    addNavigationGroup: Boolean
+    place: String
   ): EditorGroupsTabsBase {
     popupGroupSupplier = supplier::get
     popupPlace = place
-    this.addNavigationGroup = addNavigationGroup
     return this
   }
 
@@ -1210,12 +1199,6 @@ open class KrTabsImpl(
       for (eachListener in tabListeners) {
         eachListener?.selectionChanged(oldInfo, newInfo)
       }
-    }
-  }
-
-  fun fireTabsMoved() {
-    for (eachListener in tabListeners) {
-      eachListener?.tabsMoved()
     }
   }
 
@@ -1455,8 +1438,6 @@ open class KrTabsImpl(
     }
     return null
   }
-
-  private fun createToolbarComponent(tabInfo: EditorGroupTabInfo): Toolbar = Toolbar(tabs = this, info = tabInfo)
 
   override fun getTabAt(tabIndex: Int): EditorGroupTabInfo = tabs[tabIndex]
 
@@ -1780,17 +1761,16 @@ open class KrTabsImpl(
 
   override fun getPresentation(): KrTabsPresentation = this
 
-  override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(info, null, false)
+  override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(info, null)
 
   override fun removeTab(info: EditorGroupTabInfo, forcedSelectionTransfer: EditorGroupTabInfo?) {
-    doRemoveTab(info, forcedSelectionTransfer, false)
+    doRemoveTab(info, forcedSelectionTransfer)
   }
 
   @RequiresEdt
   private fun doRemoveTab(
     info: EditorGroupTabInfo?,
-    forcedSelectionTransfer: EditorGroupTabInfo?,
-    isDropTarget: Boolean
+    forcedSelectionTransfer: EditorGroupTabInfo?
   ): ActionCallback {
     if (removeNotifyInProgress) {
       LOG.warn(IllegalStateException("removeNotify in progress"))
@@ -1800,14 +1780,14 @@ open class KrTabsImpl(
 
     if (info == null || !tabs.contains(info)) return ActionCallback.DONE
 
-    if (isDropTarget && lastLayoutPass != null) {
+    if (lastLayoutPass != null) {
       lastLayoutPass!!.visibleTabInfos.remove(info)
     }
 
     val result = ActionCallback()
 
     val toSelect = if (forcedSelectionTransfer == null) {
-      getToSelectOnRemoveOf(info!!)
+      getToSelectOnRemoveOf(info)
     } else {
       assert(visibleTabInfos.contains(forcedSelectionTransfer)) { "Cannot find tab for selection transfer, tab=$forcedSelectionTransfer" }
       forcedSelectionTransfer
@@ -1815,7 +1795,7 @@ open class KrTabsImpl(
 
     if (toSelect != null) {
       val clearSelection = info == mySelectedInfo
-      val transferFocus = isFocused(info!!)
+      val transferFocus = isFocused(info)
       processRemove(info, false)
       if (clearSelection) {
         setSelectedInfo(info)
@@ -1831,7 +1811,7 @@ open class KrTabsImpl(
     }
 
     revalidateAndRepaint(true)
-    fireTabRemoved(info!!)
+    fireTabRemoved(info)
     return result
   }
 
@@ -2071,7 +2051,7 @@ open class KrTabsImpl(
   }
 
   private abstract class BaseNavigationAction(
-    copyFromId: @NlsSafe String,
+    copyFromId: String,
     private val tabs: KrTabsImpl,
     parentDisposable: Disposable
   ) : DumbAwareAction() {
@@ -2177,27 +2157,6 @@ open class KrTabsImpl(
     return null
   }
 
-  private fun selectFirstVisible() {
-    if (!isNavigatable) {
-      return
-    }
-
-    val select = getVisibleInfos()[0]
-    select.lastFocusOwner
-    select(select, true)
-  }
-
-  private fun selectLastVisible() {
-    if (!isNavigatable) {
-      return
-    }
-
-    val last = getVisibleInfos().size - 1
-    val select = getVisibleInfos()[last]
-    select.lastFocusOwner
-    select(select, true)
-  }
-
   private class SelectPreviousAction(tabs: KrTabsImpl, parentDisposable: Disposable) : BaseNavigationAction(
     IdeActions.ACTION_PREVIOUS_TAB,
     tabs,
@@ -2274,14 +2233,6 @@ open class KrTabsImpl(
     relayout(forced = true, layoutNow = false)
   }
 
-  protected fun reorderTab(tabInfo: EditorGroupTabInfo, newIndex: Int) {
-    if (visibleTabInfos.remove(tabInfo)) {
-      visibleTabInfos.add(newIndex, tabInfo)
-      resetTabsCache()
-      relayout(forced = true, layoutNow = false)
-    }
-  }
-
   override fun setRequestFocusOnLastFocusedComponent(requestFocusOnLastFocusedComponent: Boolean): KrTabsPresentation {
     isRequestFocusOnLastFocusedComponent = requestFocusOnLastFocusedComponent
     return this
@@ -2332,18 +2283,6 @@ open class KrTabsImpl(
 
   override fun getTabsPosition(): EditorGroupsTabsPosition = position
 
-  fun reallocate(source: EditorGroupTabInfo?, target: EditorGroupTabInfo?) {
-    if (source == target || source == null || target == null) {
-      return
-    }
-
-    val targetIndex = visibleTabInfos.indexOf(target)
-    visibleTabInfos.remove(source)
-    visibleTabInfos.add(targetIndex, source)
-    invalidate()
-    relayout(forced = true, layoutNow = true)
-  }
-
   override fun toString(): String = "KrTabs visible=$visibleTabInfos selected=$mySelectedInfo"
 
   private class DefaultTabDecorator : TabUiDecorator {
@@ -2391,8 +2330,6 @@ private fun updateToolbarIfVisibilityChanged(toolbar: ActionToolbar?, previousBo
     toolbar.updateActionsAsync()
   }
 }
-
-private const val ARC_SIZE = 4
 
 private fun createToolbar(
   group: ActionGroup,
