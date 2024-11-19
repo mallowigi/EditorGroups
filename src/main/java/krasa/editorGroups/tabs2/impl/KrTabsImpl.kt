@@ -98,6 +98,24 @@ open class KrTabsImpl(
   var mySelectedInfo: EditorGroupTabInfo? = null
   val moreToolbar: ActionToolbar?
   var entryPointToolbar: ActionToolbar? = null
+  var headerFitSize: Dimension? = null
+
+  private var innerInsets: Insets = JBUI.emptyInsets()
+  private val tabMouseListeners = ContainerUtil.createLockFreeCopyOnWriteList<EventListener>()
+  private val tabListeners = ContainerUtil.createLockFreeCopyOnWriteList<EditorGroupsTabsListener>()
+  private var isFocused = false
+
+  private var popupGroupSupplier: (() -> ActionGroup)? = null
+  var popupPlace: String? = null
+  var popupInfo: EditorGroupTabInfo? = null
+  private val myNavigationActions: DefaultActionGroup
+  val popupListener: PopupMenuListener
+  var activePopup: JPopupMenu? = null
+
+  private var dataProvider: DataProvider? = null
+  private val deferredToRemove = WeakHashMap<Component, Component>()
+
+  internal var effectiveLayout: EditorGroupsTabLayout? = null
 
   val navigationActions: ActionGroup
     get() = myNavigationActions
@@ -148,14 +166,6 @@ open class KrTabsImpl(
 
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
 
-  var headerFitSize: Dimension? = null
-
-  private var innerInsets: Insets = JBUI.emptyInsets()
-  private val tabMouseListeners = ContainerUtil.createLockFreeCopyOnWriteList<EventListener>()
-  private val tabListeners = ContainerUtil.createLockFreeCopyOnWriteList<EditorGroupsTabsListener>()
-  private var isFocused = false
-  private var popupGroupSupplier: (() -> ActionGroup)? = null
-
   private val isMyChildIsFocusedNow: Boolean
     get() {
       val owner = getFocusOwner() ?: return false
@@ -165,20 +175,6 @@ open class KrTabsImpl(
           SwingUtilities.isDescendingFrom(owner, this)
       }
     }
-
-  var popupPlace: String? = null
-    private set
-
-  var popupInfo: EditorGroupTabInfo? = null
-  private val myNavigationActions: DefaultActionGroup
-
-  val popupListener: PopupMenuListener
-  var activePopup: JPopupMenu? = null
-
-  private var dataProvider: DataProvider? = null
-  private val deferredToRemove = WeakHashMap<Component, Component>()
-
-  internal var effectiveLayout: EditorGroupsTabLayout? = null
 
   val popupGroup: ActionGroup?
     get() = popupGroupSupplier?.invoke()
