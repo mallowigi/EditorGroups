@@ -65,7 +65,7 @@ abstract class EditorGroupsSingleRowLayout(
 
     // Prepare the passinfo
     val selectedInfo = tabs.selectedInfo
-    prepareLayoutPassInfo(passInfo = passInfo, selected = selectedInfo)
+    prepareLayoutPassInfo(passInfo = passInfo)
 
     // Reset the layout
     tabs.resetLayout(shouldLayoutLabels || tabs.isHideTabs)
@@ -79,9 +79,6 @@ abstract class EditorGroupsSingleRowLayout(
 
       // Layout the labels
       layoutLabels(passInfo)
-
-      // Layout the entry point
-      layoutEntryPointButton(passInfo)
 
       // Layout the more button
       layoutMoreButton(passInfo)
@@ -118,7 +115,7 @@ abstract class EditorGroupsSingleRowLayout(
     tabs.getTabLabel(passInfo.toLayout[passInfo.toLayout.size - 1])
 
   /** Prepare the passInfo. */
-  protected fun prepareLayoutPassInfo(passInfo: EditorGroupsSingleRowPassInfo, selected: EditorGroupTabInfo?) {
+  protected fun prepareLayoutPassInfo(passInfo: EditorGroupsSingleRowPassInfo) {
     // Save the insets
     passInfo.insets = tabs.layoutInsets
     // Add offset left
@@ -132,11 +129,6 @@ abstract class EditorGroupsSingleRowLayout(
     if (!passInfo.toDrop.isEmpty()) {
       passInfo.moreRect = strategy.getMoreRect(passInfo)
     }
-  }
-
-  /** Sets the entry point bounds. */
-  protected fun layoutEntryPointButton(passInfo: EditorGroupsSingleRowPassInfo) {
-    passInfo.entryPointRect = strategy.getEntryPointRect(passInfo)!!
   }
 
   protected fun layoutLabels(passInfo: EditorGroupsSingleRowPassInfo) {
