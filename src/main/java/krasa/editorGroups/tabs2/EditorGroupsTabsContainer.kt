@@ -18,7 +18,7 @@ import java.awt.event.MouseListener
 class EditorGroupsTabsContainer(private val project: Project, parent: Disposable, private val file: VirtualFile) :
   EditorGroupsPanelTabs(project, parent) {
   /** The single row layout that will contain our component. */
-  private val mySingleRowLayout = createSingleRowLayout()
+  private val mySingleRowLayout = createRowLayout()
 
   var bulkUpdate: Boolean = false
 
@@ -81,7 +81,7 @@ class EditorGroupsTabsContainer(private val project: Project, parent: Disposable
    * krasa.editorGroups.tabs2.impl.JBTabsImpl$7.initialize(JBTabsImpl.java:340) at
    * krasa.editorGroups.tabs2.impl.JBTabsImpl$7.initialize(JBTabsImpl.java:333)
    */
-  override fun createSingleRowLayout(): EditorGroupsSingleRowLayout = EditorGroupsScrollableSingleRowLayout(this)
+  override fun createRowLayout(): EditorGroupsSingleRowLayout = EditorGroupsScrollableSingleRowLayout(this)
 
   /** Do not handle inactive tabs. */
   override fun isActiveTabs(info: EditorGroupTabInfo?): Boolean = true

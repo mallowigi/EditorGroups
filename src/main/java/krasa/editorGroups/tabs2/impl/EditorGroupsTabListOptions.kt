@@ -1,6 +1,6 @@
 package krasa.editorGroups.tabs2.impl
 
-import com.intellij.ui.tabs.JBTabsPosition
+import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
 
 data class EditorGroupsTabListOptions(
   @JvmField
@@ -8,7 +8,7 @@ data class EditorGroupsTabListOptions(
   @JvmField
   val paintFocus: Boolean = false,
   @JvmField
-  val tabPosition: JBTabsPosition = JBTabsPosition.top,
+  val tabPosition: EditorGroupsTabsPosition = EditorGroupsTabsPosition.TOP,
   @JvmField
   val hideTabs: Boolean = false,
 )
