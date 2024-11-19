@@ -66,11 +66,7 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
         }
 
         var maxLength = passInfo.toFitLength - this.moreRectAxisSize
-        val actionInsets = tabs.actionsInsets
-
-        if (tabs.entryPointPreferredSize.width == 0) {
-          maxLength -= actionInsets.left + actionInsets.right
-        }
+        tabs.actionsInsets
 
         if (offset + length > maxLength) {
           // a left side should always be visible
@@ -104,10 +100,8 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
       length = strategy.getLengthIncrement(label.getPreferredSize())
       var moreRectSize = this.moreRectAxisSize
 
-      if (passInfo.entryPointAxisSize == 0) {
-        val insets = tabs.actionsInsets
-        moreRectSize += insets.left + insets.right
-      }
+      val insets = tabs.actionsInsets
+      moreRectSize += insets.left + insets.right
 
       if (passInfo.position + length > passInfo.toFitLength - moreRectSize) {
         if (strategy.drawPartialOverflowTabs()) {

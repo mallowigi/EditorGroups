@@ -4,14 +4,11 @@ import krasa.editorGroups.tabs2.impl.KrTabsImpl
 import java.awt.Dimension
 import java.awt.Rectangle
 import kotlin.math.max
-import kotlin.math.sign
 
 abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayout: EditorGroupsSingleRowLayout) {
   val myTabs: KrTabsImpl = myLayout.tabs
 
   abstract val moreRectAxisSize: Int
-
-  abstract val entryPointAxisSize: Int
 
   abstract val additionalLength: Int
 
@@ -41,8 +38,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
   abstract fun getMoreRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle
 
-  abstract fun getEntryPointRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle?
-
   abstract fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo)
 
   /**
@@ -60,9 +55,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
     override val moreRectAxisSize: Int
       get() = myTabs.moreToolbarPreferredSize.width
 
-    override val entryPointAxisSize: Int
-      get() = myTabs.entryPointPreferredSize.width
-
     override val additionalLength: Int
       get() = 0
 
@@ -76,11 +68,10 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
       length += getStartPosition(passInfo)
 
-      val entryPointWidth = myTabs.entryPointPreferredSize.width
       val toolbarInsets = myTabs.actionsInsets
       val insets = toolbarInsets.left + toolbarInsets.right
 
-      length -= (entryPointWidth + insets * sign(entryPointWidth.toDouble())).toInt()
+      length -= insets
 
       return length
     }
@@ -119,23 +110,8 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
     override fun getFixedPosition(passInfo: EditorGroupsSingleRowPassInfo): Int = passInfo.insets!!.top
 
-    override fun getEntryPointRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle {
-      val x: Int = passInfo.layoutSize.width - myTabs.actionsInsets.right - passInfo.entryPointAxisSize
-      return Rectangle(
-        /* x = */
-        x,
-        /* y = */
-        1,
-        /* width = */
-        passInfo.entryPointAxisSize,
-        /* height = */
-        myTabs.headerFitSize!!.height
-      )
-    }
-
     override fun getMoreRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle {
       var x: Int = passInfo.layoutSize.width - myTabs.actionsInsets.right - passInfo.moreRectAxisSize
-      x -= passInfo.entryPointAxisSize
 
       return Rectangle(
         /* x = */
@@ -227,24 +203,8 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
     override fun getFixedPosition(passInfo: EditorGroupsSingleRowPassInfo): Int =
       myTabs.size.height - passInfo.insets!!.bottom - myTabs.headerFitSize!!.height
 
-    override fun getEntryPointRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle {
-      val x: Int = passInfo.layoutSize.width - myTabs.actionsInsets.right - passInfo.entryPointAxisSize
-
-      return Rectangle(
-        /* x = */
-        x,
-        /* y = */
-        getFixedPosition(passInfo),
-        /* width = */
-        passInfo.entryPointAxisSize,
-        /* height = */
-        myTabs.headerFitSize!!.height
-      )
-    }
-
     override fun getMoreRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle {
       var x: Int = passInfo.layoutSize.width - myTabs.actionsInsets.right - passInfo.moreRectAxisSize
-      x -= passInfo.entryPointAxisSize
 
       return Rectangle(
         /* x = */

@@ -103,7 +103,6 @@ open class KrTabsImpl(
 
   // The more tabs toolbar
   val moreToolbar: ActionToolbar?
-  var entryPointToolbar: ActionToolbar? = null
   var headerFitSize: Dimension? = null
 
   private var innerInsets: Insets = JBUI.emptyInsets()
@@ -271,9 +270,6 @@ open class KrTabsImpl(
   private val scrollBarChangeListener: ChangeListener
   private var scrollBarOn = false
 
-  protected open val entryPointActionGroup: DefaultActionGroup?
-    get() = null
-
   private val scrollBarModel: BoundedRangeModel
     get() = scrollBar.model
 
@@ -282,15 +278,6 @@ open class KrTabsImpl(
 
   val layoutInsets: Insets
     get() = myBorder.effectiveBorder
-
-  open val toolbarInset: Int
-    get() = ARC_SIZE + 1
-
-  val entryPointPreferredSize: Dimension
-    get() = when (entryPointToolbar) {
-      null -> Dimension()
-      else -> entryPointToolbar!!.component.preferredSize
-    }
 
   val moreToolbarPreferredSize: Dimension
     // Returns default one action horizontal toolbar size (26x24)
@@ -351,14 +338,6 @@ open class KrTabsImpl(
       actionManager = actionManager
     )
     add(moreToolbar.component)
-    val entryPointActionGroup = entryPointActionGroup
-    if (entryPointActionGroup == null) {
-      entryPointToolbar = null
-    } else {
-      entryPointToolbar = createToolbar(entryPointActionGroup, targetComponent = this, actionManager = actionManager)
-      add(entryPointToolbar!!.component)
-    }
-    // add(titleWrapper)
     Disposer.register(parentDisposable) { setTitleProducer(null) }
 
     // This scroll pane won't be shown on screen, it is needed only to handle scrolling events and properly update a scrolling model
@@ -1538,8 +1517,6 @@ open class KrTabsImpl(
       //   each.setTabActionsAutoHide(tabLabelActionsAutoHide)
       // }
       val moreBoundsBeforeLayout = moreToolbar!!.component.bounds
-      val entryPointBoundsBeforeLayout =
-        if (entryPointToolbar == null) Rectangle(0, 0, 0, 0) else entryPointToolbar!!.component.bounds
       headerFitSize = computeHeaderFitSize()
       val visible = getVisibleInfos().toMutableList()
 
@@ -1548,7 +1525,6 @@ open class KrTabsImpl(
         lastLayoutPass = effectiveLayout.layoutSingleRow(visible)
       }
 
-      centerizeEntryPointToolbarPosition()
       centerizeMoreToolbarPosition()
 
       tabActionsAutoHideListener.processMouseOver()
@@ -1560,7 +1536,6 @@ open class KrTabsImpl(
       updateScrollBarModel()
 
       updateToolbarIfVisibilityChanged(moreToolbar, moreBoundsBeforeLayout)
-      updateToolbarIfVisibilityChanged(entryPointToolbar, entryPointBoundsBeforeLayout)
     } finally {
       forcedRelayout = false
     }
@@ -1583,27 +1558,6 @@ open class KrTabsImpl(
       mComponent.bounds = Rectangle()
     }
     mComponent.putClientProperty(LAYOUT_DONE, true)
-  }
-
-  private fun centerizeEntryPointToolbarPosition() {
-    val eComponent = (if (entryPointToolbar == null) null else entryPointToolbar!!.component) ?: return
-    val entryPointRect = lastLayoutPass!!.entryPointRect
-    if (!entryPointRect.isEmpty && tabCount > 0) {
-      val preferredSize = eComponent.preferredSize
-      val bounds = Rectangle(entryPointRect)
-      if (!ExperimentalUI.isNewUI()) {
-        val xDiff = (bounds.width - preferredSize.width) / 2
-        val yDiff = (bounds.height - preferredSize.height) / 2
-        bounds.x += xDiff + 2
-        bounds.width -= 2 * xDiff
-        bounds.y += yDiff
-        bounds.height -= 2 * yDiff
-      }
-      eComponent.bounds = bounds
-    } else {
-      eComponent.bounds = Rectangle()
-    }
-    eComponent.putClientProperty(LAYOUT_DONE, true)
   }
 
   private fun computeHeaderFitSize(): Dimension {
@@ -1968,31 +1922,7 @@ open class KrTabsImpl(
         }
       }
     }
-    updateEntryPointToolbar()
     relayout(forced, layoutNow)
-  }
-
-  private fun updateEntryPointToolbar() {
-    entryPointToolbar?.let {
-      remove(it.component)
-    }
-
-    selectedInfo
-    val entryPointActionGroup = entryPointActionGroup
-    if (entryPointActionGroup == null) {
-      entryPointToolbar = null
-      return
-    }
-
-    val group = entryPointActionGroup
-
-    if (entryPointToolbar != null && entryPointToolbar!!.actionGroup == group) {
-      // keep old toolbar to avoid blinking (actions need to be updated to be visible)
-      add(entryPointToolbar!!.component)
-    } else {
-      entryPointToolbar = createToolbar(group, targetComponent = this, actionManager = ActionManager.getInstance())
-      add(entryPointToolbar!!.component)
-    }
   }
 
   internal fun isScrollBarAdjusting(): Boolean = scrollBar.valueIsAdjusting
@@ -2096,9 +2026,6 @@ open class KrTabsImpl(
     }
 
     this.hideTabs = hideTabs
-    if (entryPointToolbar != null) {
-      entryPointToolbar!!.component.isVisible = !this.hideTabs
-    }
     relayout(forced = true, layoutNow = false)
   }
 
