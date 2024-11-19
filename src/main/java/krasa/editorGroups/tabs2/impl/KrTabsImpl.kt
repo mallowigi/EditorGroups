@@ -38,6 +38,7 @@ import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
 import com.intellij.util.ui.update.lazyUiDisposable
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import krasa.editorGroups.tabs2.*
 import krasa.editorGroups.tabs2.border.EditorGroupsTabsBorder
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsDefaultTabPainterAdapter
@@ -103,36 +104,71 @@ open class KrTabsImpl(
 
   // The more tabs toolbar
   val moreToolbar: ActionToolbar?
+
+  // Header fit dimension
   var headerFitSize: Dimension? = null
 
+  // Tab panel inner insets
   private var innerInsets: Insets = JBUI.emptyInsets()
+
+  // Mouse listeners
   private val tabMouseListeners = ContainerUtil.createLockFreeCopyOnWriteList<EventListener>()
+
+  // Listeners
   private val tabListeners = ContainerUtil.createLockFreeCopyOnWriteList<EditorGroupsTabsListener>()
+
+  // Whether the tab panel is focused
   private var isFocused = false
 
+  // Provider for the popup group
   private var popupGroupSupplier: (() -> ActionGroup)? = null
+
+  // The place of popup
   var popupPlace: String? = null
   var popupInfo: EditorGroupTabInfo? = null
+
+  // TODO ???
   private val myNavigationActions: DefaultActionGroup
+
+  // Listener on the tabs popup
   val popupListener: PopupMenuListener
+
+  // Current opened popup
   var activePopup: JPopupMenu? = null
 
+  // Provides data to be consumed by others
   private var dataProvider: DataProvider? = null
+
+  // Tabs to remove in the next layout pass
   private val deferredToRemove = WeakHashMap<Component, Component>()
 
   // todo add override
   // val override tabsPosition: EditorGroupsTabsPosition
   //   get() = tabListOptions.tabPosition
 
+  // The row layout to lay the tabs over
   internal var effectiveLayout: EditorGroupsTabLayout? = createRowLayout()
 
+  // Keep a cache of the last layout pass
   var lastLayoutPass: EditorGroupsLayoutPassInfo? = null
     private set
 
+  // Flag to indicate if the tabs are relayout
   internal var forcedRelayout: Boolean = false
     private set
 
+  // Instance of tab decorator
   internal var uiDecorator: TabUiDecorator? = null
+
+  // TODO ????
+  private var listener: Job? = null
+
+  // tabs cache
+  private var allTabs: List<EditorGroupTabInfo>? = null
+  private var focusManager = IdeFocusManager.getGlobalInstance()
+
+  /** Adds the navigation action. */
+  var addNavigationGroup: Boolean = true
 
   val navigationActions: ActionGroup
     get() = myNavigationActions
@@ -207,13 +243,6 @@ open class KrTabsImpl(
       return isNavigationVisible && selectedIndex >= 0 && navigationActionsEnabled
     }
 
-  private var allTabs: List<EditorGroupTabInfo>? = null
-  private var focusManager = IdeFocusManager.getGlobalInstance()
-  private val nestedTabs = HashSet<KrTabsImpl>()
-
-  /** Adds the navigation action. */
-  var addNavigationGroup: Boolean = true
-
   private var activeTabFillIn: Color? = null
   private var tabLabelActionsAutoHide = false
 
@@ -226,7 +255,7 @@ open class KrTabsImpl(
   var position: EditorGroupsTabsPosition = EditorGroupsTabsPosition.TOP
     private set
 
-  /** @return insets, that should be used to layout [KrTabsImpl.moreToolbar] and [KrTabsImpl.entryPointToolbar] */
+  /** @return insets, that should be used to layout [KrTabsImpl.moreToolbar] */
   val actionsInsets: Insets = JBInsets.create(Insets(0, 5, 0, 8))
 
   val selectedLabel: EditorGroupTabLabel?
@@ -535,11 +564,6 @@ open class KrTabsImpl(
   fun isHoveredTab(label: EditorGroupTabLabel?): Boolean = label != null && label === tabLabelAtMouse
 
   open fun isActiveTabs(info: EditorGroupTabInfo?): Boolean = UIUtil.isFocusAncestor(this)
-
-  fun addNestedTabs(tabs: KrTabsImpl, parentDisposable: Disposable) {
-    nestedTabs.add(tabs)
-    Disposer.register(parentDisposable) { nestedTabs.remove(tabs) }
-  }
 
   @RequiresEdt
   fun resetTabsCache() {
@@ -2137,13 +2161,8 @@ open class KrTabsImpl(
 
     override fun doActionPerformed(e: AnActionEvent?, tabs: KrTabsImpl?, selectedIndex: Int) {
       val tabInfo = tabs!!.findEnabledForward(selectedIndex, true) ?: return
-      val lastFocus = tabInfo.lastFocusOwner
+      tabInfo.lastFocusOwner
       tabs.select(tabInfo, true)
-      for (nestedTabs in tabs.nestedTabs) {
-        if (lastFocus == null || SwingUtilities.isDescendingFrom(lastFocus, nestedTabs)) {
-          nestedTabs.selectFirstVisible()
-        }
-      }
     }
   }
 
@@ -2164,13 +2183,8 @@ open class KrTabsImpl(
     }
 
     val select = getVisibleInfos()[0]
-    val lastFocus = select.lastFocusOwner
+    select.lastFocusOwner
     select(select, true)
-    for (nestedTabs in nestedTabs) {
-      if (lastFocus == null || SwingUtilities.isDescendingFrom(lastFocus, nestedTabs)) {
-        nestedTabs.selectFirstVisible()
-      }
-    }
   }
 
   private fun selectLastVisible() {
@@ -2180,13 +2194,8 @@ open class KrTabsImpl(
 
     val last = getVisibleInfos().size - 1
     val select = getVisibleInfos()[last]
-    val lastFocus = select.lastFocusOwner
+    select.lastFocusOwner
     select(select, true)
-    for (nestedTabs in nestedTabs) {
-      if (lastFocus == null || SwingUtilities.isDescendingFrom(lastFocus, nestedTabs)) {
-        nestedTabs.selectLastVisible()
-      }
-    }
   }
 
   private class SelectPreviousAction(tabs: KrTabsImpl, parentDisposable: Disposable) : BaseNavigationAction(
@@ -2204,13 +2213,8 @@ open class KrTabsImpl(
 
     override fun doActionPerformed(e: AnActionEvent?, tabs: KrTabsImpl?, selectedIndex: Int) {
       val tabInfo = tabs!!.findEnabledBackward(selectedIndex, true) ?: return
-      val lastFocus = tabInfo.lastFocusOwner
+      tabInfo.lastFocusOwner
       tabs.select(tabInfo, true)
-      for (nestedTabs in tabs.nestedTabs) {
-        if (lastFocus == null || SwingUtilities.isDescendingFrom(lastFocus, nestedTabs)) {
-          nestedTabs.selectLastVisible()
-        }
-      }
     }
   }
 
