@@ -1,6 +1,5 @@
 package krasa.editorGroups.tabs2;
 
-import com.intellij.openapi.util.NlsContexts;
 import krasa.editorGroups.tabs2.label.TabUiDecorator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,11 +17,11 @@ public interface KrTabsPresentation {
 
   KrTabsPresentation setRequestFocusOnLastFocusedComponent(boolean request);
 
-  void setPaintBlocked(boolean blocked, final boolean takeSnapshot);
+  void setPaintBlocked(boolean blocked, boolean takeSnapshot);
 
   KrTabsPresentation setInnerInsets(Insets innerInsets);
 
-  KrTabsPresentation setFocusCycle(final boolean root);
+  KrTabsPresentation setFocusCycle(boolean root);
 
   @NotNull
   KrTabsPresentation setToDrawBorderIfTabsHidden(boolean draw);
@@ -33,10 +32,11 @@ public interface KrTabsPresentation {
   @NotNull
   KrTabsPresentation setActiveTabFillIn(@Nullable Color color);
 
+  EditorGroupsTabsPosition getTabsPosition();
+
   @NotNull
   KrTabsPresentation setTabsPosition(EditorGroupsTabsPosition position);
 
-  EditorGroupsTabsPosition getTabsPosition();
+  KrTabsPresentation setFirstTabOffset(int offset);
 
-  KrTabsPresentation setEmptyText(@Nullable @NlsContexts.StatusText String text);
 }

@@ -183,6 +183,8 @@ class EditorGroupPanel(
     // Create the tabs component
     updateTabPlacement()
 
+    tabs.setFirstTabOffset(8)
+
     // Add a right click mouse listener to allow remove from favorites
     tabs.addTabMouseListener(EditorTabMouseListener(tabs))
 
