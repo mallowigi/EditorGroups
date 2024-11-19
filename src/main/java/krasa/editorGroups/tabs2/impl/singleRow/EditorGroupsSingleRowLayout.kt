@@ -68,10 +68,10 @@ abstract class EditorGroupsSingleRowLayout(
     prepareLayoutPassInfo(passInfo = passInfo)
 
     // Reset the layout
-    tabs.resetLayout(shouldLayoutLabels || tabs.isHideTabs)
+    tabs.resetLayout(shouldLayoutLabels)
 
     // Layout the tabs
-    if (shouldLayoutLabels && !tabs.isHideTabs) {
+    if (shouldLayoutLabels) {
       recomputeToLayout(passInfo)
 
       // Sets the left position

@@ -7,9 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 
 public interface KrTabsPresentation {
-  boolean isHideTabs();
-
-  void setHideTabs(boolean hideTabs);
 
   KrTabsPresentation setPaintFocus(boolean paintFocus);
 

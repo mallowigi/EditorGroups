@@ -12,15 +12,12 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.options.advanced.AdvancedSettings
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.fill2DRoundRect
-import com.intellij.openapi.ui.ShadowAction
 import com.intellij.openapi.ui.popup.*
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.openapi.util.*
 import com.intellij.openapi.wm.IdeFocusManager
-import com.intellij.openapi.wm.IdeGlassPaneUtil
 import com.intellij.ui.*
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBScrollBar
@@ -258,6 +255,14 @@ open class KrTabsImpl(
   val borderThickness: Int
     get() = tabBorder.thickness
 
+  // The tab gap
+  val tabHGap: Int
+    get() = -tabBorder.thickness
+
+  // is empty visible
+  override val isEmptyVisible: Boolean
+    get() = visibleTabInfos.isEmpty()
+
   // Cache the tab size
   override val tabCount: Int
     get() = tabs.size
@@ -296,7 +301,6 @@ open class KrTabsImpl(
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
 
   private var paintFocus = false
-  private var hideTabs = false
   private var isRequestFocusOnLastFocusedComponent = false
 
   private var activeTabFillIn: Color? = null
@@ -306,12 +310,6 @@ open class KrTabsImpl(
 
   /** @return insets, that should be used to layout [KrTabsImpl.moreToolbar] */
   val actionsInsets: Insets = JBInsets.create(Insets(0, 5, 0, 8))
-
-  override val isEmptyVisible: Boolean
-    get() = visibleTabInfos.isEmpty()
-
-  val tabHGap: Int
-    get() = -tabBorder.thickness
 
   private val toFocus: JComponent?
     get() {
@@ -397,7 +395,6 @@ open class KrTabsImpl(
         this@KrTabsImpl.project = project
       }
 
-      val gp = IdeGlassPaneUtil.find(child)
       StartupUiUtil.addAwtListener({
         if (JBPopupFactory.getInstance().getChildPopups(this@KrTabsImpl).isEmpty()) {
           processFocusChange()
@@ -493,13 +490,9 @@ open class KrTabsImpl(
     scrollBar.toggle(isOn)
   }
 
-  private fun getScrollBarBounds(): Rectangle {
-    if (isHideTabs) return Rectangle(0, 0, 0, 0)
-
-    return when (tabsPosition) {
-      EditorGroupsTabsPosition.TOP    -> Rectangle(0, 1, width, SCROLL_BAR_THICKNESS)
-      EditorGroupsTabsPosition.BOTTOM -> Rectangle(0, height - SCROLL_BAR_THICKNESS, width, SCROLL_BAR_THICKNESS)
-    }
+  private fun getScrollBarBounds(): Rectangle = when (tabsPosition) {
+    EditorGroupsTabsPosition.TOP    -> Rectangle(0, 1, width, SCROLL_BAR_THICKNESS)
+    EditorGroupsTabsPosition.BOTTOM -> Rectangle(0, height - SCROLL_BAR_THICKNESS, width, SCROLL_BAR_THICKNESS)
   }
 
   override fun uiSettingsChanged(uiSettings: UISettings) {
@@ -749,7 +742,7 @@ open class KrTabsImpl(
             override fun getMaximumSize(): Dimension = preferredSize
           }
           textLabel!!.myBorder = null
-          textLabel!!.setIpad(JBInsets.emptyInsets())
+          textLabel!!.setIpad(JBUI.emptyInsets())
           textLabel!!.setOpaque(true)
           component!!.add(textLabel)
           if (settings.closeTabButtonOnTheRight) {
@@ -1500,10 +1493,10 @@ open class KrTabsImpl(
     val y = insets.top + bounds.y + inner.top
     var width = bounds.width - insets.left - insets.right - bounds.x - inner.left - inner.right
     var height = bounds.height - insets.top - insets.bottom - bounds.y - inner.top - inner.bottom
-    if (!isHideTabs) {
-      width += deltaWidth
-      height += deltaHeight
-    }
+
+    width += deltaWidth
+    height += deltaHeight
+
     return layout(component = component, x = x, y = y, width = width, height = height)
   }
 
@@ -1570,9 +1563,7 @@ open class KrTabsImpl(
     JBSwingUtilities.runGlobalCGTransform(this, super.getComponentGraphics(graphics))
 
   protected fun drawBorder(g: Graphics) {
-    if (!isHideTabs) {
-      tabBorder.paintBorder(this, g, 0, 0, width, height)
-    }
+    tabBorder.paintBorder(this, g, 0, 0, width, height)
   }
 
   private fun computeMaxSize(): Max {
@@ -1768,19 +1759,15 @@ open class KrTabsImpl(
 
   override fun findInfo(event: MouseEvent): EditorGroupTabInfo? {
     val point = SwingUtilities.convertPoint(event.component, event.point, this)
-    return doFindInfo(point, false)
+    return doFindInfo(point)
   }
 
-  private fun doFindInfo(point: Point, labelsOnly: Boolean): EditorGroupTabInfo? {
+  private fun doFindInfo(point: Point): EditorGroupTabInfo? {
     var component = findComponentAt(point)
     while (component !== this) {
       if (component == null) return null
       if (component is EditorGroupTabLabel) {
         return component.info
-      }
-      if (!labelsOnly) {
-        val info = findInfo(component)
-        if (info != null) return info
       }
       component = component.parent
     }
@@ -1843,7 +1830,7 @@ open class KrTabsImpl(
       forcedRelayout = forced
     }
     if (moreToolbar != null) {
-      moreToolbar.component.isVisible = !isHideTabs
+      moreToolbar.component.isVisible = true
     }
     revalidateAndRepaint(layoutNow)
   }
@@ -1920,17 +1907,6 @@ open class KrTabsImpl(
 
   override fun getIndexOf(tabInfo: EditorGroupTabInfo?): Int = getVisibleInfos().indexOf(tabInfo)
 
-  override fun isHideTabs(): Boolean = hideTabs
-
-  override fun setHideTabs(hideTabs: Boolean) {
-    if (isHideTabs == hideTabs) {
-      return
-    }
-
-    this.hideTabs = hideTabs
-    relayout(forced = true, layoutNow = false)
-  }
-
   override fun setActiveTabFillIn(color: Color?): KrTabsPresentation {
     if (!isChanged(activeTabFillIn, color)) return this
     activeTabFillIn = color
@@ -1946,79 +1922,6 @@ open class KrTabsImpl(
   override fun setPaintFocus(paintFocus: Boolean): KrTabsPresentation {
     this.paintFocus = paintFocus
     return this
-  }
-
-  private abstract class BaseNavigationAction(
-    copyFromId: String,
-    private val tabs: KrTabsImpl,
-    parentDisposable: Disposable
-  ) : DumbAwareAction() {
-    private val shadowAction: ShadowAction
-
-    init {
-      @Suppress("LeakingThis")
-      shadowAction = ShadowAction(this, copyFromId, tabs, parentDisposable)
-      isEnabledInModalContext = true
-    }
-
-    override fun update(e: AnActionEvent) {
-      var tabs = e.getData(EditorGroupsTabsEx.NAVIGATION_ACTIONS_KEY) as? KrTabsImpl
-      e.presentation.isVisible = tabs != null
-      if (tabs == null) return
-      tabs = findNavigatableTabs(tabs)
-      e.presentation.isEnabled = tabs != null
-      if (tabs != null) {
-        doUpdate(e = e, tabs = tabs, selectedIndex = tabs.getVisibleInfos().indexOf(tabs.selectedInfo))
-      }
-    }
-
-    fun findNavigatableTabs(tabs: KrTabsImpl?): KrTabsImpl? {
-      // The debugger UI contains multiple nested JBTabsImpl, where the innermost JBTabsImpl has only one tab. In this case,
-      // the action should target the outer JBTabsImpl.
-      if (tabs == null || tabs !== this.tabs) {
-        return null
-      }
-      return tabs
-    }
-
-    abstract fun doUpdate(e: AnActionEvent, tabs: KrTabsImpl, selectedIndex: Int)
-
-    override fun actionPerformed(e: AnActionEvent) {
-      var tabs = e.getData(EditorGroupsTabsEx.NAVIGATION_ACTIONS_KEY) as? KrTabsImpl
-      tabs = findNavigatableTabs(tabs) ?: return
-
-      var infos: List<EditorGroupTabInfo?>
-      var index: Int
-      while (true) {
-        infos = tabs!!.getVisibleInfos()
-        index = infos.indexOf(tabs.selectedInfo)
-        if (index == -1) {
-          return
-        }
-
-        if (borderIndex(infos, index) && tabs.navigatableParent() != null) {
-          tabs = tabs.navigatableParent()
-        } else {
-          break
-        }
-      }
-      doActionPerformed(e = e, tabs = tabs, selectedIndex = index)
-    }
-
-    abstract fun borderIndex(infos: List<EditorGroupTabInfo?>, index: Int): Boolean
-
-    abstract fun doActionPerformed(e: AnActionEvent?, tabs: KrTabsImpl?, selectedIndex: Int)
-  }
-
-  private fun navigatableParent(): KrTabsImpl? {
-    var c: Component? = parent
-    while (c != null) {
-      if (c is KrTabsImpl) {
-        return c
-      }
-      c = c.parent
-    }
-    return null
   }
 
   private fun disposePopupListener() {

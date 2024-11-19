@@ -126,17 +126,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
     }
 
     override fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo) {
-      if (myTabs.isHideTabs) {
-        myTabs.layoutComp(
-          passInfo = passInfo,
-          deltaX = 0,
-          deltaY = 0,
-          deltaWidth = 0,
-          deltaHeight = 0
-        )
-        return
-      }
-
       val x = 0
       val hToolbar = passInfo.hToolbar?.get()
       val hToolbarHeight = when {
@@ -181,23 +170,13 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
   internal class Bottom(layout: EditorGroupsSingleRowLayout) : Horizontal(layout) {
     override fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo) {
-      when {
-        myTabs.isHideTabs -> myTabs.layoutComp(
-          passInfo = passInfo,
-          deltaX = 0,
-          deltaY = 0,
-          deltaWidth = 0,
-          deltaHeight = 0
-        )
-
-        else              -> myTabs.layoutComp(
-          passInfo = passInfo,
-          deltaX = 0,
-          deltaY = 0,
-          deltaWidth = 0,
-          deltaHeight = -myTabs.headerFitSize!!.height
-        )
-      }
+      myTabs.layoutComp(
+        passInfo = passInfo,
+        deltaX = 0,
+        deltaY = 0,
+        deltaWidth = 0,
+        deltaHeight = -myTabs.headerFitSize!!.height
+      )
     }
 
     override fun getFixedPosition(passInfo: EditorGroupsSingleRowPassInfo): Int =

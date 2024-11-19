@@ -238,7 +238,6 @@ class EditorGroupPanel(
     when (this.currentTabPlacement) {
       SwingConstants.TOP    -> tabs.setTabsPosition(EditorGroupsTabsPosition.TOP)
       SwingConstants.BOTTOM -> tabs.setTabsPosition(EditorGroupsTabsPosition.BOTTOM)
-      else                  -> tabs.isHideTabs = true
     }
   }
 

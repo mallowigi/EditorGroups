@@ -15,7 +15,7 @@ class EditorGroupsTabsBorder(val tabs: KrTabsImpl) : Border {
 
   override fun paintBorder(c: Component, g: Graphics, x: Int, y: Int, width: Int, height: Int) {
     g as Graphics2D
-    if (tabs.isEmptyVisible || tabs.isHideTabs) return
+    if (tabs.isEmptyVisible) return
 
     val firstLabel = tabs.getTabLabel(tabs.getVisibleInfos().first()) ?: return
 
