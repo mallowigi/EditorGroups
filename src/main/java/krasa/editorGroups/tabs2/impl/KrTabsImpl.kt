@@ -330,8 +330,10 @@ open class KrTabsImpl(
     add(moreToolbar.component)
 
     // This scroll pane won't be shown on screen, it is needed only to handle scrolling events and properly update a scrolling model
-    val fakeScrollPane =
-      JBScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS)
+    val fakeScrollPane = JBScrollPane(
+      ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS
+    )
     scrollBar = object : JBScrollBar(HORIZONTAL) {
       override fun updateUI() {
         super.updateUI()
@@ -342,18 +344,31 @@ open class KrTabsImpl(
 
       override fun isThin(): Boolean = true
     }
+
     fakeScrollPane.verticalScrollBar = scrollBar
     fakeScrollPane.horizontalScrollBar = scrollBar
     fakeScrollPane.isVisible = true
     fakeScrollPane.setBounds(0, 0, 0, 0)
     add(fakeScrollPane) // isShowing() should return true for this component
     add(scrollBar)
+
+    // Listen to scroll events on the fake scroll pane and redispatch them to the tabs
     addMouseWheelListener { event ->
       val modifiers = UIUtil.getAllModifiers(event) or InputEvent.SHIFT_DOWN_MASK
-      val e = MouseEventAdapter.convert(event, fakeScrollPane, event.id, event.getWhen(), modifiers, event.x, event.y)
+      val e = MouseEventAdapter.convert(
+        /* event = */ event,
+        /* source = */ fakeScrollPane,
+        /* id = */ event.id,
+        /* when = */ event.getWhen(),
+        /* modifiers = */ modifiers,
+        /* x = */ event.x,
+        /* y = */ event.y
+      )
       MouseEventAdapter.redispatch(e, fakeScrollPane)
     }
+    // AWT listener
     addMouseMotionAwtListener(parentDisposable)
+
     isFocusTraversalPolicyProvider = true
     focusTraversalPolicy = object : LayoutFocusTraversalPolicy() {
       override fun getDefaultComponent(aContainer: Container): Component? = toFocus
@@ -371,27 +386,31 @@ open class KrTabsImpl(
       }, AWTEvent.FOCUS_EVENT_MASK, parentDisposable)
     }
 
+    // Add client property to hide the tabs from the hierarchy
     putClientProperty(
       UIUtil.NOT_IN_HIERARCHY_COMPONENTS,
       Iterable {
         getVisibleInfos().asSequence().filter { it != mySelectedInfo }.map { it.component }.iterator()
       }
     )
-    val hoverListener = object : HoverListener() {
+
+    object : HoverListener() {
       override fun mouseEntered(component: Component, x: Int, y: Int) {
-        toggleScrollBar(isInsideTabsArea(x, y))
+        this@KrTabsImpl.toggleScrollBar(this@KrTabsImpl.isInsideTabsArea(x, y))
       }
 
       override fun mouseMoved(component: Component, x: Int, y: Int) {
-        toggleScrollBar(isInsideTabsArea(x, y))
+        this@KrTabsImpl.toggleScrollBar(this@KrTabsImpl.isInsideTabsArea(x, y))
       }
 
       override fun mouseExited(component: Component) {
-        toggleScrollBar(false)
+        this@KrTabsImpl.toggleScrollBar(false)
       }
-    }
-    hoverListener.addTo(this)
+    }.addTo(this)
+
     scrollBarChangeListener = ChangeListener { updateTabsOffsetFromScrollBar() }
+    
+    setTabsPosition(tabsPosition)
   }
 
   @Suppress("IncorrectParentDisposable")
