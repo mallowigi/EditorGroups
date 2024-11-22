@@ -33,8 +33,8 @@ import com.intellij.util.Alarm
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
-import com.intellij.util.ui.update.lazyUiDisposable
 import kotlinx.coroutines.Runnable
+import krasa.editorGroups.support.lazyUiDisposable
 import krasa.editorGroups.tabs2.*
 import krasa.editorGroups.tabs2.border.EditorGroupsTabsBorder
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsDefaultTabPainterAdapter
@@ -247,7 +247,7 @@ open class KrTabsImpl(
 
   // Whether we should sort the tabs alphabetically
   val isAlphabeticalMode: Boolean
-    get() = false // TODO add setting for it
+    get() = true // TODO add setting for it
 
   /** The list of tabs. */
   override val tabs: List<EditorGroupTabInfo>
@@ -374,16 +374,19 @@ open class KrTabsImpl(
       override fun getDefaultComponent(aContainer: Container): Component? = toFocus
     }
 
+    // Hide popup focus
     lazyUiDisposable(parent = parentDisposable, ui = this, child = this) { child, project ->
       if (this@KrTabsImpl.project == null && project != null) {
         this@KrTabsImpl.project = project
       }
 
-      StartupUiUtil.addAwtListener({
+      val listener = AWTEventListener { _: AWTEvent? ->
         if (JBPopupFactory.getInstance().getChildPopups(this@KrTabsImpl).isEmpty()) {
           processFocusChange()
         }
-      }, AWTEvent.FOCUS_EVENT_MASK, parentDisposable)
+      }
+
+      Toolkit.getDefaultToolkit().addAWTEventListener(listener, AWTEvent.FOCUS_EVENT_MASK)
     }
 
     // Add client property to hide the tabs from the hierarchy
@@ -409,7 +412,7 @@ open class KrTabsImpl(
     }.addTo(this)
 
     scrollBarChangeListener = ChangeListener { updateTabsOffsetFromScrollBar() }
-    
+
     setTabsPosition(tabsPosition)
   }
 
