@@ -53,6 +53,8 @@ class EditorGroupTabLabel(
     get() = tabs.isHoveredTab(this)
     private set(value) {
       if (field == value) return
+      field = value
+
       when {
         value -> tabs.setHovered(label = this)
         else  -> tabs.unHover(label = this)
