@@ -29,7 +29,6 @@ import com.intellij.ui.popup.list.SelectablePanel
 import com.intellij.ui.switcher.QuickActionProvider
 import com.intellij.ui.tabs.impl.MorePopupAware
 import com.intellij.ui.tabs.impl.SingleHeightTabs
-import com.intellij.util.Alarm
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
@@ -419,6 +418,31 @@ open class KrTabsImpl(
   @Suppress("IncorrectParentDisposable")
   constructor(project: Project) : this(project = project, parentDisposable = project)
 
+  internal fun isScrollBarAdjusting(): Boolean = scrollBar.valueIsAdjusting
+
+  /** Add an event listener to specify whether the mouse is inside the tabs area. */
+  private fun addMouseMotionAwtListener(parentDisposable: Disposable) {
+    val listener = AWTEventListener { event ->
+      val tabRectangle = lastLayoutPass?.headerRectangle ?: return@AWTEventListener
+
+      event as MouseEvent
+      val point = event.point
+      SwingUtilities.convertPointToScreen(point, event.component)
+
+      var rectangle = visibleRect.intersection(tabRectangle)
+      val p = rectangle.location
+      SwingUtilities.convertPointToScreen(p, this@KrTabsImpl)
+      rectangle.location = p
+
+      val inside = rectangle.contains(point)
+      if (inside == isMouseInsideTabsArea) return@AWTEventListener
+
+      isMouseInsideTabsArea = inside
+    }
+
+    Toolkit.getDefaultToolkit().addAWTEventListener(listener, AWTEvent.MOUSE_MOTION_EVENT_MASK)
+  }
+
   fun sortTabsAlphabetically(tabs: MutableList<EditorGroupTabInfo>) {
     tabs.sortWith { o1, o2 -> NaturalComparator.INSTANCE.compare(o1.text, o2.text) }
   }
@@ -426,41 +450,6 @@ open class KrTabsImpl(
   protected fun createTabBorder(): EditorGroupsTabsBorder = EditorGroupsTabsBorder(this)
 
   protected open fun createTabPainterAdapter(): EditorGroupsTabPainterAdapter = EditorGroupsDefaultTabPainterAdapter()
-
-  private fun addMouseMotionAwtListener(parentDisposable: Disposable) {
-    StartupUiUtil.addAwtListener(
-      object : AWTEventListener {
-        val afterScroll = Alarm(parentDisposable)
-
-        override fun eventDispatched(event: AWTEvent) {
-          val tabRectangle = lastLayoutPass?.headerRectangle ?: return
-          event as MouseEvent
-          val point = event.point
-          SwingUtilities.convertPointToScreen(point, event.component)
-          var rectangle = visibleRect
-          rectangle = rectangle.intersection(tabRectangle)
-          val p = rectangle.location
-          SwingUtilities.convertPointToScreen(p, this@KrTabsImpl)
-          rectangle.location = p
-          val inside = rectangle.contains(point)
-          if (inside == isMouseInsideTabsArea) {
-            return
-          }
-
-          isMouseInsideTabsArea = inside
-          afterScroll.cancelAllRequests()
-          if (!inside) {
-            afterScroll.addRequest({
-              if (!isMouseInsideTabsArea) {
-                relayout(false, false)
-              }
-            }, 500)
-          }
-        }
-      },
-      AWTEvent.MOUSE_MOTION_EVENT_MASK, parentDisposable
-    )
-  }
 
   private fun isInsideTabsArea(x: Int, y: Int): Boolean {
     val area = lastLayoutPass?.headerRectangle?.size ?: return false
@@ -1739,8 +1728,6 @@ open class KrTabsImpl(
     }
     relayout(forced, layoutNow)
   }
-
-  internal fun isScrollBarAdjusting(): Boolean = scrollBar.valueIsAdjusting
 
   override fun addImpl(component: Component, constraints: Any?, index: Int) {
     unqueueFromRemove(component)
