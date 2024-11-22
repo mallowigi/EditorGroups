@@ -10,8 +10,6 @@ public interface KrTabsPresentation {
 
   KrTabsPresentation setUiDecorator(@Nullable TabUiDecorator decorator);
 
-  KrTabsPresentation setRequestFocusOnLastFocusedComponent(boolean request);
-
   void setPaintBlocked(boolean blocked, boolean takeSnapshot);
 
   KrTabsPresentation setInnerInsets(Insets innerInsets);
@@ -21,9 +19,6 @@ public interface KrTabsPresentation {
 
   @NotNull
   EditorGroupsTabsBase getJBTabs();
-
-  @NotNull
-  KrTabsPresentation setActiveTabFillIn(@Nullable Color color);
 
   EditorGroupsTabsPosition getTabsPosition();
 

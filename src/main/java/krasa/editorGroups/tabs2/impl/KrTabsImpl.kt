@@ -221,28 +221,6 @@ open class KrTabsImpl(
   private val scrollBarModel: BoundedRangeModel
     get() = scrollBar.model
 
-  // Flag to indicate if the a tab is focused (and not the pane)
-  private val isMyChildIsFocusedNow: Boolean
-    get() {
-      val owner = getFocusOwner() ?: return false
-      return when {
-        mySelectedInfo != null && !SwingUtilities.isDescendingFrom(owner, mySelectedInfo!!.component) -> false
-        else                                                                                          ->
-          SwingUtilities.isDescendingFrom(owner, this)
-      }
-    }
-
-  // Returns the current focus owner of this tabs panel
-  protected open val focusOwnerToStore: JComponent?
-    get() {
-      val owner = getFocusOwner() ?: return null
-      val tabs = ComponentUtil.getParentOfType(KrTabsImpl::class.java, owner.parent)
-      return when {
-        tabs === this -> owner
-        else          -> null
-      }
-    }
-
   // Layout insets
   val layoutInsets: Insets
     get() = tabBorder.effectiveBorder
@@ -302,34 +280,22 @@ open class KrTabsImpl(
   // Map infos to labels
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
 
-  private var paintFocus = false
-  private var isRequestFocusOnLastFocusedComponent = false
-
-  private var activeTabFillIn: Color? = null
-
   var position: EditorGroupsTabsPosition = EditorGroupsTabsPosition.TOP
     private set
 
   /** @return insets, that should be used to layout [KrTabsImpl.moreToolbar] */
   val actionsInsets: Insets = JBInsets.create(Insets(0, 5, 0, 8))
 
+  // Return the focused component
   private val toFocus: JComponent?
     get() {
       val info = selectedInfo ?: return null
-      var toFocus: JComponent? = null
+      var toFocus: JComponent? = info.component
+      if (toFocus == null || !toFocus.isShowing) return null
 
-      if (isRequestFocusOnLastFocusedComponent && info.lastFocusOwner != null && !isMyChildIsFocusedNow) {
-        toFocus = info.lastFocusOwner
-      }
-
-      if (toFocus == null) {
-        toFocus = info.component
-        if (toFocus == null || !toFocus.isShowing) return null
-
-        val policyToFocus = focusManager.getFocusTargetFor(toFocus)
-        if (policyToFocus != null) {
-          toFocus = policyToFocus
-        }
+      val policyToFocus = focusManager.getFocusTargetFor(toFocus)
+      if (policyToFocus != null) {
+        return policyToFocus
       }
 
       return toFocus
@@ -339,20 +305,22 @@ open class KrTabsImpl(
     isOpaque = true
     background = tabPainter.getBackgroundColor()
     border = tabBorder
+    // reset decorations
     setUiDecorator(null)
     setLayout(createRowLayout())
+
+    // Add disposer for popup
     popupListener = object : PopupMenuListener {
       override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {}
-      override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) {
-        disposePopupListener()
-      }
 
-      override fun popupMenuCanceled(e: PopupMenuEvent) {
-        disposePopupListener()
-      }
+      override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) = disposePopupListener()
+
+      override fun popupMenuCanceled(e: PopupMenuEvent) = disposePopupListener()
     }
 
     val actionManager = ActionManager.getInstance()
+
+    // More tabs toolbar
     @Suppress("UnresolvedPluginConfigReference")
     moreToolbar = createToolbar(
       group = DefaultActionGroup(actionManager.getAction("TabList")),
@@ -360,6 +328,7 @@ open class KrTabsImpl(
       actionManager = actionManager
     )
     add(moreToolbar.component)
+
     Disposer.register(parentDisposable) { setTitleProducer(null) }
 
     // This scroll pane won't be shown on screen, it is needed only to handle scrolling events and properly update a scrolling model
@@ -882,51 +851,6 @@ open class KrTabsImpl(
     }
   }
 
-  private fun showTabLabelsPopup(rect: Rectangle, hiddenInfos: List<EditorGroupTabInfo>): JBPopup {
-    val gridPanel = JPanel(GridLayout(hiddenInfos.size, 1))
-    val scrollPane: JScrollPane = object : JBScrollPane(gridPanel) {
-      override fun getPreferredSize(): Dimension {
-        val size = super.getPreferredSize()
-        if (ScreenUtil.getScreenRectangle(this@KrTabsImpl).height < gridPanel.preferredSize.height) {
-          size.width += UIUtil.getScrollBarWidth()
-        }
-        return size
-      }
-    }
-    val popup = JBPopupFactory.getInstance().createComponentPopupBuilder(scrollPane, null).createPopup()
-    for (info in hiddenInfos) {
-      val label = createTabLabel(info)
-      label.isDoubleBuffered = true
-      label.setText(info.coloredText)
-      label.setIcon(info.icon)
-      label.setAlignmentToCenter()
-      label.apply(uiDecorator?.decoration ?: defaultDecorator.decoration)
-      label.addMouseListener(object : MouseAdapter() {
-        override fun mouseClicked(e: MouseEvent) {
-          if (e.isShiftDown && !e.isPopupTrigger) {
-            removeTab(info)
-            if (canShowMorePopup()) {
-              showMorePopup()
-            }
-            popup.cancel()
-          } else {
-            select(info, true)
-          }
-        }
-      })
-      add(label)
-      try {
-        // label.updateTabActions()
-      } finally {
-        remove(label)
-      }
-      gridPanel.add(label)
-    }
-    popup.content.putClientProperty(MorePopupAware::class.java, true)
-    popup.show(RelativePoint(this, Point(rect.x, rect.y + rect.height)))
-    return popup
-  }
-
   override fun requestFocus() {
     val toFocus = toFocus
     when (toFocus) {
@@ -1046,10 +970,6 @@ open class KrTabsImpl(
       } else {
         requestFocus(toFocus, requestFocusInWindow)
       }
-    }
-
-    if (isRequestFocusOnLastFocusedComponent && mySelectedInfo != null && isMyChildIsFocusedNow) {
-      mySelectedInfo!!.lastFocusOwner = focusOwnerToStore
     }
 
     val oldInfo = mySelectedInfo
@@ -1904,13 +1824,6 @@ open class KrTabsImpl(
 
   override fun getIndexOf(tabInfo: EditorGroupTabInfo?): Int = getVisibleInfos().indexOf(tabInfo)
 
-  override fun setActiveTabFillIn(color: Color?): KrTabsPresentation {
-    if (!isChanged(activeTabFillIn, color)) return this
-    activeTabFillIn = color
-    revalidateAndRepaint(false)
-    return this
-  }
-
   private fun disposePopupListener() {
     if (activePopup != null) {
       activePopup!!.removePopupMenuListener(popupListener)
@@ -1965,11 +1878,6 @@ open class KrTabsImpl(
     visibleTabInfos.sortWith(comparator)
     resetTabsCache()
     relayout(forced = true, layoutNow = false)
-  }
-
-  override fun setRequestFocusOnLastFocusedComponent(requestFocusOnLastFocusedComponent: Boolean): KrTabsPresentation {
-    isRequestFocusOnLastFocusedComponent = requestFocusOnLastFocusedComponent
-    return this
   }
 
   override fun uiDataSnapshot(sink: DataSink) {
