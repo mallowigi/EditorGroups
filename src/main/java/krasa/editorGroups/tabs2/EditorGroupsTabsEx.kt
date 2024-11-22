@@ -2,8 +2,6 @@ package krasa.editorGroups.tabs2
 
 import com.intellij.openapi.actionSystem.DataKey
 import krasa.editorGroups.tabs2.label.EditorGroupTabInfo
-import org.jetbrains.annotations.Nls
-import javax.swing.Icon
 
 interface EditorGroupsTabsEx : EditorGroupsTabsBase {
 
@@ -18,8 +16,6 @@ interface EditorGroupsTabsEx : EditorGroupsTabsBase {
   fun getToSelectOnRemoveOf(info: EditorGroupTabInfo): EditorGroupTabInfo?
 
   fun sortTabs(comparator: Comparator<EditorGroupTabInfo>)
-
-  fun setTitleProducer(titleProducer: (() -> Pair<Icon, @Nls String>)?)
 
   companion object {
     @JvmField

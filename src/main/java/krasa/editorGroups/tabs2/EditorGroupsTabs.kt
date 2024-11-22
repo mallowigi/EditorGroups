@@ -16,7 +16,7 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 
 /** Fork of [com.intellij.ui.tabs.impl.JBEditorTabs]. */
-class EditorGroupsTabsContainer(private val project: Project, parent: Disposable, private val file: VirtualFile) :
+class EditorGroupsTabs(private val project: Project, parent: Disposable, private val file: VirtualFile) :
   EditorGroupsPanelTabs(project, parent) {
   /** The single row layout that will contain our component. */
   private val mySingleRowLayout = createRowLayout()

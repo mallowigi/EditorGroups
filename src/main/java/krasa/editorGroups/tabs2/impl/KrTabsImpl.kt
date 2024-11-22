@@ -329,8 +329,6 @@ open class KrTabsImpl(
     )
     add(moreToolbar.component)
 
-    Disposer.register(parentDisposable) { setTitleProducer(null) }
-
     // This scroll pane won't be shown on screen, it is needed only to handle scrolling events and properly update a scrolling model
     val fakeScrollPane =
       JBScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS)
@@ -614,20 +612,6 @@ open class KrTabsImpl(
   }
 
   override fun updateTabActions(validateNow: Boolean) {
-  }
-
-  override fun setTitleProducer(titleProducer: (() -> Pair<Icon, @Nls String>)?) {
-    if (titleProducer != null) {
-      val toolbar = ActionManager.getInstance().createActionToolbar(/* place = */
-        ActionPlaces.TABS_MORE_TOOLBAR,
-        /* group = */DefaultActionGroup(
-          TitleAction(tabs = this, titleProvider = titleProducer)
-        ),
-        /* horizontal = */ true
-      )
-      toolbar.targetComponent = null
-      toolbar.setMiniMode(true)
-    }
   }
 
   override fun canShowMorePopup(): Boolean {
