@@ -68,11 +68,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
       length += getStartPosition(passInfo)
 
-      val toolbarInsets = myTabs.actionsInsets
-      val insets = toolbarInsets.left + toolbarInsets.right
-
-      length -= insets
-
       return length
     }
 
