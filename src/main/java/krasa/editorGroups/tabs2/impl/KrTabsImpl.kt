@@ -17,6 +17,7 @@ import com.intellij.openapi.rd.fill2DRoundRect
 import com.intellij.openapi.ui.popup.*
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.openapi.util.*
+import com.intellij.openapi.util.text.NaturalComparator
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.ui.*
 import com.intellij.ui.awt.RelativePoint
@@ -75,7 +76,6 @@ private const val LAYOUT_DONE: @NonNls String = "Layout.done"
 open class KrTabsImpl(
   private var project: Project?,
   private val parentDisposable: Disposable,
-  val tabListOptions: EditorGroupsTabListOptions,
 ) : JComponent(),
   EditorGroupsTabsEx,
   PropertyChangeListener,
@@ -267,6 +267,11 @@ open class KrTabsImpl(
   override val tabCount: Int
     get() = tabs.size
 
+  // Whether we should sort the tabs alphabetically
+  val isAlphabeticalMode: Boolean
+    get() = false // TODO add setting for it
+
+  /** The list of tabs. */
   override val tabs: List<EditorGroupTabInfo>
     get() {
       // If allTabs is not null, it means that the tabs are already sorted and we can return them directly.
@@ -277,27 +282,24 @@ open class KrTabsImpl(
         result.add(getIndexInVisibleArray(tabInfo), tabInfo)
       }
 
+      if (isAlphabeticalMode) {
+        sortTabsAlphabetically(result)
+      }
+
       this.allTabs = result
       return result
     }
 
+  /** The currently selected tab. */
   override val selectedInfo: EditorGroupTabInfo?
     get() = when {
       oldSelection != null                     -> oldSelection
-
-      mySelectedInfo == null                   -> when {
-        visibleTabInfos.isEmpty() -> null
-        else                      -> visibleTabInfos[0]
-      }
-
+      mySelectedInfo == null                   -> visibleTabInfos.firstOrNull()
       visibleTabInfos.contains(mySelectedInfo) -> mySelectedInfo
-
-      else                                     -> {
-        setSelectedInfo(null)
-        null
-      }
+      else                                     -> null
     }
 
+  // Map infos to labels
   val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
 
   private var paintFocus = false
@@ -428,11 +430,9 @@ open class KrTabsImpl(
   @Suppress("IncorrectParentDisposable")
   constructor(project: Project) : this(project = project, parentDisposable = project)
 
-  constructor(project: Project?, parentDisposable: Disposable) : this(
-    project = project,
-    parentDisposable = parentDisposable,
-    tabListOptions = EditorGroupsTabListOptions(),
-  )
+  fun sortTabsAlphabetically(tabs: MutableList<EditorGroupTabInfo>) {
+    tabs.sortWith { o1, o2 -> NaturalComparator.INSTANCE.compare(o1.text, o2.text) }
+  }
 
   protected fun createTabBorder(): EditorGroupsTabsBorder = EditorGroupsTabsBorder(this)
 
@@ -1900,9 +1900,6 @@ open class KrTabsImpl(
     }
 
     isFocused = focused
-    if (paintFocus) {
-      repaint()
-    }
   }
 
   override fun getIndexOf(tabInfo: EditorGroupTabInfo?): Int = getVisibleInfos().indexOf(tabInfo)
@@ -1911,16 +1908,6 @@ open class KrTabsImpl(
     if (!isChanged(activeTabFillIn, color)) return this
     activeTabFillIn = color
     revalidateAndRepaint(false)
-    return this
-  }
-
-  override fun setFocusCycle(root: Boolean): KrTabsPresentation {
-    isFocusCycleRoot = root
-    return this
-  }
-
-  override fun setPaintFocus(paintFocus: Boolean): KrTabsPresentation {
-    this.paintFocus = paintFocus
     return this
   }
 

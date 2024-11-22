@@ -8,8 +8,6 @@ import java.awt.*;
 
 public interface KrTabsPresentation {
 
-  KrTabsPresentation setPaintFocus(boolean paintFocus);
-
   KrTabsPresentation setUiDecorator(@Nullable TabUiDecorator decorator);
 
   KrTabsPresentation setRequestFocusOnLastFocusedComponent(boolean request);
@@ -17,8 +15,6 @@ public interface KrTabsPresentation {
   void setPaintBlocked(boolean blocked, boolean takeSnapshot);
 
   KrTabsPresentation setInnerInsets(Insets innerInsets);
-
-  KrTabsPresentation setFocusCycle(boolean root);
 
   @NotNull
   KrTabsPresentation setToDrawBorderIfTabsHidden(boolean draw);
