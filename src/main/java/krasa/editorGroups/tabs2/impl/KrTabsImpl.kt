@@ -25,6 +25,7 @@ import com.intellij.ui.popup.list.GroupedItemsListRenderer
 import com.intellij.ui.popup.list.SelectablePanel
 import com.intellij.ui.switcher.QuickActionProvider
 import com.intellij.ui.tabs.impl.MorePopupAware
+import com.intellij.util.Alarm
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
@@ -77,8 +78,10 @@ open class KrTabsImpl(
   QuickActionProvider,
   MorePopupAware,
   Accessible {
+  private val scrollBarActivityTracker = ScrollBarActivityTracker()
+
   // List of visible tabs
-  private val visibleTabInfos = ArrayList<EditorGroupTabInfo>()
+  internal val visibleTabInfos = ArrayList<EditorGroupTabInfo>()
 
   // Map tab -> index
   private val hiddenInfos = HashMap<EditorGroupTabInfo, Int>()
@@ -156,6 +159,10 @@ open class KrTabsImpl(
 
   // Instance of tab decorator
   internal var uiDecorator: TabUiDecorator? = null
+
+  // Keep a state for recent activity for the scrollbar
+  val isRecentlyActive: Boolean
+    get() = scrollBarActivityTracker.isRecentlyActive
 
   // tabs cache
   private var allTabs: List<EditorGroupTabInfo>? = null
@@ -365,10 +372,8 @@ open class KrTabsImpl(
     }
 
     // Hide popup focus
-    lazyUiDisposable(parent = parentDisposable, ui = this, child = this) { child, project ->
-      if (this@KrTabsImpl.project == null && project != null) {
-        this@KrTabsImpl.project = project
-      }
+    lazyUiDisposable(parent = parentDisposable, ui = this, child = this) { _, proj ->
+      if (project == null && proj != null) project = proj
 
       val listener = AWTEventListener { _: AWTEvent? ->
         if (JBPopupFactory.getInstance().getChildPopups(this@KrTabsImpl).isEmpty()) {
@@ -414,6 +419,11 @@ open class KrTabsImpl(
     tabs.sortWith { o1, o2 -> NaturalComparator.INSTANCE.compare(o1.text, o2.text) }
   }
 
+  /** Reset scrollbar activity. */
+  protected fun resetScrollBarActivity() {
+    scrollBarActivityTracker.reset()
+  }
+
   /** Whether the scrollbar is adjusting. */
   internal fun isScrollBarAdjusting(): Boolean = scrollBar.valueIsAdjusting
 
@@ -435,6 +445,11 @@ open class KrTabsImpl(
       if (inside == isMouseInsideTabsArea) return@AWTEventListener
 
       isMouseInsideTabsArea = inside
+      scrollBarActivityTracker.cancelActivityTimer()
+
+      if (!inside) {
+        scrollBarActivityTracker.setRecentlyActive()
+      }
     }
 
     Toolkit.getDefaultToolkit().addAWTEventListener(listener, AWTEvent.MOUSE_MOTION_EVENT_MASK)
@@ -1445,6 +1460,7 @@ open class KrTabsImpl(
     if (!deferredToRemove.containsKey(c)) deferredToRemove.put(c, c)
   }
 
+  /** Updates the scroll bar's model with the latest values from the layout pass and effective layout. */
   private fun updateScrollBarModel() {
     val scrollBarModel = scrollBarModel
     if (scrollBarModel.valueIsAdjusting) return
@@ -1460,25 +1476,38 @@ open class KrTabsImpl(
     scrollBarModel.extent = if (extent == 0) value + maximum else extent
   }
 
+  /** Update the tab offset according to the scrollbar model. */
   private fun updateTabsOffsetFromScrollBar() {
+    if (!isScrollBarAdjusting()) {
+      scrollBarActivityTracker.setRecentlyActive()
+      toggleScrollBar(isMouseInsideTabsArea)
+    }
+
     val currentUnitsOffset = effectiveLayout!!.scrollOffset
     val updatedOffset = scrollBarModel.value
+
     effectiveLayout!!.scroll(updatedOffset - currentUnitsOffset)
-    relayout(forced = false, layoutNow = false)
+
+    SwingUtilities.invokeLater {
+      relayout(forced = false, layoutNow = false)
+    }
   }
 
   override fun doLayout() {
+    // Model changes caused by layout changes shouldn't be interpreted as activity.
+    scrollBarActivityTracker.suspend()
+
     try {
       val moreBoundsBeforeLayout = moreToolbar!!.component.bounds
       headerFitSize = computeHeaderFitSize()
-      val visible = visibleTabInfos.toMutableList()
 
+      val visible = visibleTabInfos.toMutableList()
       val effectiveLayout = effectiveLayout
       if (effectiveLayout is EditorGroupsSingleRowLayout) {
         lastLayoutPass = effectiveLayout.layoutSingleRow(visible)
       }
 
-      centerizeMoreToolbarPosition()
+      centerMoreToolbarPosition()
 
       applyResetComponents()
 
@@ -1489,10 +1518,11 @@ open class KrTabsImpl(
       updateToolbarIfVisibilityChanged(moreToolbar, moreBoundsBeforeLayout)
     } finally {
       forcedRelayout = false
+      scrollBarActivityTracker.resume()
     }
   }
 
-  private fun centerizeMoreToolbarPosition() {
+  private fun centerMoreToolbarPosition() {
     val moreRect = lastLayoutPass!!.moreRect
     val mComponent = moreToolbar!!.component
     if (!moreRect.isEmpty) {
@@ -2042,6 +2072,46 @@ open class KrTabsImpl(
 
     @JvmField
     val toolbar = Dimension()
+  }
+
+  private inner class ScrollBarActivityTracker {
+    var isRecentlyActive: Boolean = false
+      private set
+
+    private val relayoutDelay = 2000
+    private val relayoutAlarm = Alarm(parentDisposable)
+    private var suspended = false
+
+    fun suspend() {
+      suspended = true
+    }
+
+    fun resume() {
+      suspended = false
+    }
+
+    fun reset() {
+      relayoutAlarm.cancelAllRequests()
+      isRecentlyActive = false
+    }
+
+    fun setRecentlyActive() {
+      if (suspended) return
+
+      relayoutAlarm.cancelAllRequests()
+      isRecentlyActive = true
+
+      if (!relayoutAlarm.isDisposed) {
+        relayoutAlarm.addRequest(Runnable {
+          isRecentlyActive = false
+          relayout(forced = false, layoutNow = false)
+        }, relayoutDelay)
+      }
+    }
+
+    fun cancelActivityTimer() {
+      relayoutAlarm.cancelAllRequests()
+    }
   }
 
   companion object {
