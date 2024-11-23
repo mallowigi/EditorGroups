@@ -295,9 +295,9 @@ class IndexCache(private val project: Project) {
     currentFile: VirtualFile
   ): EditorGroup {
     return when {
-      includeAutoGroups && config.isAutoSameFeature && last == AutoGroup.SAME_FEATURE -> SameFeatureGroup.INSTANCE
       includeAutoGroups && config.isAutoSameName && last == AutoGroup.SAME_FILE_NAME  -> SameNameGroup.INSTANCE
       includeAutoGroups && config.isAutoFolders && last == AutoGroup.DIRECTORY        -> FolderGroup.INSTANCE
+      includeAutoGroups && config.isAutoSameFeature && last == AutoGroup.SAME_FEATURE -> SameFeatureGroup.INSTANCE
       last == HidePanelGroup.ID                                                       -> HidePanelGroup.INSTANCE
 
       includeFavorites && last.startsWith(RegexGroup.ID_PREFIX)                       -> {
