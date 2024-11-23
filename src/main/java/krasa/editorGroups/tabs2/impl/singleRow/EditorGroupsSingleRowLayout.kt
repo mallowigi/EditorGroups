@@ -1,10 +1,8 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package krasa.editorGroups.tabs2.impl.singleRow
 
 import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
 import krasa.editorGroups.tabs2.impl.EditorGroupsTabLayout
 import krasa.editorGroups.tabs2.impl.KrTabsImpl
-import krasa.editorGroups.tabs2.impl.KrTabsImpl.Companion.resetLayout
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsSingleRowLayoutStrategy.Bottom
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsSingleRowLayoutStrategy.Top
 import krasa.editorGroups.tabs2.label.EditorGroupTabInfo
@@ -29,7 +27,7 @@ abstract class EditorGroupsSingleRowLayout(
     }
 
   /** Check whether to relayout tab labels. */
-  @Suppress("detekt:ReturnCount")
+  @Suppress("detekt:ReturnCount", "HardCodedStringLiteral")
   protected open fun shouldRelayoutLabels(passInfo: EditorGroupsSingleRowPassInfo): Boolean {
     var layoutLabels = true
 
@@ -126,9 +124,7 @@ abstract class EditorGroupsSingleRowLayout(
   }
 
   protected open fun layoutMoreButton(passInfo: EditorGroupsSingleRowPassInfo) {
-    if (!passInfo.toDrop.isEmpty()) {
-      passInfo.moreRect = strategy.getMoreRect(passInfo)
-    }
+    passInfo.moreRect = strategy.getMoreRect(passInfo)
   }
 
   protected fun layoutLabels(passInfo: EditorGroupsSingleRowPassInfo) {
@@ -161,10 +157,6 @@ abstract class EditorGroupsSingleRowLayout(
       if (!continueLayout) {
         layoutStopped = true
       }
-    }
-
-    for (eachInfo in passInfo.toDrop) {
-      resetLayout(tabs.infoToLabel[eachInfo])
     }
   }
 
@@ -206,6 +198,5 @@ abstract class EditorGroupsSingleRowLayout(
     return strategy.getLengthIncrement(label?.preferredSize ?: Dimension()) + tabs.tabHGap
   }
 
-  override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean =
-    lastSingleRowLayout != null && lastSingleRowLayout!!.toDrop.contains(tabInfo)
+  override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean = lastSingleRowLayout != null
 }

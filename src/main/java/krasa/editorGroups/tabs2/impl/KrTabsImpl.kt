@@ -746,14 +746,18 @@ open class KrTabsImpl(
     return this
   }
 
+  /** Whether we need to show the more tabs button. */
   override fun canShowMorePopup(): Boolean {
     val rect = lastLayoutPass?.moreRect
     return rect != null && !rect.isEmpty
   }
 
+  /** Show the more tabs popup. */
   override fun showMorePopup(): JBPopup? {
     val rect = lastLayoutPass?.moreRect ?: return null
-    val hiddenInfos = getVisibleInfos().filter { effectiveLayout!!.isTabHidden(it) }.takeIf { it.isNotEmpty() } ?: return null
+    val hiddenInfos = getVisibleInfos()
+      .filter { effectiveLayout!!.isTabHidden(it) }
+      .takeIf { it.isNotEmpty() } ?: return null
 
     return showListPopup(rect = rect, hiddenInfos = hiddenInfos)
   }

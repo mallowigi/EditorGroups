@@ -32,9 +32,6 @@ class EditorGroupsSingleRowPassInfo(
   val toLayout: MutableList<EditorGroupTabInfo> = mutableListOf<EditorGroupTabInfo>()
 
   @JvmField
-  val toDrop: MutableList<EditorGroupTabInfo> = mutableListOf<EditorGroupTabInfo>()
-
-  @JvmField
   val moreRectAxisSize: Int = layout.strategy.moreRectAxisSize
 
   @JvmField
