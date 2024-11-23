@@ -758,6 +758,7 @@ open class KrTabsImpl(
     return showListPopup(rect = rect, hiddenInfos = hiddenInfos)
   }
 
+  /** Show the hidden tabs popup. */
   private fun showListPopup(rect: Rectangle, hiddenInfos: List<EditorGroupTabInfo>): JBPopup {
     // get the first label of hidden infos, this is where we'll add our separator
     val separatorIndex = hiddenInfos.indexOfFirst { info ->
@@ -882,6 +883,7 @@ open class KrTabsImpl(
     return popup
   }
 
+  /** Request focus. */
   override fun requestFocus() {
     val toFocus = toFocus
     when (toFocus) {
@@ -890,45 +892,71 @@ open class KrTabsImpl(
     }
   }
 
+  /** Request focus in window. */
   override fun requestFocusInWindow(): Boolean = toFocus?.requestFocusInWindow() ?: super.requestFocusInWindow()
 
+  /** Add tab at the given index. */
   override fun addTab(info: EditorGroupTabInfo, index: Int): EditorGroupTabInfo =
-    addTab(info = info, index = index, isDropTarget = false, fireEvents = true)
+    addTab(info = info, index = index, fireEvents = true)
 
+  /** Add a tab silently at the given index (e.g. do not fire events) */
   override fun addTabSilently(info: EditorGroupTabInfo, index: Int): EditorGroupTabInfo =
-    addTab(info = info, index = index, isDropTarget = false, fireEvents = false)
+    addTab(info = info, index = index, fireEvents = false)
 
-  private fun addTab(info: EditorGroupTabInfo, index: Int, isDropTarget: Boolean, fireEvents: Boolean): EditorGroupTabInfo {
-    if (!isDropTarget && tabs.contains(info)) {
-      return tabs[tabs.indexOf(info)]
-    }
+  /**
+   * Adds a new tab into the editor group at a specified index and optionally fires events related to the addition.
+   *
+   * @param info Information about the editor group tab to be added.
+   * @param index The position at which the tab should be added.
+   * @param fireEvents Whether or not to fire events related to the addition of the tab.
+   * @return Information about the added editor group tab.
+   */
+  private fun addTab(info: EditorGroupTabInfo, index: Int, fireEvents: Boolean): EditorGroupTabInfo {
+    if (addTabWithoutUpdating(tabInfo = info, index = index)) return tabs[tabs.indexOf(info)]
 
-    info.changeSupport.addPropertyChangeListener(this)
-    val label = createTabLabel(info)
-    infoToLabel.put(info, label)
-    if (!isDropTarget) {
-      if (index < 0 || index > visibleTabInfos.size - 1) {
-        visibleTabInfos.add(info)
-      } else {
-        visibleTabInfos.add(index, info)
-      }
-    }
-    resetTabsCache()
-    updateText(info)
-    updateIcon(info)
-    info.tabLabel = label
-    add(label)
-    adjust(info)
-    updateAll(false)
-    if (info.isHidden) {
-      updateHiding()
-    }
+    updateAll(forcedRelayout = false)
     if (fireEvents && tabCount == 1) {
-      fireBeforeSelectionChanged(null, info)
-      fireSelectionChanged(null, info)
+      fireBeforeSelectionChanged(oldInfo = null, newInfo = info)
+      fireSelectionChanged(oldInfo = null, newInfo = info)
     }
-    revalidateAndRepaint(false)
+
+    revalidateAndRepaint(layoutNow = false)
     return info
+  }
+
+  /**
+   * Adds a tab without updating the existing tabs.
+   *
+   * @param tabInfo the tab information to be added
+   * @param index the position at which the tab should be inserted
+   * @return true if tab already exists and adding was not performed, false otherwise
+   */
+  private fun addTabWithoutUpdating(tabInfo: EditorGroupTabInfo, index: Int): Boolean {
+    if (tabs.contains(tabInfo)) return true
+
+    tabInfo.changeSupport.addPropertyChangeListener(this)
+
+    // Create the tab label
+    val label = createTabLabel(tabInfo)
+    label.setText(tabInfo.coloredText)
+    label.toolTipText = tabInfo.tooltipText
+    label.setIcon(tabInfo.icon)
+
+    tabInfo.tabLabel = label
+    // TODO REMOVE THIS once we remove infoToLabel
+    infoToLabel.put(tabInfo, label)
+
+    // Add the tab at the given index
+    when {
+      index < 0 || index > visibleTabInfos.size - 1 -> visibleTabInfos.add(tabInfo)
+      else                                          -> visibleTabInfos.add(index, tabInfo)
+    }
+
+    resetTabsCache()
+    add(label)
+    // Remove scroll border
+    adjust(tabInfo)
+    return false
   }
 
   protected open fun createTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel = EditorGroupTabLabel(this, info)
@@ -1491,6 +1519,7 @@ open class KrTabsImpl(
       max.label.height = max.label.height.coerceAtLeast(label!!.preferredSize.height)
       max.label.width = max.label.width.coerceAtLeast(label.preferredSize.width)
     }
+
     return max
   }
 
