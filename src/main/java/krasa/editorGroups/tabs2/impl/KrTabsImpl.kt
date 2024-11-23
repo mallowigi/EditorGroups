@@ -7,7 +7,6 @@ import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.options.advanced.AdvancedSettings
@@ -249,7 +248,7 @@ open class KrTabsImpl(
 
       val result = visibleTabInfos.toMutableList()
       for (tabInfo in hiddenInfos.keys) {
-        result.add(getIndexInVisibleArray(tabInfo), tabInfo)
+        result.add(getIndexInHiddenInfos(tabInfo), tabInfo)
       }
 
       if (isAlphabeticalMode) {
@@ -989,10 +988,10 @@ open class KrTabsImpl(
   private fun updateAll(forcedRelayout: Boolean) {
     val toSelect = selectedInfo
     setSelectedInfo(toSelect)
-    updateContainer(forcedRelayout, false)
+    updateContainer(forced = forcedRelayout, layoutNow = false)
     removeDeferred()
     updateListeners()
-    updateEnabling()
+    updateEnabledState()
   }
 
   /** Select a tab. */
@@ -1019,263 +1018,340 @@ open class KrTabsImpl(
     }
   }
 
+  /**
+   * Handles a selection change in a tabbed interface, focusing the selected tab if requested, firing appropriate events, and updating the
+   * UI layout.
+   *
+   * @param tabInfo The information about the tab that lost or gained selection.
+   * @param requestFocus A flag indicating whether focus should be requested.
+   * @param requestFocusInWindow A flag indicating whether focus should be requested within the window.
+   * @return An ActionCallback representing the result of the focus request and subsequent UI updates.
+   */
   private fun executeSelectionChange(
-    info: EditorGroupTabInfo,
+    tabInfo: EditorGroupTabInfo,
     requestFocus: Boolean,
     requestFocusInWindow: Boolean
   ): ActionCallback {
-    if (mySelectedInfo != null && mySelectedInfo == info) {
-      if (!requestFocus) {
-        return ActionCallback.DONE
-      }
+    // If selecting the same tab, focus force it
+    if (mySelectedInfo != null && mySelectedInfo == tabInfo) {
+      if (!requestFocus) return ActionCallback.DONE
 
       val owner = focusManager.focusOwner
-      val c = info.component
-      return if (c != null && owner != null && (c === owner || SwingUtilities.isDescendingFrom(owner, c))) {
-        // This might look like a no-op, but in some cases it's not. In particular, it's required when a focus transfer has just been
-        // requested to another component. E.g., this happens on 'unsplit' operation when we remove an editor component from UI hierarchy and
-        // re-add it at once in a different layout, and want that editor component to preserve focus afterward.
-        requestFocus(owner, requestFocusInWindow)
-      } else {
-        requestFocus(toFocus, requestFocusInWindow)
+      val c = tabInfo.component
+
+      return when {
+        owner != null && (c === owner || SwingUtilities.isDescendingFrom(owner, c)) -> {
+          // This might look like a no-op, but in some cases it's not. In particular, it's required when a focus transfer has just been
+          // requested to another component. E.g., this happens on 'unsplit' operation when we remove an editor component from UI hierarchy and
+          // re-add it at once in a different layout, and want that editor component to preserve focus afterward.
+          requestFocusLaterOn(owner, requestFocusInWindow)
+        }
+
+        else                                                                        -> requestFocusLater(requestFocusInWindow)
       }
     }
 
-    val oldInfo = mySelectedInfo
-    setSelectedInfo(info)
+    // Keep new selected info
+    val oldTabInfo = mySelectedInfo
+    setSelectedInfo(tabInfo)
 
-    val newInfo = selectedInfo
-    val label = infoToLabel[info]
-    if (label != null) {
-      setComponentZOrder(label, 0)
-    }
+    // Put label at top of tab
+    val newInfo = mySelectedInfo
+    tabInfo.tabLabel?.let { setComponentZOrder(it, 0) }
 
+    // Lay scrollbar on top of tabs
     setComponentZOrder(scrollBar, 0)
-    fireBeforeSelectionChanged(oldInfo, newInfo)
+    // Fire events
+    fireBeforeSelectionChanged(oldTabInfo, newInfo)
 
-    val oldValue = isMouseInsideTabsArea
-
+    // Update the tabs component, removing or adding tabs if necessary
+    val oldMouseInsideTabsArea = isMouseInsideTabsArea
     try {
       updateContainer(forced = false, layoutNow = true)
     } finally {
-      isMouseInsideTabsArea = oldValue
+      isMouseInsideTabsArea = oldMouseInsideTabsArea
     }
 
-    fireSelectionChanged(oldInfo, newInfo)
-
-    if (!requestFocus) {
-      return removeDeferred()
-    }
+    // Fire events
+    fireSelectionChanged(oldTabInfo, newInfo)
+    // If no focus requested, return earlier after removing deferred to remove tabs
+    if (!requestFocus) return removeDeferred()
 
     val toFocus = toFocus
-    if (project != null && toFocus != null) {
-      val result = ActionCallback()
-      requestFocus(toFocus, requestFocusInWindow).doWhenProcessed {
-        if (project!!.isDisposed) {
-          result.setRejected()
-        } else {
-          removeDeferred().notifyWhenDone(result)
+    when {
+      project != null && toFocus != null -> {
+        val result = ActionCallback()
+
+        // Remove deferred and focus the toFocus
+        requestFocusLater(requestFocusInWindow).doWhenProcessed {
+          when {
+            project!!.isDisposed -> result.setRejected()
+            else                 -> removeDeferred().notifyWhenDone(result)
+          }
         }
+        return result
       }
-      return result
-    } else {
-      ApplicationManager.getApplication().invokeLater({
-        if (requestFocusInWindow) {
-          requestFocusInWindow()
-        } else {
-          focusManager.requestFocusInProject(this, project)
-        }
-      }, ModalityState.nonModal())
-      return removeDeferred()
+
+      else                               -> {
+        requestFocusLaterOn(this, requestFocusInWindow)
+        return removeDeferred()
+      }
     }
   }
 
+  /** Select tab without firing events. */
+  @RequiresEdt
+  fun selectTabSilently(tab: EditorGroupTabInfo) {
+    setSelectedInfo(tab)
+    // Lay components
+    setComponentZOrder(tab.tabLabel!!, 0)
+    setComponentZOrder(scrollBar, 0)
+
+    val oldMouseInsideTabs = isMouseInsideTabsArea
+    try {
+      val component = tab.component
+      if (component?.parent != null) add(component)
+    } finally {
+      isMouseInsideTabsArea = oldMouseInsideTabs
+    }
+  }
+
+  /** Fire event before changing selection. */
   private fun fireBeforeSelectionChanged(oldInfo: EditorGroupTabInfo?, newInfo: EditorGroupTabInfo?) {
-    if (oldInfo != newInfo) {
-      oldSelection = oldInfo
-      try {
-        for (eachListener in tabListeners) {
-          eachListener.beforeSelectionChanged(oldInfo, newInfo)
-        }
-      } finally {
-        oldSelection = null
-      }
+    if (oldInfo == newInfo) return
+    oldSelection = oldInfo
+
+    try {
+      tabListeners.forEach { it.beforeSelectionChanged(oldInfo, newInfo) }
+    } finally {
+      oldSelection = null
     }
   }
 
+  /** Fire event after changing selection. */
   private fun fireSelectionChanged(oldInfo: EditorGroupTabInfo?, newInfo: EditorGroupTabInfo?) {
-    if (oldInfo != newInfo) {
-      for (eachListener in tabListeners) {
-        eachListener?.selectionChanged(oldInfo, newInfo)
-      }
-    }
+    if (oldInfo == newInfo) return
+    tabListeners.forEach { it?.selectionChanged(oldInfo, newInfo) }
   }
 
+  /** Fire event when a tab is removed. */
   private fun fireTabRemoved(info: EditorGroupTabInfo) {
-    for (eachListener in tabListeners) {
-      eachListener?.tabRemoved(info)
-    }
+    tabListeners.forEach { it?.tabRemoved(info) }
   }
 
-  private fun requestFocus(toFocus: Component?, inWindow: Boolean): ActionCallback {
-    if (toFocus == null) {
-      return ActionCallback.DONE
-    }
-    if (isShowing) {
-      val result = ActionCallback()
-      ApplicationManager.getApplication().invokeLater {
-        if (inWindow) {
-          toFocus.requestFocusInWindow()
-          result.setDone()
-        } else {
-          focusManager.requestFocusInProject(toFocus, project).notifyWhenDone(result)
-        }
-      }
-      return result
-    }
-    return ActionCallback.REJECTED
-  }
+  /**
+   * Requests focus for the specified component at a later time.
+   *
+   * The method ensures that the focus request is performed on the Event Dispatch Thread (EDT). Depending on the value of `inWindow`, it
+   * either requests focus in the window or uses the focus manager to request focus in the project.
+   *
+   * @param toFocus the component for which the focus request should be performed. If null, the method immediately returns
+   *    `ActionCallback.DONE`.
+   * @param inWindow if true, the focus request is performed using `requestFocusInWindow`. If false, the focus manager is used to request
+   *    focus in the project.
+   * @return an `ActionCallback` that indicates the status of the focus request. It will be set to `DONE` if the request was successful, and
+   *    `REJECTED` if the component is not showing .
+   */
+  private fun requestFocusLaterOn(toFocus: Component?, inWindow: Boolean): ActionCallback {
+    if (toFocus == null) return ActionCallback.DONE
 
-  private fun removeDeferred(): ActionCallback {
-    if (deferredToRemove.isEmpty()) {
-      return ActionCallback.DONE
-    }
+    // If the component is not showing, return rejected
+    if (!isShowing) return ActionCallback.REJECTED
 
     val callback = ActionCallback()
-    val executionRequest = ++removeDeferredRequest
-    focusManager.doWhenFocusSettlesDown {
-      if (removeDeferredRequest == executionRequest) {
-        removeDeferredNow()
+    ApplicationManager.getApplication().invokeLater {
+      when {
+        inWindow -> {
+          toFocus.requestFocusInWindow()
+          callback.setDone()
+        }
+
+        else     -> focusManager.requestFocusInProject(toFocus, project).notifyWhenDone(callback)
       }
-      callback.setDone()
+    }
+
+    return callback
+  }
+
+  /**
+   * Requests focus to the `toFocus` component at a later time.
+   *
+   * @param inWindow Whether to request focus within the window or globally in the project.
+   * @return An ActionCallback indicating the result of the focus request.
+   */
+  private fun requestFocusLater(inWindow: Boolean): ActionCallback {
+    if (!isShowing) return ActionCallback.REJECTED
+
+    val callback = ActionCallback()
+    ApplicationManager.getApplication().invokeLater {
+      val toFocus = toFocus
+      when {
+        toFocus == null -> callback.setDone()
+        inWindow        -> {
+          toFocus.requestFocusInWindow()
+          callback.setDone()
+        }
+
+        else            -> focusManager.requestFocusInProject(toFocus, project).notifyWhenDone(callback)
+      }
     }
     return callback
   }
 
-  private fun unqueueFromRemove(c: Component) {
-    deferredToRemove.remove(c)
+  /** Remove deferred tabs. */
+  private fun removeDeferred(): ActionCallback {
+    if (deferredToRemove.isEmpty()) return ActionCallback.DONE
+
+    val callback = ActionCallback()
+    val executionRequest = ++removeDeferredRequest
+
+    focusManager.doWhenFocusSettlesDown {
+      if (removeDeferredRequest == executionRequest) removeDeferredNow()
+      callback.setDone()
+    }
+
+    return callback
   }
 
+  /** Immediately removes deferred elements from their parent, ensuring any pending removals are processed. */
   private fun removeDeferredNow() {
-    for (each in deferredToRemove.keys) {
-      if (each != null && each.parent === this) {
-        remove(each)
-      }
+    deferredToRemove.keys.forEach { tabToRemove ->
+      if (tabToRemove != null && tabToRemove.parent === this) remove(tabToRemove)
     }
+
     deferredToRemove.clear()
   }
 
+  /** Execute actions when specific tab properties change. */
   override fun propertyChange(evt: PropertyChangeEvent) {
     val tabInfo = evt.source as EditorGroupTabInfo
     when (evt.propertyName) {
-      EditorGroupTabInfo.ACTION_GROUP -> {
-        relayout(false, false)
-      }
+      EditorGroupTabInfo.ACTION_GROUP -> relayout(forced = false, layoutNow = false)
+      EditorGroupTabInfo.COMPONENT    -> relayout(forced = true, layoutNow = false)
 
-      EditorGroupTabInfo.COMPONENT    -> relayout(true, false)
       EditorGroupTabInfo.TEXT         -> {
         updateText(tabInfo)
-        revalidateAndRepaint()
+        revalidateAndRepaint(layoutNow = true)
       }
 
       EditorGroupTabInfo.ICON         -> {
         updateIcon(tabInfo)
-        revalidateAndRepaint()
+        revalidateAndRepaint(layoutNow = true)
       }
 
-      EditorGroupTabInfo.TAB_COLOR    -> revalidateAndRepaint()
+      EditorGroupTabInfo.TAB_COLOR    -> revalidateAndRepaint(layoutNow = true)
+
       EditorGroupTabInfo.HIDDEN       -> {
-        updateHiding()
-        relayout(false, false)
+        updateHiddenState()
+        relayout(forced = false, layoutNow = false)
       }
 
-      EditorGroupTabInfo.ENABLED      -> updateEnabling()
+      EditorGroupTabInfo.ENABLED      -> updateEnabledState()
     }
   }
 
-  private fun updateEnabling() {
+  /** Update enabled state of all tabs. */
+  private fun updateEnabledState() {
     val all = tabs
     for (tabInfo in all) {
-      infoToLabel[tabInfo]!!.setTabEnabled(tabInfo.isEnabled)
+      tabInfo.tabLabel?.setTabEnabled(tabInfo.isEnabled)
     }
-    val selected = selectedInfo
-    if (selected != null && !selected.isEnabled) {
-      val toSelect = getToSelectOnRemoveOf(selected)
-      if (toSelect != null) {
-        select(tabInfo = toSelect, requestFocus = focusManager.getFocusedDescendantFor(this) != null)
-      }
+
+    val selected = mySelectedInfo
+    if (selected == null || selected.isEnabled) return
+
+    // Try to select the requested tab with focus
+    val toSelect = getToSelectOnRemoveOf(selected)
+    if (toSelect != null) {
+      select(tabInfo = toSelect, requestFocus = focusManager.getFocusedDescendantFor(this) != null)
     }
   }
 
-  private fun updateHiding() {
-    var update = false
+  /** Update hidden state of all tabs. */
+  private fun updateHiddenState() {
+    var shouldUpdate = false
     val visible = visibleTabInfos.iterator()
+
+    // Update the visibleTabInfos list based on the hidden state of the tabs
     while (visible.hasNext()) {
       val tabInfo = visible.next()
       if (tabInfo.isHidden && !hiddenInfos.containsKey(tabInfo)) {
         hiddenInfos.put(tabInfo, visibleTabInfos.indexOf(tabInfo))
         visible.remove()
-        update = true
+        shouldUpdate = true
       }
     }
+
+    // Update hidden infos based on the visible state of the tabs
     val hidden = hiddenInfos.keys.iterator()
     while (hidden.hasNext()) {
-      val each = hidden.next()
-      if (!each.isHidden && hiddenInfos.containsKey(each)) {
-        visibleTabInfos.add(getIndexInVisibleArray(each), each)
+      val tabInfo = hidden.next()
+      if (!tabInfo.isHidden && hiddenInfos.containsKey(tabInfo)) {
+        visibleTabInfos.add(getIndexInHiddenInfos(tabInfo), tabInfo)
         hidden.remove()
-        update = true
+        shouldUpdate = true
       }
     }
-    if (update) {
+
+    if (shouldUpdate) {
       resetTabsCache()
-      if (mySelectedInfo != null && hiddenInfos.containsKey(mySelectedInfo)) {
-        val toSelect = getToSelectOnRemoveOf(mySelectedInfo!!)
-        setSelectedInfo(toSelect)
+      val oldSelectedInfo = mySelectedInfo
+      // Remove selected info from the hidden infos since it came into view
+      if (oldSelectedInfo != null && hiddenInfos.containsKey(oldSelectedInfo)) {
+        setSelectedInfo(getToSelectOnRemoveOf(oldSelectedInfo))
       }
-      updateAll(true)
+
+      updateAll(forcedRelayout = true)
     }
   }
 
-  private fun getIndexInVisibleArray(each: EditorGroupTabInfo): Int {
-    val info = hiddenInfos[each]
+  /**
+   * Gets the index of the specified tab information in the list of hidden tabs.
+   *
+   * @param tabInfo The tab information for which the index is to be found.
+   * @return The index of the tab information in the hidden infos list, or the size of the visible tab infos if it's not found in hidden
+   *    infos.
+   */
+  private fun getIndexInHiddenInfos(tabInfo: EditorGroupTabInfo): Int {
+    val info = hiddenInfos[tabInfo]
     var index = info ?: visibleTabInfos.size
+
     if (index > visibleTabInfos.size) {
       index = visibleTabInfos.size
     }
+
     if (index < 0) {
       index = 0
     }
+
     return index
   }
 
-  private fun updateIcon(tabInfo: EditorGroupTabInfo) {
-    infoToLabel[tabInfo]?.setIcon(tabInfo.icon)
-  }
+  /** Update the tab label icon with the tabInfo's icon. */
+  private fun updateIcon(tabInfo: EditorGroupTabInfo) = tabInfo.tabLabel?.setIcon(tabInfo.icon)
 
-  fun revalidateAndRepaint() {
-    revalidateAndRepaint(true)
-  }
+  override fun isOpaque(): Boolean = super.isOpaque() && !visibleTabInfos.isEmpty()
 
-  override fun isOpaque(): Boolean = !visibleTabInfos.isEmpty()
-
+  /** Revalidates and repaints the component, optionally performing the layout immediately. */
   open fun revalidateAndRepaint(layoutNow: Boolean) {
     if (visibleTabInfos.isEmpty() && parent != null) {
-      val nonOpaque = ComponentUtil.findUltimateParent(this)
-      val toRepaint = SwingUtilities.convertRectangle(parent, bounds, nonOpaque)
-      nonOpaque.repaint(toRepaint.x, toRepaint.y, toRepaint.width, toRepaint.height)
+      val directParent = ComponentUtil.findUltimateParent(this)
+      val toRepaint = SwingUtilities.convertRectangle(parent, bounds, directParent)
+      directParent.repaint(toRepaint.x, toRepaint.y, toRepaint.width, toRepaint.height)
     }
-    if (layoutNow) {
-      validate()
-    } else {
-      revalidate()
+
+    when {
+      layoutNow -> validate()
+      else      -> revalidate()
     }
+
     repaint()
   }
 
+  /** Update text and tooltip text. */
   private fun updateText(tabInfo: EditorGroupTabInfo) {
-    val label = infoToLabel[tabInfo]
-    label!!.setText(tabInfo.coloredText)
+    val label = tabInfo.tabLabel!!
+    label.setText(tabInfo.coloredText)
     label.toolTipText = tabInfo.tooltipText
   }
 
@@ -1734,27 +1810,37 @@ open class KrTabsImpl(
     tabs.forEach { removeTab(it) }
   }
 
+  /**
+   * Updates the container based on the visibility and selection status of tab components.
+   *
+   * @param forced Whether the relayout should be forced regardless of the current state.
+   * @param layoutNow Whether the layout update should be executed immediately.
+   */
   private fun updateContainer(forced: Boolean, layoutNow: Boolean) {
     for (tabInfo in java.util.List.copyOf(visibleTabInfos)) {
       val component = tabInfo.component ?: continue
 
-      if (tabInfo == selectedInfo) {
-        unqueueFromRemove(component)
-        val parent = component.parent
-        if (parent != null && parent !== this) {
-          parent.remove(component)
+      when (tabInfo) {
+        mySelectedInfo -> {
+          deferredToRemove.remove(component)
+          val parent = component.parent
+
+          if (parent != null && parent !== this) {
+            parent.remove(component)
+          }
+
+          if (component.parent == null) {
+            add(component)
+          }
         }
-        if (component.parent == null) {
-          add(component)
-        }
-      } else {
-        if (component.parent == null) {
-          continue
-        }
-        if (isToDeferRemoveForLater(component)) {
-          addToDeferredRemove(component)
-        } else {
-          remove(component)
+
+        else           -> {
+          if (component.parent == null) continue
+
+          when {
+            isToDeferRemoveForLater(component) -> addToDeferredRemove(component)
+            else                               -> remove(component)
+          }
         }
       }
     }
@@ -1762,7 +1848,7 @@ open class KrTabsImpl(
   }
 
   override fun addImpl(component: Component, constraints: Any?, index: Int) {
-    unqueueFromRemove(component)
+    deferredToRemove.remove(component)
     if (component is EditorGroupTabLabel) {
       val uiDecorator = uiDecorator
       component.apply(uiDecorator?.decoration ?: defaultDecorator.decoration)
