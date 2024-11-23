@@ -111,7 +111,7 @@ class EditorGroupTabLabel(
         }
 
         // Select tab
-        tabs.select(info = info, requestFocus = true)
+        tabs.select(tabInfo = info, requestFocus = true)
 
         // Close previously opened right click popups
         val container = PopupUtil.getPopupContainerFor(this@EditorGroupTabLabel)

@@ -959,15 +959,19 @@ open class KrTabsImpl(
     return false
   }
 
-  protected open fun createTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel = EditorGroupTabLabel(this, info)
-
+  // Add a tab at the end
   override fun addTab(info: EditorGroupTabInfo): EditorGroupTabInfo = addTab(info, -1)
 
-  override fun getTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel? = infoToLabel[info]
+  /** Create a new tab label. */
+  protected open fun createTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel = EditorGroupTabLabel(this, info)
+
+  /** Get a tab label at the given info. */
+  override fun getTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel? = info.tabLabel ?: infoToLabel[info]
 
   override fun setPopupGroup(popupGroup: ActionGroup, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase =
     setPopupGroupWithSupplier({ popupGroup }, place)
 
+  /** Set the supplier of the popup group. */
   override fun setPopupGroupWithSupplier(
     supplier: Supplier<out ActionGroup>,
     place: String
@@ -977,6 +981,11 @@ open class KrTabsImpl(
     return this
   }
 
+  /**
+   * Updates all necessary components and state based on whether a forced relayout is needed.
+   *
+   * @param forcedRelayout Indicates if a forced relayout should be performed.
+   */
   private fun updateAll(forcedRelayout: Boolean) {
     val toSelect = selectedInfo
     setSelectedInfo(toSelect)
@@ -986,25 +995,27 @@ open class KrTabsImpl(
     updateEnabling()
   }
 
-  override fun select(info: EditorGroupTabInfo, requestFocus: Boolean): ActionCallback =
-    doSetSelected(info = info, requestFocus = requestFocus, requestFocusInWindow = false)
+  /** Select a tab. */
+  override fun select(tabInfo: EditorGroupTabInfo, requestFocus: Boolean): ActionCallback =
+    doSetSelected(tabInfo = tabInfo, requestFocus = requestFocus, requestFocusInWindow = false)
 
-  private fun doSetSelected(info: EditorGroupTabInfo, requestFocus: Boolean, requestFocusInWindow: Boolean): ActionCallback {
-    if (!isEnabled) {
-      return ActionCallback.REJECTED
-    }
+  /** Select a tab and execute the change selection. */
+  private fun doSetSelected(tabInfo: EditorGroupTabInfo, requestFocus: Boolean, requestFocusInWindow: Boolean): ActionCallback {
+    if (!isEnabled) return ActionCallback.REJECTED
 
     // temporary state to make selection fully visible (scrolled in view)
     isMouseInsideTabsArea = false
-    return if (selectionChangeHandler != null) {
-      selectionChangeHandler!!.execute(
-        info, requestFocus,
-        object : ActiveRunnable() {
-          override fun run(): ActionCallback = executeSelectionChange(info, requestFocus, requestFocusInWindow)
+
+    return when {
+      selectionChangeHandler != null -> selectionChangeHandler!!.execute(
+        info = tabInfo,
+        requestFocus = requestFocus,
+        doChangeSelection = object : ActiveRunnable() {
+          override fun run(): ActionCallback = executeSelectionChange(tabInfo, requestFocus, requestFocusInWindow)
         }
       )
-    } else {
-      executeSelectionChange(info, requestFocus, requestFocusInWindow)
+
+      else                           -> executeSelectionChange(tabInfo, requestFocus, requestFocusInWindow)
     }
   }
 
@@ -1191,7 +1202,7 @@ open class KrTabsImpl(
     if (selected != null && !selected.isEnabled) {
       val toSelect = getToSelectOnRemoveOf(selected)
       if (toSelect != null) {
-        select(info = toSelect, requestFocus = focusManager.getFocusedDescendantFor(this) != null)
+        select(tabInfo = toSelect, requestFocus = focusManager.getFocusedDescendantFor(this) != null)
       }
     }
   }
@@ -1952,7 +1963,7 @@ open class KrTabsImpl(
 
     override fun onChosen(selectedTab: EditorGroupTabInfo, finalChoice: Boolean): PopupStep<*>? {
       when {
-        shouldSelectTab -> select(info = selectedTab, requestFocus = true)
+        shouldSelectTab -> select(tabInfo = selectedTab, requestFocus = true)
         else            -> shouldSelectTab = true
       }
       return FINAL_CHOICE

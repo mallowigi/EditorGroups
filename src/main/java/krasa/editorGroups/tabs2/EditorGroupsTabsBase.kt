@@ -12,6 +12,7 @@ import java.awt.event.MouseListener
 import java.util.function.Supplier
 import javax.swing.JComponent
 
+/** Fork of JBTabs. */
 @Suppress("unused", "HardCodedStringLiteral")
 interface EditorGroupsTabsBase {
   /** Selected tab. */
