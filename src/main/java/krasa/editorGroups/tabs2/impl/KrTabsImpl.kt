@@ -1723,42 +1723,47 @@ open class KrTabsImpl(
   override fun getPresentation(): KrTabsPresentation = this
 
   /** Removes a tab. */
-  override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(info = info, forcedSelectionTransfer = null)
+  override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(tabInfo = info)
 
+  /**
+   * Removes the specified tab from the collection of tabs.
+   *
+   * @param tabInfo The tab information that needs to be removed. Can be null.
+   * @return An ActionCallback that can be used to check if the action is complete.
+   */
   @RequiresEdt
-  private fun doRemoveTab(info: EditorGroupTabInfo?, forcedSelectionTransfer: EditorGroupTabInfo?): ActionCallback {
-    if (removeNotifyInProgress) {
-      LOG.warn(IllegalStateException("removeNotify in progress"))
-    }
+  private fun doRemoveTab(tabInfo: EditorGroupTabInfo?): ActionCallback {
+    if (removeNotifyInProgress) thisLogger().warn(IllegalStateException("removeNotify in progress"))
 
-    if (popupInfo == info) popupInfo = null
+    // Clear popup
+    if (popupInfo == tabInfo) popupInfo = null
 
-    if (info == null || !tabs.contains(info)) return ActionCallback.DONE
+    if (tabInfo == null || !tabs.contains(tabInfo)) return ActionCallback.DONE
 
+    // Remove the tab info from the lastLayoutPass
     if (lastLayoutPass != null) {
-      lastLayoutPass!!.visibleTabInfos.remove(info)
+      lastLayoutPass!!.visibleTabInfos.remove(tabInfo)
     }
 
-    val result = ActionCallback()
+    val callback = ActionCallback()
+    val toSelect = getToSelectOnRemoveOf(tabInfo)
 
-    val toSelect = if (forcedSelectionTransfer == null) {
-      getToSelectOnRemoveOf(info)
+    if (toSelect == null) {
+      processRemove(info = tabInfo, forcedNow = true, setSelectedToNull = selectedInfo == tabInfo)
+      removeDeferred().notifyWhenDone(callback)
     } else {
-      assert(visibleTabInfos.contains(forcedSelectionTransfer)) { "Cannot find tab for selection transfer, tab=$forcedSelectionTransfer" }
-      forcedSelectionTransfer
-    }
+      val clearSelection = tabInfo == mySelectedInfo
+      val transferFocus = isFocused(tabInfo)
 
-    if (toSelect != null) {
-      val clearSelection = info == mySelectedInfo
-      val transferFocus = isFocused(info)
-      processRemove(info, false)
+      // Remove tab
+      processRemove(info = tabInfo, forcedNow = false, setSelectedToNull = false)
+
       if (clearSelection) {
-        mySelectedInfo = info
+        mySelectedInfo = tabInfo
       }
-      doSetSelected(toSelect, transferFocus, true).doWhenProcessed { removeDeferred().notifyWhenDone(result) }
-    } else {
-      processRemove(info, true)
-      removeDeferred().notifyWhenDone(result)
+
+      doSetSelected(tabInfo = toSelect, requestFocus = transferFocus, requestFocusInWindow = true)
+        .doWhenProcessed { removeDeferred().notifyWhenDone(callback) }
     }
 
     if (visibleTabInfos.isEmpty()) {
@@ -1766,8 +1771,8 @@ open class KrTabsImpl(
     }
 
     revalidateAndRepaint(true)
-    fireTabRemoved(info)
-    return result
+    fireTabRemoved(tabInfo)
+    return callback
   }
 
   private fun isFocused(info: EditorGroupTabInfo): Boolean {
@@ -1790,7 +1795,7 @@ open class KrTabsImpl(
     return ourWindow != null && !ourWindow.isFocused && ancestorChecker.test(ourWindow.mostRecentFocusOwner)
   }
 
-  private fun processRemove(info: EditorGroupTabInfo?, forcedNow: Boolean) {
+  private fun processRemove(info: EditorGroupTabInfo?, forcedNow: Boolean, setSelectedToNull: Boolean) {
     val tabLabel = infoToLabel[info]
     tabLabel?.let { remove(it) }
 
