@@ -26,6 +26,7 @@ import com.intellij.ui.popup.list.SelectablePanel
 import com.intellij.ui.switcher.QuickActionProvider
 import com.intellij.ui.tabs.impl.MorePopupAware
 import com.intellij.util.Alarm
+import com.intellij.util.Function
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
@@ -1616,101 +1617,113 @@ open class KrTabsImpl(
     drawBorder(g)
   }
 
+  /** What component graphics to use. */
   override fun getComponentGraphics(graphics: Graphics): Graphics =
     JBSwingUtilities.runGlobalCGTransform(this, super.getComponentGraphics(graphics))
 
+  /** Draw the tab border. */
   protected fun drawBorder(g: Graphics): Unit = tabBorder.paintBorder(this, g, 0, 0, width, height)
 
-  private fun computeMaxSize(): Max {
-    val max = Max()
-    for (eachInfo in visibleTabInfos) {
-      val label = infoToLabel[eachInfo]
-      max.label.height = max.label.height.coerceAtLeast(label!!.preferredSize.height)
+  /** Find the max label size of all labels. */
+  private fun computeMaxSize(): MaxHolder {
+    val max = MaxHolder()
+
+    for (tab in visibleTabInfos) {
+      val label = tab.tabLabel ?: continue
+      max.label.height = max.label.height.coerceAtLeast(label.preferredSize.height)
       max.label.width = max.label.width.coerceAtLeast(label.preferredSize.width)
     }
 
     return max
   }
 
+  /** Get the minimum size. */
   override fun getMinimumSize(): Dimension = computeSize({ it.minimumSize }, 1)
 
+  /** get the preferred size */
   override fun getPreferredSize(): Dimension {
-    return computeSize(
-      { component: JComponent -> component.preferredSize },
-      3
-    )
+    return computeSize({ it.preferredSize }, 3)
   }
 
+  /**
+   * Computes the overall size of the tabs by applying a transformation function to determine the dimensions of each tab component, and then
+   * finding the maximum width and height among all tabs. Additionally, adjusts the calculated dimensions by adding header size.
+   *
+   * @param transform A function that takes a JComponent and returns its dimension.
+   * @param tabCount The number of tabs to consider in the size calculation.
+   * @return The computed dimensions as a Dimension object.
+   */
   private fun computeSize(
-    transform: com.intellij.util.Function<in JComponent, out Dimension>,
+    transform: Function<in JComponent, out Dimension>,
     tabCount: Int
   ): Dimension {
     val size = Dimension()
-    for (each in visibleTabInfos) {
-      val c = each.component
+
+    // Find the max width and height of all tabs
+    for (tab in visibleTabInfos) {
+      val c = tab.component
       if (c != null) {
-        val eachSize = transform.`fun`(c)
-        size.width = max(eachSize.width, size.width)
-        size.height = max(eachSize.height, size.height)
+        val tabSize = transform.`fun`(c)
+        size.width = max(tabSize.width, size.width)
+        size.height = max(tabSize.height, size.height)
       }
     }
+
     addHeaderSize(size, tabCount)
     return size
   }
 
+  /**
+   * Adjusts the given Dimension to account for the size of the header based on the number of tabs.
+   *
+   * @param size The original Dimension to be adjusted.
+   * @param tabsCount The number of tabs to consider when computing the header size.
+   */
   private fun addHeaderSize(size: Dimension, tabsCount: Int) {
     val header = computeHeaderPreferredSize(tabsCount)
-    val horizontal = tabsPosition == EditorGroupsTabsPosition.TOP || tabsPosition == EditorGroupsTabsPosition.BOTTOM
-    if (horizontal) {
-      size.height += header.height
-      size.width = max(size.width, header.width)
-    } else {
-      size.height += max(size.height, header.height)
-      size.width += header.width
-    }
+    size.height += header.height
+    size.width = max(size.width, header.width)
+
     val insets = layoutInsets
     size.width += insets.left + insets.right + 1
     size.height += insets.top + insets.bottom + 1
   }
 
+  /**
+   * Computes the preferred size of the header based on the number of tabs and their preferred sizes.
+   *
+   * @param tabsCount The number of tabs to consider for computing the preferred size.
+   * @return The preferred size of the header as a Dimension object.
+   */
   private fun computeHeaderPreferredSize(tabsCount: Int): Dimension {
-    val infos: Iterator<EditorGroupTabInfo?> = infoToLabel.keys.iterator()
     val size = Dimension()
     var currentTab = 0
-    val horizontal = tabsPosition == EditorGroupsTabsPosition.TOP || tabsPosition == EditorGroupsTabsPosition.BOTTOM
-    while (infos.hasNext()) {
+    val horizontal = true
+
+    for (tab in visibleTabInfos) {
       val canGrow = currentTab < tabsCount
-      val eachInfo = infos.next()
-      val eachLabel = infoToLabel[eachInfo]
-      val eachPrefSize = eachLabel!!.preferredSize
+      val eachLabel = tab.tabLabel ?: continue
+      val eachPrefSize = eachLabel.preferredSize
+
       if (horizontal) {
         if (canGrow) {
           size.width += eachPrefSize.width
         }
         size.height = max(size.height, eachPrefSize.height)
-      } else {
-        size.width = max(size.width, eachPrefSize.width)
-        if (canGrow) {
-          size.height += eachPrefSize.height
-        }
       }
+
       currentTab++
     }
-    if (horizontal) {
-      size.height += tabBorder.thickness
-    } else {
-      size.width += tabBorder.thickness
-    }
+
+    size.height += tabBorder.thickness
     return size
   }
 
+  /** Returns this component. */
   override fun getPresentation(): KrTabsPresentation = this
 
-  override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(info, null)
-
-  override fun removeTab(info: EditorGroupTabInfo, forcedSelectionTransfer: EditorGroupTabInfo?) {
-    doRemoveTab(info, forcedSelectionTransfer)
-  }
+  /** Removes a tab. */
+  override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(info = info, forcedSelectionTransfer = null)
 
   @RequiresEdt
   private fun doRemoveTab(info: EditorGroupTabInfo?, forcedSelectionTransfer: EditorGroupTabInfo?): ActionCallback {
@@ -2017,7 +2030,6 @@ open class KrTabsImpl(
     DataSink.uiDataSnapshot(sink, dataProvider)
     sink[QuickActionProvider.KEY] = this@KrTabsImpl
     sink[MorePopupAware.KEY] = this@KrTabsImpl
-    sink[EditorGroupsTabsEx.NAVIGATION_ACTIONS_KEY] = this@KrTabsImpl
   }
 
   override fun getActions(originalProvider: Boolean): List<AnAction> = emptyList()
@@ -2088,7 +2100,7 @@ open class KrTabsImpl(
     override fun getTextFor(tabInfo: EditorGroupTabInfo): String = tabInfo.text
   }
 
-  private class Max {
+  private class MaxHolder {
     @JvmField
     val label = Dimension()
 
