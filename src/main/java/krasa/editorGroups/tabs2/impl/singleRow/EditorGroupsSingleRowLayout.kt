@@ -78,6 +78,9 @@ abstract class EditorGroupsSingleRowLayout(
       // Layout the labels
       layoutLabels(passInfo)
 
+      // Layout the entry point
+      layoutEntryPointButton(passInfo)
+
       // Layout the more button
       layoutMoreButton(passInfo)
     }
@@ -123,8 +126,14 @@ abstract class EditorGroupsSingleRowLayout(
     passInfo.toFitLength = strategy.getToFitLength(passInfo)
   }
 
+  /** Layout the more button. */
   protected open fun layoutMoreButton(passInfo: EditorGroupsSingleRowPassInfo) {
     passInfo.moreRect = strategy.getMoreRect(passInfo)
+  }
+
+  /** Sets the entry point bounds. */
+  protected fun layoutEntryPointButton(passInfo: EditorGroupsSingleRowPassInfo) {
+    passInfo.entryPointRect = strategy.getEntryPointRect(passInfo)!!
   }
 
   protected fun layoutLabels(passInfo: EditorGroupsSingleRowPassInfo) {

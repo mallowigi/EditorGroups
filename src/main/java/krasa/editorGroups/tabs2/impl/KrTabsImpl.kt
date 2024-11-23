@@ -92,6 +92,7 @@ open class KrTabsImpl(
 
   // The more tabs toolbar
   val moreToolbar: ActionToolbar?
+  var entryPointToolbar: ActionToolbar? = null
 
   // Returns default one action horizontal toolbar size (26x24)
   val moreToolbarPreferredSize: Dimension
@@ -215,6 +216,9 @@ open class KrTabsImpl(
   // Whether the scroll is on
   private var scrollBarOn = false
 
+  protected open val entryPointActionGroup: DefaultActionGroup?
+    get() = null
+
   // Scrollbar model
   private val scrollBarModel: BoundedRangeModel
     get() = scrollBar.model
@@ -238,6 +242,12 @@ open class KrTabsImpl(
   // is empty visible
   override val isEmptyVisible: Boolean
     get() = visibleTabInfos.isEmpty()
+
+  val entryPointPreferredSize: Dimension
+    get() = when (entryPointToolbar) {
+      null -> Dimension()
+      else -> entryPointToolbar!!.component.preferredSize
+    }
 
   // Cache the tab size
   override val tabCount: Int
@@ -326,6 +336,16 @@ open class KrTabsImpl(
       actionManager = actionManager
     )
     add(moreToolbar.component)
+
+    // Entry point toolbar (needed for a smooth scrolling)
+    val entryPointActionGroup = entryPointActionGroup
+    when (entryPointActionGroup) {
+      null -> entryPointToolbar = null
+      else -> {
+        entryPointToolbar = createToolbar(entryPointActionGroup, targetComponent = this, actionManager = actionManager)
+        add(entryPointToolbar!!.component)
+      }
+    }
 
     // This scroll pane won't be shown on screen, it is needed only to handle scrolling events and properly update a scrolling model
     val fakeScrollPane = JBScrollPane(
