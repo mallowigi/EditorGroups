@@ -67,8 +67,6 @@ import kotlin.Pair
 import kotlin.math.max
 
 private val LOG = logger<KrTabsImpl>()
-private const val SCROLL_BAR_THICKNESS = 3
-private const val LAYOUT_DONE: @NonNls String = "Layout.done"
 
 @Suppress("detekt:LargeClass", "detekt:MagicNumber", "detekt:StringLiteralDuplication")
 @DirtyUI
@@ -78,7 +76,6 @@ open class KrTabsImpl(
 ) : JComponent(),
   EditorGroupsTabsEx,
   PropertyChangeListener,
-  TimerListener,
   UiDataProvider,
   PopupMenuListener,
   KrTabsPresentation,
@@ -366,7 +363,7 @@ open class KrTabsImpl(
       MouseEventAdapter.redispatch(e, fakeScrollPane)
     }
     // AWT listener
-    addMouseMotionAwtListener(parentDisposable)
+    addMouseMotionAwtListener()
 
     isFocusTraversalPolicyProvider = true
     focusTraversalPolicy = object : LayoutFocusTraversalPolicy() {
@@ -398,15 +395,15 @@ open class KrTabsImpl(
 
     object : HoverListener() {
       override fun mouseEntered(component: Component, x: Int, y: Int) {
-        this@KrTabsImpl.toggleScrollBar(this@KrTabsImpl.isInsideTabsArea(x, y))
+        toggleScrollBar(isInsideTabsArea(y))
       }
 
       override fun mouseMoved(component: Component, x: Int, y: Int) {
-        this@KrTabsImpl.toggleScrollBar(this@KrTabsImpl.isInsideTabsArea(x, y))
+        toggleScrollBar(isInsideTabsArea(y) || isScrollBarAdjusting())
       }
 
       override fun mouseExited(component: Component) {
-        this@KrTabsImpl.toggleScrollBar(false)
+        toggleScrollBar(false)
       }
     }.addTo(this)
 
@@ -418,10 +415,16 @@ open class KrTabsImpl(
   @Suppress("IncorrectParentDisposable")
   constructor(project: Project) : this(project = project, parentDisposable = project)
 
+  /** Sort the tabs alphabetically. */
+  fun sortTabsAlphabetically(tabs: MutableList<EditorGroupTabInfo>) {
+    tabs.sortWith { o1, o2 -> NaturalComparator.INSTANCE.compare(o1.text, o2.text) }
+  }
+
+  /** Whether the scrollbar is adjusting. */
   internal fun isScrollBarAdjusting(): Boolean = scrollBar.valueIsAdjusting
 
   /** Add an event listener to specify whether the mouse is inside the tabs area. */
-  private fun addMouseMotionAwtListener(parentDisposable: Disposable) {
+  private fun addMouseMotionAwtListener() {
     val listener = AWTEventListener { event ->
       val tabRectangle = lastLayoutPass?.headerRectangle ?: return@AWTEventListener
 
@@ -443,15 +446,14 @@ open class KrTabsImpl(
     Toolkit.getDefaultToolkit().addAWTEventListener(listener, AWTEvent.MOUSE_MOTION_EVENT_MASK)
   }
 
-  fun sortTabsAlphabetically(tabs: MutableList<EditorGroupTabInfo>) {
-    tabs.sortWith { o1, o2 -> NaturalComparator.INSTANCE.compare(o1.text, o2.text) }
-  }
-
+  // Tab border
   protected fun createTabBorder(): EditorGroupsTabsBorder = EditorGroupsTabsBorder(this)
 
+  // Tab painter adapter
   protected open fun createTabPainterAdapter(): EditorGroupsTabPainterAdapter = EditorGroupsDefaultTabPainterAdapter()
 
-  private fun isInsideTabsArea(x: Int, y: Int): Boolean {
+  /** Check whether the current position is inside the tabs area (for scrolling) */
+  private fun isInsideTabsArea(y: Int): Boolean {
     val area = lastLayoutPass?.headerRectangle?.size ?: return false
     return when (tabsPosition) {
       EditorGroupsTabsPosition.TOP    -> y <= area.height
@@ -459,27 +461,30 @@ open class KrTabsImpl(
     }
   }
 
-  private fun toggleScrollBar(isOn: Boolean) {
-    if (isOn == scrollBarOn) {
-      return
-    }
+  /** Toggle scroll bar on mouse over. */
+  private fun toggleScrollBar(state: Boolean) {
+    if (state == scrollBarOn) return
 
-    scrollBarOn = isOn
-    scrollBar.toggle(isOn)
+    scrollBarOn = state
+    scrollBar.toggle(state)
   }
 
+  /** Return the position of the scrollbar. */
   private fun getScrollBarBounds(): Rectangle = when (tabsPosition) {
     EditorGroupsTabsPosition.TOP    -> Rectangle(0, 1, width, SCROLL_BAR_THICKNESS)
     EditorGroupsTabsPosition.BOTTOM -> Rectangle(0, height - SCROLL_BAR_THICKNESS, width, SCROLL_BAR_THICKNESS)
   }
 
+  /** Revalidate tabs on settings change. */
   override fun uiSettingsChanged(uiSettings: UISettings) {
-    for ((info, _) in infoToLabel) {
-      info.revalidate()
+    for (tab in visibleTabInfos) {
+      tab.revalidate()
     }
+
     updateRowLayout()
   }
 
+  /** Update the layout. */
   private fun updateRowLayout() {
     val layout = createRowLayout()
     // set the current scroll value to new layout
@@ -490,24 +495,26 @@ open class KrTabsImpl(
     relayout(forced = true, layoutNow = true)
   }
 
+  /** The row layout. */
   protected open fun createRowLayout(): EditorGroupsSingleRowLayout = EditorGroupsScrollableSingleRowLayout(this)
 
-  override fun setNavigationActionBinding(prevActionId: String, nextActionId: String) {
-  }
-
+  /** Hover the tab. */
   fun setHovered(label: EditorGroupTabLabel?) {
     val old = tabLabelAtMouse
     tabLabelAtMouse = label
+
     if (old != null) {
       old.revalidate()
       old.repaint()
     }
+
     if (tabLabelAtMouse != null) {
       tabLabelAtMouse!!.revalidate()
       tabLabelAtMouse!!.repaint()
     }
   }
 
+  /** Remove hover at the tab. */
   fun unHover(label: EditorGroupTabLabel) {
     if (tabLabelAtMouse === label) {
       tabLabelAtMouse = null
@@ -516,15 +523,30 @@ open class KrTabsImpl(
     }
   }
 
+  /** Whether the tab is hovered. */
   fun isHoveredTab(label: EditorGroupTabLabel?): Boolean = label != null && label === tabLabelAtMouse
 
+  /** Whether the tab panel is active. */
   open fun isActiveTabs(info: EditorGroupTabInfo?): Boolean = UIUtil.isFocusAncestor(this)
 
+  /** Reset tabs cache. */
   @RequiresEdt
   fun resetTabsCache() {
     allTabs = null
   }
 
+  /**
+   * Handles changes in focus for the component.
+   *
+   * This method determines if the current focus owner is the component itself or a descendant of the component. If so, it sets the
+   * component as focused. Otherwise, it sets the component as not focused.
+   *
+   * It first retrieves the current focus owner using the KeyboardFocusManager. If the focus owner is null, it marks the component as not
+   * focused and returns.
+   *
+   * If the component itself or one of its descendants holds the focus, it sets the focused state to true. Otherwise, it sets the focused
+   * state to false.
+   */
   private fun processFocusChange() {
     val owner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner
     if (owner == null) {
@@ -539,9 +561,16 @@ open class KrTabsImpl(
     }
   }
 
+  /**
+   * Initializes the component and attaches necessary listeners upon addition to its parent. This method overrides the default addNotify
+   * implementation to add a ChangeListener to the scrollBarModel and to handle any deferred focus requests. If there is a deferred focus
+   * request, it will be executed and set to null.
+   */
   override fun addNotify() {
     super.addNotify()
+
     scrollBarModel.addChangeListener(scrollBarChangeListener)
+
     if (deferredFocusRequest != null) {
       val request = deferredFocusRequest!!
       deferredFocusRequest = null
@@ -549,20 +578,35 @@ open class KrTabsImpl(
     }
   }
 
+  /** Remove a tab. */
   override fun remove(index: Int) {
     if (removeNotifyInProgress) {
       thisLogger().warn("removeNotify in progress")
     }
+
     super.remove(index)
   }
 
+  /** Remove all tabs. */
   override fun removeAll() {
     if (removeNotifyInProgress) {
       thisLogger().warn("removeNotify in progress")
     }
+
     super.removeAll()
   }
 
+  /**
+   * This method is called when the component is about to be removed from its display. Handles cleanup tasks and ensures that any ongoing
+   * processes related to the component being removed are properly managed.
+   *
+   * Specifically, this method:
+   * 1. Sets a flag to indicate that the removal is in progress.
+   * 2. Calls the superclass's `removeNotify` method to perform any default actions.
+   * 3. Resets the flag indicating that the removal process has finished.
+   * 4. Ensures that the component is no longer focused.
+   * 5. Removes the change listener from the scroll bar model to avoid memory leaks.
+   */
   override fun removeNotify() {
     try {
       removeNotifyInProgress = true
@@ -570,14 +614,67 @@ open class KrTabsImpl(
     } finally {
       removeNotifyInProgress = false
     }
+
     setFocused(false)
+
     scrollBarModel.removeChangeListener(scrollBarChangeListener)
   }
 
-  public override fun processMouseEvent(e: MouseEvent) {
-    super.processMouseEvent(e)
+  /**
+   * Adjusts the layout of a given component by modifying its size and position.
+   *
+   * @param componentX The x-coordinate of the component's initial position.
+   * @param componentY The y-coordinate of the component's initial position.
+   * @param component The JComponent to be resized and repositioned.
+   * @param deltaWidth The amount by which the component's width should be adjusted.
+   * @param deltaHeight The amount by which the component's height should be adjusted.
+   * @return A Rectangle representing the new bounds of the component.
+   */
+  fun layoutComp(
+    componentX: Int,
+    componentY: Int,
+    component: JComponent,
+    deltaWidth: Int,
+    deltaHeight: Int
+  ): Rectangle = layoutComp(
+    bounds = Rectangle(componentX, componentY, width, height),
+    component = component,
+    deltaWidth = deltaWidth,
+    deltaHeight = deltaHeight
+  )
+
+  /**
+   * Adjusts the layout of a given component by considering specified bounds, insets, and deltas in width and height.
+   *
+   * @param bounds The bounding rectangle specifying the initial position and size.
+   * @param component The JComponent to be laid out.
+   * @param deltaWidth The additional width to add to the component's calculated width.
+   * @param deltaHeight The additional height to add to the component's calculated height.
+   * @return A rectangle representing the new bounds of the component after layout adjustments.
+   */
+  fun layoutComp(bounds: Rectangle, component: JComponent, deltaWidth: Int, deltaHeight: Int): Rectangle {
+    val insets = layoutInsets
+    val inner = innerInsets
+    val x = insets.left + bounds.x + inner.left
+    val y = insets.top + bounds.y + inner.top
+    var width = bounds.width - insets.left - insets.right - bounds.x - inner.left - inner.right
+    var height = bounds.height - insets.top - insets.bottom - bounds.y - inner.top - inner.bottom
+
+    width += deltaWidth
+    height += deltaHeight
+
+    return layout(component = component, x = x, y = y, width = width, height = height)
   }
 
+  /**
+   * Adjusts the layout of the provided component with specified deltas for x, y coordinates and width, height.
+   *
+   * @param passInfo an object containing layout information and component references
+   * @param deltaX the change in the x-coordinate position for the component's layout
+   * @param deltaY the change in the y-coordinate position for the component's layout
+   * @param deltaWidth the change in the width of the component's layout
+   * @param deltaHeight the change in the height of the component's layout
+   */
   fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo, deltaX: Int, deltaY: Int, deltaWidth: Int, deltaHeight: Int) {
     val hToolbar = passInfo.hToolbar?.get()
 
@@ -611,18 +708,42 @@ open class KrTabsImpl(
     }
   }
 
+  /**
+   * Updates the layout of the specified component with the provided bounds.
+   *
+   * @param component the component to update the layout for
+   * @param bounds the new bounds to set for the component
+   * @return the bounds that were set for the component
+   */
+  fun layout(component: JComponent, bounds: Rectangle): Rectangle {
+    val now = component.bounds
+    if (bounds != now) {
+      component.bounds = bounds
+    }
+
+    component.doLayout()
+    component.putClientProperty(LAYOUT_DONE, true)
+
+    return bounds
+  }
+
+  /**
+   * Positions and sizes the given component based on the specified bounds.
+   *
+   * @param component the JComponent to be positioned and sized
+   * @param x the x-coordinate of the component's new location
+   * @param y the y-coordinate of the component's new location
+   * @param width the new width of the component
+   * @param height the new height of the component
+   * @return a Rectangle representing the component's new bounds
+   */
+  fun layout(component: JComponent, x: Int, y: Int, width: Int, height: Int): Rectangle =
+    layout(component = component, bounds = Rectangle(x, y, width, height))
+
+  /** Set the offset of the first tab. */
   override fun setFirstTabOffset(offset: Int): KrTabsPresentation {
     this.firstTabOffset = offset
     return this
-  }
-
-  override fun getModalityState(): ModalityState = ModalityState.stateForComponent(this)
-
-  override fun run() {
-    updateTabActions(false)
-  }
-
-  override fun updateTabActions(validateNow: Boolean) {
   }
 
   override fun canShowMorePopup(): Boolean {
@@ -919,7 +1040,6 @@ open class KrTabsImpl(
     updateContainer(forcedRelayout, false)
     removeDeferred()
     updateListeners()
-    updateTabActions(false)
     updateEnabling()
   }
 
@@ -1333,9 +1453,6 @@ open class KrTabsImpl(
 
   override fun doLayout() {
     try {
-      // for (each in infoToLabel.values) {
-      //   each.setTabActionsAutoHide(tabLabelActionsAutoHide)
-      // }
       val moreBoundsBeforeLayout = moreToolbar!!.component.bounds
       headerFitSize = computeHeaderFitSize()
       val visible = getVisibleInfos().toMutableList()
@@ -1384,35 +1501,6 @@ open class KrTabsImpl(
       size.width,
       max(max.label.height, max.toolbar.height)
     )
-  }
-
-  fun layoutComp(
-    componentX: Int,
-    componentY: Int,
-    component: JComponent,
-    deltaWidth: Int,
-    deltaHeight: Int
-  ): Rectangle {
-    return layoutComp(
-      bounds = Rectangle(componentX, componentY, width, height),
-      component = component,
-      deltaWidth = deltaWidth,
-      deltaHeight = deltaHeight
-    )
-  }
-
-  fun layoutComp(bounds: Rectangle, component: JComponent, deltaWidth: Int, deltaHeight: Int): Rectangle {
-    val insets = layoutInsets
-    val inner = innerInsets
-    val x = insets.left + bounds.x + inner.left
-    val y = insets.top + bounds.y + inner.top
-    var width = bounds.width - insets.left - insets.right - bounds.x - inner.left - inner.right
-    var height = bounds.height - insets.top - insets.bottom - bounds.y - inner.top - inner.bottom
-
-    width += deltaWidth
-    height += deltaHeight
-
-    return layout(component = component, x = x, y = y, width = width, height = height)
   }
 
   override fun setInnerInsets(innerInsets: Insets): KrTabsPresentation {
@@ -1887,19 +1975,6 @@ open class KrTabsImpl(
     return this
   }
 
-  fun layout(component: JComponent, bounds: Rectangle): Rectangle {
-    val now = component.bounds
-    if (bounds != now) {
-      component.bounds = bounds
-    }
-    component.doLayout()
-    component.putClientProperty(LAYOUT_DONE, true)
-    return bounds
-  }
-
-  fun layout(component: JComponent, x: Int, y: Int, width: Int, height: Int): Rectangle =
-    layout(component = component, bounds = Rectangle(x, y, width, height))
-
   private fun applyResetComponents() {
     for (i in 0 until componentCount) {
       val each = getComponent(i)
@@ -1929,6 +2004,8 @@ open class KrTabsImpl(
   }
 
   companion object {
+    private const val SCROLL_BAR_THICKNESS = 3
+    private const val LAYOUT_DONE: @NonNls String = "Layout.done"
 
     private val HIDDEN_INFOS_SELECT_INDEX_KEY = Key.create<Int>("HIDDEN_INFOS_SELECT_INDEX")
 

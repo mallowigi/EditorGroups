@@ -66,8 +66,6 @@ interface EditorGroupsTabsBase {
 
   fun requestFocus()
 
-  fun setNavigationActionBinding(prevActionId: String, nextActionId: String)
-
   fun setPopupGroup(popupGroup: ActionGroup, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase
 
   fun setPopupGroupWithSupplier(supplier: Supplier<out ActionGroup?>, place: String): EditorGroupsTabsBase

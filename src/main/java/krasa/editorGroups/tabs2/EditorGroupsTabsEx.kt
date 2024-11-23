@@ -7,8 +7,6 @@ interface EditorGroupsTabsEx : EditorGroupsTabsBase {
 
   val isEmptyVisible: Boolean
 
-  fun updateTabActions(validateNow: Boolean)
-
   fun addTabSilently(info: EditorGroupTabInfo, index: Int): EditorGroupTabInfo?
 
   fun removeTab(info: EditorGroupTabInfo, forcedSelectionTransfer: EditorGroupTabInfo?)
