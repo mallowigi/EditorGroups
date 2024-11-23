@@ -1493,6 +1493,23 @@ open class KrTabsImpl(
     }
   }
 
+  /**
+   * Arranges and layouts components within the container. This method is responsible for determining the new bounds of the components,
+   * updating scrollbar properties, and managing visibility changes.
+   *
+   * The method includes steps to:
+   * - Suspend scrollbar activity to prevent model changes from being interpreted as user activity.
+   * - Compute the fit size for the header.
+   * - Layout tabs using the appropriate layout strategy.
+   * - Center the toolbar if necessary.
+   * - Reset components as needed.
+   * - Set scrollbar orientation and bounds.
+   * - Update the scrollbar model.
+   * - Update the toolbar's visibility state if it has changed.
+   *
+   * Special precautions are taken to ensure that forced re-layouts are marked and that any changes are resumed properly after layout
+   * adjustments are completed.
+   */
   override fun doLayout() {
     // Model changes caused by layout changes shouldn't be interpreted as activity.
     scrollBarActivityTracker.suspend()
@@ -1522,30 +1539,36 @@ open class KrTabsImpl(
     }
   }
 
+  /** Centers the more toolbar. */
   private fun centerMoreToolbarPosition() {
     val moreRect = lastLayoutPass!!.moreRect
     val mComponent = moreToolbar!!.component
+
     if (!moreRect.isEmpty) {
       val bounds = Rectangle(moreRect)
       val preferredSize = mComponent.preferredSize
       val xDiff = (bounds.width - preferredSize.width) / 2
       val yDiff = (bounds.height - preferredSize.height) / 2
+
       bounds.x += xDiff + 2
       bounds.width -= 2 * xDiff
       bounds.y += yDiff
       bounds.height -= 2 * yDiff
+
       mComponent.bounds = bounds
     } else {
       mComponent.bounds = Rectangle()
     }
+
     mComponent.putClientProperty(LAYOUT_DONE, true)
   }
 
+  /** Compute the header fit size. */
   private fun computeHeaderFitSize(): Dimension {
     val max = computeMaxSize()
     return Dimension(
       size.width,
-      max(max.label.height, max.toolbar.height)
+      max(max.label.height, max.toolbar.height).coerceAtLeast(0)
     )
   }
 
@@ -1576,18 +1599,19 @@ open class KrTabsImpl(
     }
   }
 
+  /** Reset the tabinfo. */
   private fun reset(tabInfo: EditorGroupTabInfo, shouldResetLabels: Boolean) {
     val c = tabInfo.component
-    if (c != null) {
-      resetLayout(c)
-    }
+    resetLayout(c)
+
     if (shouldResetLabels) {
-      resetLayout(infoToLabel[tabInfo])
+      tabInfo.tabLabel?.let { resetLayout(it) }
     }
   }
 
   override fun paintComponent(g: Graphics) {
     super.paintComponent(g)
+
     tabPainter.fillBackground(g as Graphics2D, Rectangle(0, 0, width, height))
     drawBorder(g)
   }
@@ -1595,9 +1619,7 @@ open class KrTabsImpl(
   override fun getComponentGraphics(graphics: Graphics): Graphics =
     JBSwingUtilities.runGlobalCGTransform(this, super.getComponentGraphics(graphics))
 
-  protected fun drawBorder(g: Graphics) {
-    tabBorder.paintBorder(this, g, 0, 0, width, height)
-  }
+  protected fun drawBorder(g: Graphics): Unit = tabBorder.paintBorder(this, g, 0, 0, width, height)
 
   private fun computeMaxSize(): Max {
     val max = Max()
