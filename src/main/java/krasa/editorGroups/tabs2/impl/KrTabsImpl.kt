@@ -6,7 +6,6 @@ import com.intellij.ide.ui.UISettings
 import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
-import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.logger
@@ -28,7 +27,6 @@ import com.intellij.ui.popup.list.GroupedItemsListRenderer
 import com.intellij.ui.popup.list.SelectablePanel
 import com.intellij.ui.switcher.QuickActionProvider
 import com.intellij.ui.tabs.impl.MorePopupAware
-import com.intellij.ui.tabs.impl.SingleHeightTabs
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.*
@@ -47,7 +45,6 @@ import krasa.editorGroups.tabs2.impl.themes.EditorGroupTabTheme
 import krasa.editorGroups.tabs2.label.EditorGroupTabInfo
 import krasa.editorGroups.tabs2.label.EditorGroupTabLabel
 import krasa.editorGroups.tabs2.label.TabUiDecorator
-import org.jetbrains.annotations.Nls
 import org.jetbrains.annotations.NonNls
 import java.awt.*
 import java.awt.event.*
@@ -63,7 +60,6 @@ import javax.swing.event.ChangeListener
 import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
 import javax.swing.plaf.ComponentUI
-import kotlin.Pair
 import kotlin.math.max
 
 private val LOG = logger<KrTabsImpl>()
@@ -763,53 +759,58 @@ open class KrTabsImpl(
   }
 
   private fun showListPopup(rect: Rectangle, hiddenInfos: List<EditorGroupTabInfo>): JBPopup {
+    // get the first label of hidden infos, this is where we'll add our separator
     val separatorIndex = hiddenInfos.indexOfFirst { info ->
-      val label = infoToLabel[info]
-      label!!.x >= 0
+      val label = info.tabLabel!!
+      label.x >= 0
     }
 
-    val separatorInfo = if (separatorIndex > 0) hiddenInfos[separatorIndex] else null
+    // The tab info at the separator index
+    val separatorInfo = when {
+      separatorIndex > 0 -> hiddenInfos[separatorIndex]
+      else               -> null
+    }
+
     val step = HiddenInfosListPopupStep(hiddenInfos, separatorInfo)
+    // Try to restore the selected index
     val selectedIndex = ClientProperty.get(this, HIDDEN_INFOS_SELECT_INDEX_KEY)
     if (selectedIndex != null) {
       step.defaultOptionIndex = selectedIndex
     }
+
     val popup = JBPopupFactory.getInstance().createListPopup(project!!, step) {
       val descriptor = object : ListItemDescriptorAdapter<EditorGroupTabInfo>() {
-        @Suppress("DialogTitleCapitalization")
         override fun getTextFor(value: EditorGroupTabInfo): String = value.text
 
         override fun getIconFor(value: EditorGroupTabInfo): Icon? = value.icon
 
         override fun hasSeparatorAboveOf(value: EditorGroupTabInfo): Boolean = value == separatorInfo
       }
+
       object : GroupedItemsListRenderer<EditorGroupTabInfo?>(descriptor) {
-        private val HOVER_INDEX_KEY = Key.create<Int>("HOVER_INDEX")
-        private val TAB_INFO_KEY = Key.create<EditorGroupTabInfo?>("TAB_INFO")
         private val SELECTED_KEY = Key.create<Boolean>("SELECTED")
         var component: JPanel? = null
         var iconLabel: JLabel? = null
         var textLabel: SimpleColoredComponent? = null
-        var actionLabel: JLabel? = null
-        var listMouseListener: MouseAdapter? = null
+
         override fun createItemComponent(): JComponent {
           // there is the separate label 'textLabel', but the original one still should be created,
           // as it is used from the GroupedElementsRenderer.configureComponent
           createLabel()
+
           component = JPanel()
-          val layout = BoxLayout(component, BoxLayout.X_AXIS)
-          component!!.layout = layout
-          // painting underline for the selected tab
+          component!!.layout = BoxLayout(this.component, BoxLayout.X_AXIS)
+          // painting underline on the left for the selected tab
           component!!.border = object : Border {
             override fun paintBorder(c: Component, g: Graphics, x: Int, y: Int, width: Int, height: Int) {
-              if (!ClientProperty.isTrue(c, SELECTED_KEY)) {
-                return
-              }
-              val inset = JBUI.scale(2)
+              if (!ClientProperty.isTrue(c, SELECTED_KEY)) return
+
+              val padding = JBUI.scale(2)
               val arc = JBUI.scale(4)
               val theme: EditorGroupTabTheme = tabPainter.getTabTheme()
 
-              val rect = Rectangle(x, y + inset, theme.underlineHeight, height - inset * 2)
+              val rect = Rectangle(x, y + padding, theme.underlineHeight, height - padding * 2)
+
               (g as Graphics2D).fill2DRoundRect(rect, arc.toDouble(), theme.underlineColor)
             }
 
@@ -817,16 +818,16 @@ open class KrTabsImpl(
 
             override fun isBorderOpaque(): Boolean = true
           }
-          val settings = UISettings.getInstance()
-          if (!settings.closeTabButtonOnTheRight) {
-            addActionLabel()
-            val gap = JBUI.CurrentTheme.ActionsList.elementIconGap() - 2
-            component!!.add(Box.createRigidArea(Dimension(gap, 0)))
-          }
+
+          // add icon label
           iconLabel = JLabel()
           component!!.add(iconLabel)
+
+          // Add some spacing between icon and text
           val gap = JBUI.CurrentTheme.ActionsList.elementIconGap() - 2
           component!!.add(Box.createRigidArea(Dimension(gap, 0)))
+
+          // Add text label
           textLabel = object : SimpleColoredComponent() {
             override fun getMaximumSize(): Dimension = preferredSize
           }
@@ -834,48 +835,31 @@ open class KrTabsImpl(
           textLabel!!.setIpad(JBUI.emptyInsets())
           textLabel!!.setOpaque(true)
           component!!.add(textLabel)
-          if (settings.closeTabButtonOnTheRight) {
-            component!!.add(Box.createRigidArea(JBDimension(30, 0)))
-            component!!.add(Box.createHorizontalGlue())
-            addActionLabel()
-          }
+
           val result = layoutComponent(component)
+          // For new UI
           if (result is SelectablePanel) {
             result.setBorder(JBUI.Borders.empty(0, 5))
             result.selectionInsets = JBInsets.create(0, 5)
             result.preferredHeight = JBUI.scale(26)
           }
-          return result
-        }
 
-        private fun addActionLabel() {
-          actionLabel = JLabel()
-          component!!.add(actionLabel)
+          return result
         }
 
         override fun customizeComponent(
           list: JList<out EditorGroupTabInfo?>?,
-          info: EditorGroupTabInfo?,
+          tabInfo: EditorGroupTabInfo?,
           isSelected: Boolean
         ) {
-          if (actionLabel != null) {
-            val isHovered = ClientProperty.get(list, HOVER_INDEX_KEY) == myCurrentIndex
-            val icon = getTabActionIcon(info!!, isHovered)
-            actionLabel!!.icon = icon
-            ClientProperty.put(actionLabel!!, TAB_INFO_KEY, info)
-            addMouseListener(list!!)
-          }
-          val selectedInfo = selectedInfo
-          var icon = info?.icon
-          if (icon != null && info != selectedInfo) {
-            icon = IconLoader.getTransparentIcon(icon, JBUI.CurrentTheme.EditorTabs.unselectedAlpha())
-          }
-          iconLabel!!.icon = icon
+          iconLabel!!.icon = tabInfo?.icon
           textLabel!!.clear()
-          info!!.coloredText.appendToComponent(textLabel!!)
-          val customBackground = info.tabColor
+          tabInfo!!.coloredText.appendToComponent(textLabel!!)
+
+          val customBackground = tabInfo.tabColor
           myRendererComponent.background = customBackground ?: JBUI.CurrentTheme.Popup.BACKGROUND
-          ClientProperty.put(component!!, SELECTED_KEY, if (info == selectedInfo) true else null)
+
+          ClientProperty.put(component!!, SELECTED_KEY, if (tabInfo == selectedInfo) true else null)
           component!!.invalidate()
         }
 
@@ -883,46 +867,7 @@ open class KrTabsImpl(
           // the icon will be set in customizeComponent
         }
 
-        override fun createSeparator(): SeparatorWithText {
-          val labelInsets = JBUI.CurrentTheme.Popup.separatorLabelInsets()
-          return GroupHeaderSeparator(labelInsets)
-        }
-
-        private fun addMouseListener(list: JList<out EditorGroupTabInfo>) {
-          if (listMouseListener != null) {
-            return
-          }
-
-          listMouseListener = object : MouseAdapter() {
-            override fun mouseMoved(e: MouseEvent) {
-              val point = e.locationOnScreen
-              SwingUtilities.convertPointFromScreen(point, list)
-              val hoveredIndex = list.locationToIndex(point)
-              val renderer = ListUtil.getDeepestRendererChildComponentAt(list, e.point)
-              updateHoveredIconIndex(if (ClientProperty.get(renderer, TAB_INFO_KEY) != null) hoveredIndex else -1)
-            }
-
-            override fun mouseExited(e: MouseEvent) {
-              updateHoveredIconIndex(-1)
-            }
-
-            private fun updateHoveredIconIndex(hoveredIndex: Int) {
-              val oldIndex = ClientProperty.get(list, HOVER_INDEX_KEY)
-              ClientProperty.put(list, HOVER_INDEX_KEY, hoveredIndex)
-              if (oldIndex != hoveredIndex) {
-                list.repaint()
-              }
-            }
-          }
-          val listeners = list.mouseListeners
-          val motionListeners = list.mouseMotionListeners
-          listeners.forEach(list::removeMouseListener)
-          motionListeners.forEach(list::removeMouseMotionListener)
-          list.addMouseListener(listMouseListener)
-          list.addMouseMotionListener(listMouseListener)
-          listeners.forEach(list::addMouseListener)
-          motionListeners.forEach(list::addMouseMotionListener)
-        }
+        override fun createSeparator() = GroupHeaderSeparator(JBUI.CurrentTheme.Popup.separatorLabelInsets())
       }
     }
     popup.content.putClientProperty(MorePopupAware::class.java, true)
@@ -935,40 +880,6 @@ open class KrTabsImpl(
     })
     popup.show(RelativePoint(this, Point(rect.x, rect.y + rect.height)))
     return popup
-  }
-
-  // returns the icon that will be used in the hidden tabs list
-  protected open fun getTabActionIcon(info: EditorGroupTabInfo, isHovered: Boolean): Icon? = EmptyIcon.ICON_16
-
-  private inner class HiddenInfosListPopupStep(
-    values: List<EditorGroupTabInfo>,
-    private val separatorInfo: EditorGroupTabInfo?
-  ) :
-    BaseListPopupStep<EditorGroupTabInfo>(
-      null,
-      values
-    ) {
-    var selectTab = true
-    override fun onChosen(selectedValue: EditorGroupTabInfo, finalChoice: Boolean): PopupStep<*>? {
-      if (selectTab) {
-        select(selectedValue, true)
-      } else {
-        selectTab = true
-      }
-      return FINAL_CHOICE
-    }
-
-    override fun getSeparatorAbove(value: EditorGroupTabInfo): ListSeparator? = when (value) {
-      separatorInfo -> ListSeparator()
-      else          -> null
-    }
-
-    override fun getIconFor(value: EditorGroupTabInfo): Icon? = value.icon
-
-    override fun getTextFor(value: EditorGroupTabInfo): String {
-      @Suppress("DialogTitleCapitalization")
-      return value.text
-    }
   }
 
   override fun requestFocus() {
@@ -1664,10 +1575,7 @@ open class KrTabsImpl(
   }
 
   @RequiresEdt
-  private fun doRemoveTab(
-    info: EditorGroupTabInfo?,
-    forcedSelectionTransfer: EditorGroupTabInfo?
-  ): ActionCallback {
+  private fun doRemoveTab(info: EditorGroupTabInfo?, forcedSelectionTransfer: EditorGroupTabInfo?): ActionCallback {
     if (removeNotifyInProgress) {
       LOG.warn(IllegalStateException("removeNotify in progress"))
     }
@@ -1784,14 +1692,6 @@ open class KrTabsImpl(
   /** Removes all tabs from the current collection of tabs. */
   override fun removeAllTabs() {
     tabs.forEach { removeTab(it) }
-  }
-
-  private class Max {
-    @JvmField
-    val label = Dimension()
-
-    @JvmField
-    val toolbar = Dimension()
   }
 
   private fun updateContainer(forced: Boolean, layoutNow: Boolean) {
@@ -2007,6 +1907,47 @@ open class KrTabsImpl(
     )
   }
 
+  /**
+   * A custom list popup step for displaying the hidden tabs
+   *
+   * @param values A list of [EditorGroupTabInfo] to be displayed in the popup.
+   * @param separatorInfo An optional [EditorGroupTabInfo] that acts as a separator in the list.
+   * @constructor Creates an instance of [HiddenInfosListPopupStep] with the given list of tab infos and optional separator info.
+   */
+  private inner class HiddenInfosListPopupStep(
+    values: List<EditorGroupTabInfo>,
+    private val separatorInfo: EditorGroupTabInfo?
+  ) : BaseListPopupStep<EditorGroupTabInfo>(/* title = */ null, /* values = */ values) {
+    // Flag for determining whether we should select the tab on selection
+    var shouldSelectTab = true
+
+    override fun onChosen(selectedTab: EditorGroupTabInfo, finalChoice: Boolean): PopupStep<*>? {
+      when {
+        shouldSelectTab -> select(info = selectedTab, requestFocus = true)
+        else            -> shouldSelectTab = true
+      }
+      return FINAL_CHOICE
+    }
+
+    /** Put the separator above the separator info. */
+    override fun getSeparatorAbove(tabInfo: EditorGroupTabInfo): ListSeparator? = when (tabInfo) {
+      separatorInfo -> ListSeparator()
+      else          -> null
+    }
+
+    override fun getIconFor(tabInfo: EditorGroupTabInfo): Icon? = tabInfo.icon
+
+    override fun getTextFor(tabInfo: EditorGroupTabInfo): String = tabInfo.text
+  }
+
+  private class Max {
+    @JvmField
+    val label = Dimension()
+
+    @JvmField
+    val toolbar = Dimension()
+  }
+
   companion object {
     private const val SCROLL_BAR_THICKNESS = 3
     private const val LAYOUT_DONE: @NonNls String = "Layout.done"
@@ -2034,8 +1975,6 @@ open class KrTabsImpl(
   }
 }
 
-private fun getFocusOwner(): JComponent? = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner as? JComponent
-
 private fun updateToolbarIfVisibilityChanged(toolbar: ActionToolbar?, previousBounds: Rectangle) {
   if (toolbar == null) {
     return
@@ -2059,46 +1998,4 @@ private fun createToolbar(
   return toolbar
 }
 
-private class TitleAction(
-  private val tabs: KrTabsImpl,
-  private val titleProvider: () -> Pair<Icon, @Nls String>
-) : AnAction(), CustomComponentAction {
-  private val label = object : JLabel() {
-    override fun getPreferredSize(): Dimension {
-      val size = super.getPreferredSize()
-      size.height = JBUI.scale(SingleHeightTabs.UNSCALED_PREF_HEIGHT)
-      return size
-    }
-
-    override fun updateUI() {
-      super.updateUI()
-      font = EditorGroupTabLabel(tabs, EditorGroupTabInfo()).labelComponent.font
-      border = JBUI.Borders.empty(0, 5, 0, 6)
-    }
-  }
-
-  override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
-    update()
-    return label
-  }
-
-  private fun update() {
-    val pair = titleProvider()
-    label.icon = pair.first
-    label.text = pair.second
-  }
-
-  override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
-
-  override fun actionPerformed(e: AnActionEvent) {
-    // do nothing
-  }
-
-  override fun update(e: AnActionEvent) {
-    update()
-  }
-}
-
 private fun isToDeferRemoveForLater(c: JComponent): Boolean = c.rootPane != null
-
-private fun isChanged(oldObject: Any?, newObject: Any?): Boolean = !Comparing.equal(oldObject, newObject)
