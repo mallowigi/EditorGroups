@@ -1,4 +1,4 @@
-@file:Suppress("UsePropertyAccessSyntax", "detekt:All")
+@file:Suppress("detekt:All")
 
 package krasa.editorGroups.tabs2.impl
 
@@ -9,7 +9,6 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.options.advanced.AdvancedSettings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.fill2DRoundRect
 import com.intellij.openapi.ui.popup.*
@@ -384,7 +383,7 @@ open class KrTabsImpl(
     putClientProperty(
       UIUtil.NOT_IN_HIERARCHY_COMPONENTS,
       Iterable {
-        getVisibleInfos().asSequence().filter { it != mySelectedInfo }.map { it.component }.iterator()
+        visibleTabInfos.asSequence().filter { it != mySelectedInfo }.map { it.component }.iterator()
       }
     )
 
@@ -750,7 +749,7 @@ open class KrTabsImpl(
   /** Show the more tabs popup. */
   override fun showMorePopup(): JBPopup? {
     val rect = lastLayoutPass?.moreRect ?: return null
-    val hiddenInfos = getVisibleInfos()
+    val hiddenInfos = visibleTabInfos
       .filter { effectiveLayout!!.isTabHidden(it) }
       .takeIf { it.isNotEmpty() } ?: return null
 
@@ -987,7 +986,7 @@ open class KrTabsImpl(
    */
   private fun updateAll(forcedRelayout: Boolean) {
     val toSelect = selectedInfo
-    setSelectedInfo(toSelect)
+    mySelectedInfo = toSelect
     updateContainer(forced = forcedRelayout, layoutNow = false)
     removeDeferred()
     updateListeners()
@@ -1053,7 +1052,7 @@ open class KrTabsImpl(
 
     // Keep new selected info
     val oldTabInfo = mySelectedInfo
-    setSelectedInfo(tabInfo)
+    mySelectedInfo = tabInfo
 
     // Put label at top of tab
     val newInfo = mySelectedInfo
@@ -1102,7 +1101,7 @@ open class KrTabsImpl(
   /** Select tab without firing events. */
   @RequiresEdt
   fun selectTabSilently(tab: EditorGroupTabInfo) {
-    setSelectedInfo(tab)
+    mySelectedInfo = tab
     // Lay components
     setComponentZOrder(tab.tabLabel!!, 0)
     setComponentZOrder(scrollBar, 0)
@@ -1298,7 +1297,7 @@ open class KrTabsImpl(
       val oldSelectedInfo = mySelectedInfo
       // Remove selected info from the hidden infos since it came into view
       if (oldSelectedInfo != null && hiddenInfos.containsKey(oldSelectedInfo)) {
-        setSelectedInfo(getToSelectOnRemoveOf(oldSelectedInfo))
+        mySelectedInfo = getToSelectOnRemoveOf(oldSelectedInfo)
       }
 
       updateAll(forcedRelayout = true)
@@ -1355,109 +1354,96 @@ open class KrTabsImpl(
     label.toolTipText = tabInfo.tooltipText
   }
 
-  fun setSelectedInfo(info: EditorGroupTabInfo?) {
-    mySelectedInfo = info
-  }
+  /** Returns the tab to select after removal. */
+  override fun getToSelectOnRemoveOf(tabInfo: EditorGroupTabInfo): EditorGroupTabInfo? {
+    if (!visibleTabInfos.contains(tabInfo) || mySelectedInfo != tabInfo || visibleTabInfos.size == 1) return null
 
-  override fun getToSelectOnRemoveOf(info: EditorGroupTabInfo): EditorGroupTabInfo? {
-    if (!visibleTabInfos.contains(info) || mySelectedInfo != info || visibleTabInfos.size == 1) {
-      return null
-    }
-
-    val index = getVisibleInfos().indexOf(info)
+    val index = visibleTabInfos.indexOf(tabInfo)
     var result: EditorGroupTabInfo? = null
+
+    // Find the first enabled tab on the left tabs
     if (index > 0) {
-      result = findEnabledBackward(index, false)
+      result = findEnabledBackward(from = index, cycle = false)
     }
-    return result ?: findEnabledForward(index, false)
+
+    // If nothing is found (like if its the first tab), try on the right tabs
+    return result ?: findEnabledForward(from = index, cycle = false)
   }
 
+  /** Find the next enabled tab in the forward direction. */
   fun findEnabledForward(from: Int, cycle: Boolean): EditorGroupTabInfo? {
-    if (from < 0) {
-      return null
-    }
+    if (from < 0) return null
 
     var index = from
-    val infos = getVisibleInfos()
+    val infos = visibleTabInfos
+
     while (true) {
       index++
       if (index == infos.size) {
-        if (!cycle) {
-          break
-        }
+        if (!cycle) break
         index = 0
       }
-      if (index == from) {
-        break
-      }
+
+      if (index == from) break
+
       val tabInfo = infos[index]
-      if (tabInfo.isEnabled) {
-        return tabInfo
-      }
+      if (tabInfo.isEnabled) return tabInfo
     }
+
     return null
   }
 
+  /** Find the next enabled tab in the backward direction. */
   fun findEnabledBackward(from: Int, cycle: Boolean): EditorGroupTabInfo? {
-    if (from < 0) {
-      return null
-    }
+    if (from < 0) return null
 
     var index = from
-    val infos = getVisibleInfos()
+    val infos = visibleTabInfos
+
     while (true) {
       index--
+
       if (index == -1) {
-        if (!cycle) {
-          break
-        }
+        if (!cycle) break
         index = infos.size - 1
       }
-      if (index == from) {
-        break
-      }
-      val each = infos[index]
-      if (each.isEnabled) {
-        return each
-      }
+
+      if (index == from) break
+
+      val tabInfo = infos[index]
+      if (tabInfo.isEnabled) return tabInfo
     }
+
     return null
   }
 
+  /** Get tab at tab index. */
   override fun getTabAt(tabIndex: Int): EditorGroupTabInfo = tabs[tabIndex]
 
+  // Return the target tab info
   override fun getTargetInfo(): EditorGroupTabInfo? = popupInfo ?: selectedInfo
 
+  /** When popup menu is visible. */
   override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {}
 
-  override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) {
-    resetPopup()
-  }
+  /** When popup menu is invisible. */
+  override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent): Unit = resetPopup()
 
-  override fun popupMenuCanceled(e: PopupMenuEvent) {
-    resetPopup()
-  }
+  /** When popup menu is canceled. */
+  override fun popupMenuCanceled(e: PopupMenuEvent): Unit = resetPopup()
 
+  /** Resets the popup information. */
   private fun resetPopup() {
-    // todo [kirillk] dirty hack, should rely on ActionManager to understand that menu item was either chosen on or cancelled
     SwingUtilities.invokeLater {
       // No need to reset popup info if a new popup has been already opened and myPopupInfo refers to the corresponding info.
-      if (activePopup == null) {
-        popupInfo = null
-      }
+      if (activePopup == null) popupInfo = null
     }
   }
 
-  override fun setPaintBlocked(blocked: Boolean, takeSnapshot: Boolean) {}
+  /** Add to deferred to remove. */
   private fun addToDeferredRemove(c: Component) {
-    if (!deferredToRemove.containsKey(c)) {
-      deferredToRemove.put(c, c)
-    }
+    if (!deferredToRemove.containsKey(c)) deferredToRemove.put(c, c)
   }
-
-  override fun setToDrawBorderIfTabsHidden(toDrawBorderIfTabsHidden: Boolean): KrTabsPresentation = this
-
-  override fun getJBTabs(): EditorGroupsTabsBase = this
 
   private fun updateScrollBarModel() {
     val scrollBarModel = scrollBarModel
@@ -1485,7 +1471,7 @@ open class KrTabsImpl(
     try {
       val moreBoundsBeforeLayout = moreToolbar!!.component.bounds
       headerFitSize = computeHeaderFitSize()
-      val visible = getVisibleInfos().toMutableList()
+      val visible = visibleTabInfos.toMutableList()
 
       val effectiveLayout = effectiveLayout
       if (effectiveLayout is EditorGroupsSingleRowLayout) {
@@ -1574,22 +1560,6 @@ open class KrTabsImpl(
     super.paintComponent(g)
     tabPainter.fillBackground(g as Graphics2D, Rectangle(0, 0, width, height))
     drawBorder(g)
-  }
-
-  open fun getVisibleInfos(): List<EditorGroupTabInfo> {
-    if (AdvancedSettings.getBoolean("editor.keep.pinned.tabs.on.left")) {
-      groupPinnedFirst(visibleTabInfos)
-    }
-    return visibleTabInfos
-  }
-
-  private fun groupPinnedFirst(infos: MutableList<EditorGroupTabInfo>) {
-    var firstNotPinned = -1
-    for (i in infos.indices) {
-      if (firstNotPinned == -1) {
-        firstNotPinned = i
-      }
-    }
   }
 
   override fun getComponentGraphics(graphics: Graphics): Graphics =
@@ -1718,7 +1688,7 @@ open class KrTabsImpl(
       val transferFocus = isFocused(info)
       processRemove(info, false)
       if (clearSelection) {
-        setSelectedInfo(info)
+        mySelectedInfo = info
       }
       doSetSelected(toSelect, transferFocus, true).doWhenProcessed { removeDeferred().notifyWhenDone(result) }
     } else {
@@ -1933,7 +1903,7 @@ open class KrTabsImpl(
     isFocused = focused
   }
 
-  override fun getIndexOf(tabInfo: EditorGroupTabInfo?): Int = getVisibleInfos().indexOf(tabInfo)
+  override fun getIndexOf(tabInfo: EditorGroupTabInfo?): Int = visibleTabInfos.indexOf(tabInfo)
 
   private fun disposePopupListener() {
     if (activePopup != null) {
@@ -2098,30 +2068,30 @@ open class KrTabsImpl(
       }
       c.putClientProperty(LAYOUT_DONE, null)
     }
+
+    private fun createToolbar(
+      group: ActionGroup,
+      targetComponent: JComponent,
+      actionManager: ActionManager
+    ): ActionToolbar {
+      val toolbar = actionManager.createActionToolbar(ActionPlaces.TABS_MORE_TOOLBAR, group, true)
+      toolbar.targetComponent = targetComponent
+      toolbar.component.border = JBUI.Borders.empty()
+      toolbar.component.isOpaque = false
+      return toolbar
+    }
+
+    private fun updateToolbarIfVisibilityChanged(toolbar: ActionToolbar?, previousBounds: Rectangle) {
+      if (toolbar == null) {
+        return
+      }
+
+      val bounds = toolbar.component.bounds
+      if (bounds.isEmpty != previousBounds.isEmpty) {
+        toolbar.updateActionsAsync()
+      }
+    }
+
+    private fun isToDeferRemoveForLater(c: JComponent): Boolean = c.rootPane != null
   }
 }
-
-private fun updateToolbarIfVisibilityChanged(toolbar: ActionToolbar?, previousBounds: Rectangle) {
-  if (toolbar == null) {
-    return
-  }
-
-  val bounds = toolbar.component.bounds
-  if (bounds.isEmpty != previousBounds.isEmpty) {
-    toolbar.updateActionsAsync()
-  }
-}
-
-private fun createToolbar(
-  group: ActionGroup,
-  targetComponent: JComponent,
-  actionManager: ActionManager
-): ActionToolbar {
-  val toolbar = actionManager.createActionToolbar(ActionPlaces.TABS_MORE_TOOLBAR, group, true)
-  toolbar.targetComponent = targetComponent
-  toolbar.component.border = JBUI.Borders.empty()
-  toolbar.component.isOpaque = false
-  return toolbar
-}
-
-private fun isToDeferRemoveForLater(c: JComponent): Boolean = c.rootPane != null

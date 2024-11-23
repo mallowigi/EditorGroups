@@ -117,7 +117,7 @@ class EditorGroupsTabs(private val project: Project, parent: Disposable, private
     this.popupInfo = tabInfo
   }
 
-  override fun toString(): String = "EditorGroupsTabsContainer (KrJBEditorTabs) visible=${getVisibleInfos()} selected=$selectedInfo"
+  override fun toString(): String = "EditorGroupsTabsContainer (KrJBEditorTabs) visible=${this.visibleTabInfos} selected=$selectedInfo"
 
   private class MyMouseAdapter(private val mouseListener: MouseListener) : MouseAdapter() {
     override fun mouseClicked(e: MouseEvent) {

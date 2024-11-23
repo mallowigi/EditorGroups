@@ -17,7 +17,7 @@ class EditorGroupsTabsBorder(val tabs: KrTabsImpl) : Border {
     g as Graphics2D
     if (tabs.isEmptyVisible) return
 
-    val firstLabel = tabs.getTabLabel(tabs.getVisibleInfos().first()) ?: return
+    val firstLabel = tabs.getTabLabel(tabs.visibleTabInfos.first()) ?: return
 
     when (tabs.position) {
       EditorGroupsTabsPosition.TOP    -> {
