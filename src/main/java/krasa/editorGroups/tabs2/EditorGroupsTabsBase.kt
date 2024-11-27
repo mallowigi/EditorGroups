@@ -12,6 +12,7 @@ import java.awt.event.MouseListener
 import java.util.function.Supplier
 import javax.swing.JComponent
 
+/** Fork of JBTabs. */
 @Suppress("unused", "HardCodedStringLiteral")
 interface EditorGroupsTabsBase {
   /** Selected tab. */
@@ -42,7 +43,7 @@ interface EditorGroupsTabsBase {
   fun getTabAt(tabIndex: Int): EditorGroupTabInfo
 
   /** The tab presentation. */
-  fun getPresentation(): KrTabsPresentation
+  fun getPresentation(): EditorGroupTabsPresentation
 
   fun setDataProvider(dataProvider: DataProvider): EditorGroupsTabsBase?
 
@@ -66,11 +67,9 @@ interface EditorGroupsTabsBase {
 
   fun requestFocus()
 
-  fun setNavigationActionBinding(prevActionId: String, nextActionId: String)
-
   fun setPopupGroup(popupGroup: ActionGroup, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase
 
-  fun setPopupGroupWithSupplier(supplier: Supplier<out ActionGroup?>, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase
+  fun setPopupGroupWithSupplier(supplier: Supplier<out ActionGroup?>, place: String): EditorGroupsTabsBase
 
   fun getTabLabel(tabInfo: EditorGroupTabInfo): Component?
 

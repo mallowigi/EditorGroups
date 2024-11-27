@@ -6,8 +6,6 @@ import com.intellij.ui.SimpleColoredText
 import com.intellij.ui.SimpleTextAttributes
 import java.awt.Color
 import java.beans.PropertyChangeSupport
-import java.lang.ref.Reference
-import java.lang.ref.WeakReference
 import javax.swing.Icon
 import javax.swing.JComponent
 
@@ -41,15 +39,6 @@ open class EditorGroupTabInfo(var component: JComponent? = null) {
       val old = field
       field = enabled
       changeSupport.firePropertyChange(ENABLED, old, field)
-    }
-
-  private var lastFocusOwnerRef: Reference<JComponent>? = null
-
-  /** Last focus owner. */
-  var lastFocusOwner: JComponent?
-    get() = lastFocusOwnerRef?.get()
-    set(value) {
-      lastFocusOwnerRef = value?.let { WeakReference(it) }
     }
 
   val coloredText: SimpleColoredText = SimpleColoredText()
@@ -136,7 +125,10 @@ open class EditorGroupTabInfo(var component: JComponent? = null) {
     return this
   }
 
-  fun setDefaultStyle(@SimpleTextAttributes.StyleAttributeConstant style: Int): EditorGroupTabInfo {
+  fun setDefaultStyle(
+    @SimpleTextAttributes.StyleAttributeConstant
+    style: Int
+  ): EditorGroupTabInfo {
     defaultStyle = style
     defaultAttributes = null
     update()
@@ -145,14 +137,6 @@ open class EditorGroupTabInfo(var component: JComponent? = null) {
 
   fun setDefaultForeground(fg: Color?): EditorGroupTabInfo {
     defaultForeground = fg
-    defaultAttributes = null
-    update()
-    return this
-  }
-
-  fun setDefaultForegroundAndAttributes(foregroundColor: Color?, attributes: TextAttributes?): EditorGroupTabInfo {
-    defaultForeground = foregroundColor
-    editorAttributes = attributes
     defaultAttributes = null
     update()
     return this

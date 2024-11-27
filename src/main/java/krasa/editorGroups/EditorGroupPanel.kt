@@ -45,8 +45,8 @@ import krasa.editorGroups.language.EditorGroupsLanguage.isEditorGroupsLanguage
 import krasa.editorGroups.model.*
 import krasa.editorGroups.settings.EditorGroupsSettings
 import krasa.editorGroups.support.*
+import krasa.editorGroups.tabs2.EditorGroupsTabs
 import krasa.editorGroups.tabs2.EditorGroupsTabsBase
-import krasa.editorGroups.tabs2.EditorGroupsTabsContainer
 import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
 import krasa.editorGroups.tabs2.impl.themes.EditorGroupsUI
 import krasa.editorGroups.tabs2.label.EditorGroupTabInfo
@@ -115,7 +115,7 @@ class EditorGroupPanel(
   private val fileFromTextEditor = getFileFromTextEditor(fileEditor)
 
   /** The tabs component for this editor panel. */
-  val tabs: EditorGroupsTabsContainer = EditorGroupsTabsContainer(
+  val tabs: EditorGroupsTabs = EditorGroupsTabs(
     project,
     fileEditor,
     file
@@ -183,6 +183,9 @@ class EditorGroupPanel(
     // Create the tabs component
     updateTabPlacement()
 
+    // Set the first tab offset
+    tabs.setFirstTabOffset(10)
+
     // Add a right click mouse listener to allow remove from favorites
     tabs.addTabMouseListener(EditorTabMouseListener(tabs))
 
@@ -191,8 +194,7 @@ class EditorGroupPanel(
       supplier = {
         CustomActionsSchema.getInstance().getCorrectedAction(EDITOR_GROUP_TAB_MENU) as ActionGroup
       },
-      place = TAB_PLACE,
-      addNavigationGroup = false
+      place = TAB_PLACE
     )
 
     // Listen to tab selection
@@ -237,7 +239,6 @@ class EditorGroupPanel(
     when (this.currentTabPlacement) {
       SwingConstants.TOP    -> tabs.setTabsPosition(EditorGroupsTabsPosition.TOP)
       SwingConstants.BOTTOM -> tabs.setTabsPosition(EditorGroupsTabsPosition.BOTTOM)
-      else                  -> tabs.isHideTabs = true
     }
   }
 
@@ -1133,7 +1134,7 @@ class EditorGroupPanel(
   }
 
   /** Remove favorites on right click. */
-  internal inner class EditorTabMouseListener(val tabs: EditorGroupsTabsContainer) : MouseAdapter() {
+  internal inner class EditorTabMouseListener(val tabs: EditorGroupsTabs) : MouseAdapter() {
     override fun mouseReleased(e: MouseEvent) {
       // if right click a tab (or shift-click)
       if (!UIUtil.isCloseClick(e, MouseEvent.MOUSE_RELEASED)) return

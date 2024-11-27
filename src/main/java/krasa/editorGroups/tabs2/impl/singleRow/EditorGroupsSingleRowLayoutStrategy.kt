@@ -39,8 +39,6 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
   abstract fun getFixedPosition(passInfo: EditorGroupsSingleRowPassInfo): Int
 
-  abstract fun getTitleRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle
-
   abstract fun getMoreRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle
 
   abstract fun getEntryPointRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle?
@@ -124,13 +122,9 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
     override fun getEntryPointRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle {
       val x: Int = passInfo.layoutSize.width - myTabs.actionsInsets.right - passInfo.entryPointAxisSize
       return Rectangle(
-        /* x = */
         x,
-        /* y = */
         1,
-        /* width = */
         passInfo.entryPointAxisSize,
-        /* height = */
         myTabs.headerFitSize!!.height
       )
     }
@@ -140,36 +134,14 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
       x -= passInfo.entryPointAxisSize
 
       return Rectangle(
-        /* x = */
         x,
-        /* y = */
         1,
-        /* width = */
         passInfo.moreRectAxisSize,
-        /* height = */
         myTabs.headerFitSize!!.height
       )
     }
 
-    override fun getTitleRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle = Rectangle(
-      0,
-      0,
-      myTabs.titleWrapper.preferredSize.width,
-      myTabs.headerFitSize!!.height
-    )
-
     override fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo) {
-      if (myTabs.isHideTabs) {
-        myTabs.layoutComp(
-          passInfo = passInfo,
-          deltaX = 0,
-          deltaY = 0,
-          deltaWidth = 0,
-          deltaHeight = 0
-        )
-        return
-      }
-
       val x = 0
       val hToolbar = passInfo.hToolbar?.get()
       val hToolbarHeight = when {
@@ -214,23 +186,13 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
 
   internal class Bottom(layout: EditorGroupsSingleRowLayout) : Horizontal(layout) {
     override fun layoutComp(passInfo: EditorGroupsSingleRowPassInfo) {
-      when {
-        myTabs.isHideTabs -> myTabs.layoutComp(
-          passInfo = passInfo,
-          deltaX = 0,
-          deltaY = 0,
-          deltaWidth = 0,
-          deltaHeight = 0
-        )
-
-        else              -> myTabs.layoutComp(
-          passInfo = passInfo,
-          deltaX = 0,
-          deltaY = 0,
-          deltaWidth = 0,
-          deltaHeight = -myTabs.headerFitSize!!.height
-        )
-      }
+      myTabs.layoutComp(
+        passInfo = passInfo,
+        deltaX = 0,
+        deltaY = 0,
+        deltaWidth = 0,
+        deltaHeight = -myTabs.headerFitSize!!.height
+      )
     }
 
     override fun getFixedPosition(passInfo: EditorGroupsSingleRowPassInfo): Int =
@@ -240,13 +202,9 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
       val x: Int = passInfo.layoutSize.width - myTabs.actionsInsets.right - passInfo.entryPointAxisSize
 
       return Rectangle(
-        /* x = */
         x,
-        /* y = */
         getFixedPosition(passInfo),
-        /* width = */
         passInfo.entryPointAxisSize,
-        /* height = */
         myTabs.headerFitSize!!.height
       )
     }
@@ -256,27 +214,12 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
       x -= passInfo.entryPointAxisSize
 
       return Rectangle(
-        /* x = */
         x,
-        /* y = */
         getFixedPosition(passInfo),
-        /* width = */
         passInfo.moreRectAxisSize,
-        /* height = */
         myTabs.headerFitSize!!.height
       )
     }
-
-    override fun getTitleRect(passInfo: EditorGroupsSingleRowPassInfo): Rectangle = Rectangle(
-      /* x = */
-      0,
-      /* y = */
-      getFixedPosition(passInfo),
-      /* width = */
-      myTabs.titleWrapper.preferredSize.width,
-      /* height = */
-      myTabs.headerFitSize!!.height
-    )
   }
 
   companion object {

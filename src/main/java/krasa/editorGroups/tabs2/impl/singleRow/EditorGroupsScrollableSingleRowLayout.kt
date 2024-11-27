@@ -53,7 +53,7 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
    */
   @Suppress("detekt:NestedBlockDepth")
   private fun doScrollToSelectedTab(passInfo: EditorGroupsSingleRowPassInfo) {
-    if (tabs.isMouseInsideTabsArea || tabs.isScrollBarAdjusting() || tabs.isRecentlyActive) return
+    if (tabs.isMouseInsideTabsArea || tabs.isScrollBarAdjusting()) return
 
     var offset = -this.scrollOffset
     for (info in passInfo.visibleTabInfos) {
@@ -134,7 +134,7 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
   override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean {
     val label = tabs.getTabLabel(tabInfo)!!
     val bounds = label.bounds
-    val deadzone = JBUI.scale(DEADZONE_FOR_DECLARE_TAB_HIDDEN)
+    val deadzone = JBUI.scale(DEADZONE_TAB_HIDDEN)
 
     return strategy.getMinPosition(bounds) < -deadzone ||
       bounds.width < label.getPreferredSize().width - deadzone ||
@@ -155,6 +155,6 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
   }
 
   companion object {
-    const val DEADZONE_FOR_DECLARE_TAB_HIDDEN: Int = 10
+    const val DEADZONE_TAB_HIDDEN: Int = 10
   }
 }

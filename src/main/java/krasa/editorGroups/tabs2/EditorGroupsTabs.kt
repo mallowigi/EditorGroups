@@ -15,10 +15,11 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 
-class EditorGroupsTabsContainer(private val project: Project, parent: Disposable, private val file: VirtualFile) :
+/** Fork of [com.intellij.ui.tabs.impl.JBEditorTabs]. */
+class EditorGroupsTabs(private val project: Project, parent: Disposable, private val file: VirtualFile) :
   EditorGroupsPanelTabs(project, parent) {
   /** The single row layout that will contain our component. */
-  private val mySingleRowLayout = createSingleRowLayout()
+  private val mySingleRowLayout = createRowLayout()
 
   var bulkUpdate: Boolean = false
 
@@ -81,7 +82,7 @@ class EditorGroupsTabsContainer(private val project: Project, parent: Disposable
    * krasa.editorGroups.tabs2.impl.JBTabsImpl$7.initialize(JBTabsImpl.java:340) at
    * krasa.editorGroups.tabs2.impl.JBTabsImpl$7.initialize(JBTabsImpl.java:333)
    */
-  override fun createSingleRowLayout(): EditorGroupsSingleRowLayout = EditorGroupsScrollableSingleRowLayout(this)
+  override fun createRowLayout(): EditorGroupsSingleRowLayout = EditorGroupsScrollableSingleRowLayout(this)
 
   /** Do not handle inactive tabs. */
   override fun isActiveTabs(info: EditorGroupTabInfo?): Boolean = true
@@ -116,22 +117,22 @@ class EditorGroupsTabsContainer(private val project: Project, parent: Disposable
     this.popupInfo = tabInfo
   }
 
-  override fun toString(): String = "EditorGroups.KrJBEditorTabs visible=${getVisibleInfos()} selected=$selectedInfo"
+  override fun toString(): String = "EditorGroupsTabsContainer (KrJBEditorTabs) visible=${this.visibleTabInfos} selected=$selectedInfo"
 
   private class MyMouseAdapter(private val mouseListener: MouseListener) : MouseAdapter() {
     override fun mouseClicked(e: MouseEvent) {
       // fix for - Ctrl + Mouse Click events are also consumed by the editor
-      IdeEventQueue.Companion.getInstance().blockNextEvents(e, IdeEventQueue.BlockMode.ACTIONS)
+      IdeEventQueue.getInstance().blockNextEvents(e, IdeEventQueue.BlockMode.ACTIONS)
       mouseListener.mouseClicked(e)
     }
 
     override fun mousePressed(e: MouseEvent) {
-      IdeEventQueue.Companion.getInstance().blockNextEvents(e, IdeEventQueue.BlockMode.ACTIONS)
+      IdeEventQueue.getInstance().blockNextEvents(e, IdeEventQueue.BlockMode.ACTIONS)
       mouseListener.mousePressed(e)
     }
 
     override fun mouseReleased(e: MouseEvent) {
-      IdeEventQueue.Companion.getInstance().blockNextEvents(e, IdeEventQueue.BlockMode.ACTIONS)
+      IdeEventQueue.getInstance().blockNextEvents(e, IdeEventQueue.BlockMode.ACTIONS)
       mouseListener.mouseReleased(e)
     }
 

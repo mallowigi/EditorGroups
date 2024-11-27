@@ -1,10 +1,8 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package krasa.editorGroups.tabs2.impl.singleRow
 
 import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
 import krasa.editorGroups.tabs2.impl.EditorGroupsTabLayout
 import krasa.editorGroups.tabs2.impl.KrTabsImpl
-import krasa.editorGroups.tabs2.impl.KrTabsImpl.Companion.resetLayout
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsSingleRowLayoutStrategy.Bottom
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsSingleRowLayoutStrategy.Top
 import krasa.editorGroups.tabs2.label.EditorGroupTabInfo
@@ -26,10 +24,11 @@ abstract class EditorGroupsSingleRowLayout(
     get() = when (tabs.getPresentation().tabsPosition) {
       EditorGroupsTabsPosition.TOP    -> topStrategy
       EditorGroupsTabsPosition.BOTTOM -> bottomStrategy
+      else                            -> topStrategy
     }
 
   /** Check whether to relayout tab labels. */
-  @Suppress("detekt:ReturnCount")
+  @Suppress("detekt:ReturnCount", "HardCodedStringLiteral")
   protected open fun shouldRelayoutLabels(passInfo: EditorGroupsSingleRowPassInfo): Boolean {
     var layoutLabels = true
 
@@ -65,20 +64,17 @@ abstract class EditorGroupsSingleRowLayout(
 
     // Prepare the passinfo
     val selectedInfo = tabs.selectedInfo
-    prepareLayoutPassInfo(passInfo = passInfo, selected = selectedInfo)
+    prepareLayoutPassInfo(passInfo = passInfo)
 
     // Reset the layout
-    tabs.resetLayout(shouldLayoutLabels || tabs.isHideTabs)
+    tabs.resetLayout(shouldLayoutLabels)
 
     // Layout the tabs
-    if (shouldLayoutLabels && !tabs.isHideTabs) {
+    if (shouldLayoutLabels) {
       recomputeToLayout(passInfo)
 
       // Sets the left position
       passInfo.position = strategy.getStartPosition(passInfo) - scrollOffset
-
-      // Compute the tab title
-      layoutTitle(passInfo)
 
       // Layout the labels
       layoutLabels(passInfo)
@@ -121,34 +117,19 @@ abstract class EditorGroupsSingleRowLayout(
     tabs.getTabLabel(passInfo.toLayout[passInfo.toLayout.size - 1])
 
   /** Prepare the passInfo. */
-  protected fun prepareLayoutPassInfo(passInfo: EditorGroupsSingleRowPassInfo, selected: EditorGroupTabInfo?) {
+  protected fun prepareLayoutPassInfo(passInfo: EditorGroupsSingleRowPassInfo) {
     // Save the insets
     passInfo.insets = tabs.layoutInsets
     // Add offset left
     passInfo.insets!!.left += tabs.firstTabOffset
 
-    // Horizontal toolbar
-    val selectedToolbar = tabs.infoToToolbar[selected]
-    if (selectedToolbar == null || selectedToolbar.isEmpty) {
-      passInfo.hToolbar = null
-    } else {
-      passInfo.hToolbar = WeakReference<JComponent?>(selectedToolbar)
-    }
-
     // Set the fit length
     passInfo.toFitLength = strategy.getToFitLength(passInfo)
   }
 
-  /** Sets the title bounds. */
-  protected fun layoutTitle(passInfo: EditorGroupsSingleRowPassInfo) {
-    passInfo.titleRect = strategy.getTitleRect(passInfo)
-    passInfo.position += passInfo.titleRect.width
-  }
-
+  /** Layout the more button. */
   protected open fun layoutMoreButton(passInfo: EditorGroupsSingleRowPassInfo) {
-    if (!passInfo.toDrop.isEmpty()) {
-      passInfo.moreRect = strategy.getMoreRect(passInfo)
-    }
+    passInfo.moreRect = strategy.getMoreRect(passInfo)
   }
 
   /** Sets the entry point bounds. */
@@ -186,10 +167,6 @@ abstract class EditorGroupsSingleRowLayout(
       if (!continueLayout) {
         layoutStopped = true
       }
-    }
-
-    for (eachInfo in passInfo.toDrop) {
-      resetLayout(tabs.infoToLabel[eachInfo])
     }
   }
 
@@ -231,6 +208,5 @@ abstract class EditorGroupsSingleRowLayout(
     return strategy.getLengthIncrement(label?.preferredSize ?: Dimension()) + tabs.tabHGap
   }
 
-  override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean =
-    lastSingleRowLayout != null && lastSingleRowLayout!!.toDrop.contains(tabInfo)
+  override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean = lastSingleRowLayout != null
 }

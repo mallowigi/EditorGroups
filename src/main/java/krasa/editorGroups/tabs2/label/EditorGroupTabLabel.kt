@@ -1,6 +1,5 @@
 package krasa.editorGroups.tabs2.label
 
-import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.openapi.ui.popup.util.PopupUtil
@@ -16,7 +15,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.accessibility.ScreenReader
 import krasa.editorGroups.settings.EditorGroupsSettings
-import krasa.editorGroups.tabs2.EditorGroupsTabsEx
 import krasa.editorGroups.tabs2.impl.KrTabsImpl
 import krasa.editorGroups.tabs2.impl.themes.EditorGroupsUI
 import java.awt.*
@@ -55,6 +53,8 @@ class EditorGroupTabLabel(
     get() = tabs.isHoveredTab(this)
     private set(value) {
       if (field == value) return
+      field = value
+
       when {
         value -> tabs.setHovered(label = this)
         else  -> tabs.unHover(label = this)
@@ -111,7 +111,7 @@ class EditorGroupTabLabel(
         }
 
         // Select tab
-        tabs.select(info = info, requestFocus = true)
+        tabs.select(tabInfo = info, requestFocus = true)
 
         // Close previously opened right click popups
         val container = PopupUtil.getPopupContainerFor(this@EditorGroupTabLabel)
@@ -367,13 +367,6 @@ class EditorGroupTabLabel(
     if (tabs.popupGroup != null) {
       toShow.addAll(tabs.popupGroup!!)
       toShow.addSeparator()
-    }
-
-    // Get the tabs instance at mouse position, if its the same one as this' tabs, add the navigation actions
-    val dataContext = DataManager.getInstance().getDataContext(e.component, e.x, e.y)
-    val contextTabs = EditorGroupsTabsEx.Companion.NAVIGATION_ACTIONS_KEY.getData(dataContext) as KrTabsImpl
-    if (contextTabs === tabs && tabs.addNavigationGroup) {
-      toShow.addAll(tabs.navigationActions)
     }
 
     if (toShow.childrenCount == 0) return
