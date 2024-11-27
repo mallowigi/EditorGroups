@@ -204,7 +204,7 @@ abstract class EditorGroupsSingleRowLayout(
   }
 
   protected fun getRequiredLength(tabInfo: EditorGroupTabInfo?): Int {
-    val label = tabs.infoToLabel[tabInfo]
+    val label = tabInfo?.tabLabel
     return strategy.getLengthIncrement(label?.preferredSize ?: Dimension()) + tabs.tabHGap
   }
 

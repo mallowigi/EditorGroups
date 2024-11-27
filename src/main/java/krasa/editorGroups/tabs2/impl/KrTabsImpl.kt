@@ -304,9 +304,6 @@ open class KrTabsImpl(
       else                                     -> null
     }
 
-  // Map infos to labels
-  val infoToLabel: MutableMap<EditorGroupTabInfo, EditorGroupTabLabel> = HashMap()
-
   var position: EditorGroupsTabsPosition = EditorGroupsTabsPosition.TOP
     private set
 
@@ -990,8 +987,6 @@ open class KrTabsImpl(
 
     tabInfo.tabLabel = label
     infoToPage.put(tabInfo, AccessibleTabPage(parent = this, tabInfo = tabInfo))
-    // TODO REMOVE THIS once we remove infoToLabel
-    infoToLabel.put(tabInfo, label)
 
     // Add the tab at the given index
     when {
@@ -1013,7 +1008,7 @@ open class KrTabsImpl(
   protected open fun createTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel = EditorGroupTabLabel(this, info)
 
   /** Get a tab label at the given info. */
-  override fun getTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel? = info.tabLabel ?: infoToLabel[info]
+  override fun getTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel? = info.tabLabel
 
   override fun setPopupGroup(popupGroup: ActionGroup, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase =
     setPopupGroupWithSupplier({ popupGroup }, place)
@@ -1834,7 +1829,6 @@ open class KrTabsImpl(
     visibleTabInfos.remove(tabInfo)
     infoToPage.remove(tabInfo)
     hiddenInfos.remove(tabInfo)
-    infoToLabel.remove(tabInfo)
 
     // Reset tabLabelAtMouse
     if (tabLabelAtMouse === tabLabel) tabLabelAtMouse = null
