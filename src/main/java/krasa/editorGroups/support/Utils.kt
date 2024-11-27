@@ -93,6 +93,7 @@ fun getFileByPath(path: String, currentFile: VirtualFile?): VirtualFile? {
       var file: VirtualFile? = null
 
       when {
+        path.contains(".jar")               -> file = VirtualFileManager.getInstance().findFileByUrl("jar://$path") // NON-NLS
         OSAgnosticPathUtil.isAbsolute(path) -> file = LocalFileSystem.getInstance().findFileByPath(path)
         currentFile != null                 -> {
           val parent = currentFile.parent
