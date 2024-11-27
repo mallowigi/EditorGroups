@@ -1,11 +1,10 @@
-@file:Suppress("detekt:All")
-
 package krasa.editorGroups.tabs2.impl
 
 import com.intellij.ide.ui.UISettings
 import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.toolbarLayout.ToolbarLayoutStrategy
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -61,7 +60,7 @@ import javax.swing.event.PopupMenuListener
 import javax.swing.plaf.ComponentUI
 import kotlin.math.max
 
-@Suppress("detekt:LargeClass", "detekt:MagicNumber", "detekt:StringLiteralDuplication")
+@Suppress("detekt:LargeClass", "detekt:MagicNumber", "detekt:StringLiteralDuplication", "UnstableApiUsage")
 @DirtyUI
 open class KrTabsImpl(
   private var project: Project?,
@@ -258,7 +257,7 @@ open class KrTabsImpl(
     get() = true // TODO add setting for it
 
   /** The list of tabs. */
-  override val tabs: List<EditorGroupTabInfo>
+  override var tabs: List<EditorGroupTabInfo>
     get() {
       // If allTabs is not null, it means that the tabs are already sorted and we can return them directly.
       this.allTabs?.let { return it }
@@ -275,27 +274,27 @@ open class KrTabsImpl(
       this.allTabs = result
       return result
     }
-  // set(tabs) {
-  //   for (tab in tabs) {
-  //     tab.changeSupport.addPropertyChangeListener(this)
-  //
-  //     val label = createTabLabel(tab)
-  //     label.setText(tab.coloredText)
-  //     label.toolTipText = tab.tooltipText
-  //     label.setIcon(tab.icon)
-  //
-  //     tab.tabLabel = label
-  //     infoToPage.put(tab, AccessibleTabPage(parent = this, tabInfo = tab))
-  //   }
-  //
-  //   for (tab in tabs) {
-  //     add(tab.tabLabel!!)
-  //   }
-  //
-  //   assert(visibleTabInfos.isEmpty())
-  //   visibleTabInfos.addAll(tabs)
-  //   resetTabsCache()
-  // }
+    set(tabs) {
+      for (tab in tabs) {
+        tab.changeSupport.addPropertyChangeListener(this)
+
+        val label = createTabLabel(tab)
+        label.setText(tab.coloredText)
+        label.toolTipText = tab.tooltipText
+        label.setIcon(tab.icon)
+
+        tab.tabLabel = label
+        infoToPage.put(tab, AccessibleTabPage(parent = this, tabInfo = tab))
+      }
+
+      for (tab in tabs) {
+        add(tab.tabLabel!!)
+      }
+
+      assert(visibleTabInfos.isEmpty())
+      visibleTabInfos.addAll(tabs)
+      resetTabsCache()
+    }
 
   /** The currently selected tab. */
   override val selectedInfo: EditorGroupTabInfo?
@@ -340,7 +339,9 @@ open class KrTabsImpl(
 
     // Add disposer for popup
     popupListener = object : PopupMenuListener {
-      override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {}
+      override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {
+        // do nothing
+      }
 
       override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) = disposePopupListener()
 
@@ -395,13 +396,13 @@ open class KrTabsImpl(
     addMouseWheelListener { event ->
       val modifiers = UIUtil.getAllModifiers(event) or InputEvent.SHIFT_DOWN_MASK
       val e = MouseEventAdapter.convert(
-        /* event = */ event,
-        /* source = */ fakeScrollPane,
-        /* id = */ event.id,
-        /* when = */ event.getWhen(),
-        /* modifiers = */ modifiers,
-        /* x = */ event.x,
-        /* y = */ event.y
+        event,
+        fakeScrollPane,
+        event.id,
+        event.getWhen(),
+        modifiers,
+        event.x,
+        event.y
       )
       MouseEventAdapter.redispatch(e, fakeScrollPane)
     }
@@ -681,13 +682,7 @@ open class KrTabsImpl(
    * @param deltaHeight The amount by which the component's height should be adjusted.
    * @return A Rectangle representing the new bounds of the component.
    */
-  fun layoutComp(
-    componentX: Int,
-    componentY: Int,
-    component: JComponent,
-    deltaWidth: Int,
-    deltaHeight: Int
-  ): Rectangle = layoutComp(
+  fun layoutComp(componentX: Int, componentY: Int, component: JComponent, deltaWidth: Int, deltaHeight: Int): Rectangle = layoutComp(
     bounds = Rectangle(componentX, componentY, width, height),
     component = component,
     deltaWidth = deltaWidth,
@@ -903,11 +898,7 @@ open class KrTabsImpl(
           return result
         }
 
-        override fun customizeComponent(
-          list: JList<out EditorGroupTabInfo?>?,
-          tabInfo: EditorGroupTabInfo?,
-          isSelected: Boolean
-        ) {
+        override fun customizeComponent(list: JList<out EditorGroupTabInfo?>?, tabInfo: EditorGroupTabInfo?, isSelected: Boolean) {
           iconLabel!!.icon = tabInfo?.icon
           textLabel!!.clear()
           tabInfo!!.coloredText.appendToComponent(textLabel!!)
@@ -951,8 +942,7 @@ open class KrTabsImpl(
   override fun requestFocusInWindow(): Boolean = toFocus?.requestFocusInWindow() ?: super.requestFocusInWindow()
 
   /** Add tab at the given index. */
-  override fun addTab(info: EditorGroupTabInfo, index: Int): EditorGroupTabInfo =
-    addTab(info = info, index = index, fireEvents = true)
+  override fun addTab(info: EditorGroupTabInfo, index: Int): EditorGroupTabInfo = addTab(info = info, index = index, fireEvents = true)
 
   /** Add a tab silently at the given index (e.g. do not fire events) */
   override fun addTabSilently(info: EditorGroupTabInfo, index: Int): EditorGroupTabInfo =
@@ -1028,10 +1018,7 @@ open class KrTabsImpl(
     setPopupGroupWithSupplier({ popupGroup }, place)
 
   /** Set the supplier of the popup group. */
-  override fun setPopupGroupWithSupplier(
-    supplier: Supplier<out ActionGroup>,
-    place: String
-  ): EditorGroupsTabsBase {
+  override fun setPopupGroupWithSupplier(supplier: Supplier<out ActionGroup>, place: String): EditorGroupsTabsBase {
     popupGroupSupplier = supplier::get
     popupPlace = place
     return this
@@ -1084,11 +1071,8 @@ open class KrTabsImpl(
    * @param requestFocusInWindow A flag indicating whether focus should be requested within the window.
    * @return An ActionCallback representing the result of the focus request and subsequent UI updates.
    */
-  private fun executeSelectionChange(
-    tabInfo: EditorGroupTabInfo,
-    requestFocus: Boolean,
-    requestFocusInWindow: Boolean
-  ): ActionCallback {
+  @Suppress("detekt:CyclomaticComplexMethod", "HardCodedStringLiteral")
+  private fun executeSelectionChange(tabInfo: EditorGroupTabInfo, requestFocus: Boolean, requestFocusInWindow: Boolean): ActionCallback {
     // If selecting the same tab, focus force it
     if (mySelectedInfo != null && mySelectedInfo == tabInfo) {
       if (!requestFocus) return ActionCallback.DONE
@@ -1097,12 +1081,11 @@ open class KrTabsImpl(
       val c = tabInfo.component
 
       return when {
-        owner != null && (c === owner || SwingUtilities.isDescendingFrom(owner, c)) -> {
+        owner != null && (c === owner || SwingUtilities.isDescendingFrom(owner, c)) ->
           // This might look like a no-op, but in some cases it's not. In particular, it's required when a focus transfer has just been
           // requested to another component. E.g., this happens on 'unsplit' operation when we remove an editor component from UI hierarchy and
           // re-add it at once in a different layout, and want that editor component to preserve focus afterward.
           requestFocusLaterOn(owner, requestFocusInWindow)
-        }
 
         else                                                                        -> requestFocusLater(requestFocusInWindow)
       }
@@ -1482,7 +1465,9 @@ open class KrTabsImpl(
   override fun getTargetInfo(): EditorGroupTabInfo? = popupInfo ?: selectedInfo
 
   /** When popup menu is visible. */
-  override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {}
+  override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {
+    // do nothing
+  }
 
   /** When popup menu is invisible. */
   override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent): Unit = resetPopup()
@@ -1683,9 +1668,7 @@ open class KrTabsImpl(
   override fun getMinimumSize(): Dimension = computeSize({ it.minimumSize }, 1)
 
   /** get the preferred size */
-  override fun getPreferredSize(): Dimension {
-    return computeSize({ it.preferredSize }, 3)
-  }
+  override fun getPreferredSize(): Dimension = computeSize({ it.preferredSize }, 3)
 
   /**
    * Computes the overall size of the tabs by applying a transformation function to determine the dimensions of each tab component, and then
@@ -1695,10 +1678,7 @@ open class KrTabsImpl(
    * @param tabCount The number of tabs to consider in the size calculation.
    * @return The computed dimensions as a Dimension object.
    */
-  private fun computeSize(
-    transform: Function<in JComponent, out Dimension>,
-    tabCount: Int
-  ): Dimension {
+  private fun computeSize(transform: Function<in JComponent, out Dimension>, tabCount: Int): Dimension {
     val size = Dimension()
 
     // Find the max width and height of all tabs
@@ -2072,7 +2052,8 @@ open class KrTabsImpl(
 
   /** Adjusts the tab info component to remove the scroll border. */
   private fun adjust(tabInfo: EditorGroupTabInfo) {
-    @Suppress("DEPRECATION") UIUtil.removeScrollBorder(tabInfo.component!!)
+    @Suppress("DEPRECATION")
+    UIUtil.removeScrollBorder(tabInfo.component!!)
   }
 
   /** Sorts the tabs using the provided comparator. */
@@ -2134,7 +2115,7 @@ open class KrTabsImpl(
     }
 
     override fun getAccessibleName(): String? {
-      var name = accessibleName ?: getClientProperty(ACCESSIBLE_NAME_PROPERTY) as String?
+      var name = accessibleName ?: getClientProperty(ACCESSIBLE_NAME_PROPERTY) as? String
 
       if (name == null) {
         // Similar to JTabbedPane, we return the name of our selected tab as our own name.
@@ -2220,7 +2201,7 @@ open class KrTabsImpl(
     override fun getAccessibleName(): String? {
       var name = accessibleName
       if (name == null) {
-        name = parent.getClientProperty(ACCESSIBLE_NAME_PROPERTY) as String?
+        name = parent.getClientProperty(ACCESSIBLE_NAME_PROPERTY) as? String
       }
 
       if (name == null) {
@@ -2239,7 +2220,7 @@ open class KrTabsImpl(
       var description = accessibleDescription
 
       if (description == null) {
-        description = parent.getClientProperty(ACCESSIBLE_DESCRIPTION_PROPERTY) as String?
+        description = parent.getClientProperty(ACCESSIBLE_DESCRIPTION_PROPERTY) as? String
       }
 
       if (description == null) {
@@ -2427,7 +2408,7 @@ open class KrTabsImpl(
   private inner class HiddenInfosListPopupStep(
     values: List<EditorGroupTabInfo>,
     private val separatorInfo: EditorGroupTabInfo?
-  ) : BaseListPopupStep<EditorGroupTabInfo>(/* title = */ null, /* values = */ values) {
+  ) : BaseListPopupStep<EditorGroupTabInfo>(null, values) {
     // Flag for determining whether we should select the tab on selection
     var shouldSelectTab = true
 
@@ -2486,10 +2467,13 @@ open class KrTabsImpl(
       isRecentlyActive = true
 
       if (!relayoutAlarm.isDisposed) {
-        relayoutAlarm.addRequest(Runnable {
-          isRecentlyActive = false
-          relayout(forced = false, layoutNow = false)
-        }, relayoutDelay)
+        relayoutAlarm.addRequest(
+          Runnable {
+            isRecentlyActive = false
+            relayout(forced = false, layoutNow = false)
+          },
+          relayoutDelay
+        )
       }
     }
 
@@ -2508,37 +2492,28 @@ open class KrTabsImpl(
     internal val defaultDecorator: TabUiDecorator = DefaultTabDecorator()
 
     @JvmStatic
-    fun isSelectionClick(e: MouseEvent): Boolean {
-      if (e.clickCount == 1 && !e.isPopupTrigger) {
-        return e.button == MouseEvent.BUTTON1 && !e.isControlDown
-      }
-      return false
+    fun isSelectionClick(e: MouseEvent): Boolean = when {
+      e.clickCount == 1 && !e.isPopupTrigger -> e.button == MouseEvent.BUTTON1 && !e.isControlDown
+      else                                   -> false
     }
 
     @JvmStatic
     fun resetLayout(c: JComponent?) {
-      if (c == null) {
-        return
-      }
+      if (c == null) return
       c.putClientProperty(LAYOUT_DONE, null)
     }
 
-    private fun createToolbar(
-      group: ActionGroup,
-      targetComponent: JComponent,
-      actionManager: ActionManager
-    ): ActionToolbar {
+    private fun createToolbar(group: ActionGroup, targetComponent: JComponent, actionManager: ActionManager): ActionToolbar {
       val toolbar = actionManager.createActionToolbar(ActionPlaces.TABS_MORE_TOOLBAR, group, true)
       toolbar.targetComponent = targetComponent
       toolbar.component.border = JBUI.Borders.empty()
       toolbar.component.isOpaque = false
+      toolbar.layoutStrategy = ToolbarLayoutStrategy.NOWRAP_STRATEGY
       return toolbar
     }
 
     private fun updateToolbarIfVisibilityChanged(toolbar: ActionToolbar?, previousBounds: Rectangle) {
-      if (toolbar == null) {
-        return
-      }
+      if (toolbar == null) return
 
       val bounds = toolbar.component.bounds
       if (bounds.isEmpty != previousBounds.isEmpty) {
