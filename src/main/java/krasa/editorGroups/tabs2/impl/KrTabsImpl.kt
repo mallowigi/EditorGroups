@@ -7,16 +7,12 @@ import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.fill2DRoundRect
 import com.intellij.openapi.ui.popup.*
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
-import com.intellij.openapi.util.ActionCallback
-import com.intellij.openapi.util.ActiveRunnable
-import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.*
 import com.intellij.openapi.util.text.NaturalComparator
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.ui.*
@@ -56,7 +52,7 @@ import java.beans.PropertyChangeListener
 import java.util.*
 import java.util.function.Predicate
 import java.util.function.Supplier
-import javax.accessibility.Accessible
+import javax.accessibility.*
 import javax.swing.*
 import javax.swing.border.Border
 import javax.swing.event.ChangeListener
@@ -64,8 +60,6 @@ import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
 import javax.swing.plaf.ComponentUI
 import kotlin.math.max
-
-private val LOG = logger<KrTabsImpl>()
 
 @Suppress("detekt:LargeClass", "detekt:MagicNumber", "detekt:StringLiteralDuplication")
 @DirtyUI
@@ -89,6 +83,9 @@ open class KrTabsImpl(
 
   // Map tab -> index
   private val hiddenInfos = HashMap<EditorGroupTabInfo, Int>()
+
+  // Accessible pages
+  private val infoToPage = HashMap<EditorGroupTabInfo, AccessibleTabPage>()
 
   // TODO correct to selectedInfo
   var mySelectedInfo: EditorGroupTabInfo? = null
@@ -278,6 +275,27 @@ open class KrTabsImpl(
       this.allTabs = result
       return result
     }
+  // set(tabs) {
+  //   for (tab in tabs) {
+  //     tab.changeSupport.addPropertyChangeListener(this)
+  //
+  //     val label = createTabLabel(tab)
+  //     label.setText(tab.coloredText)
+  //     label.toolTipText = tab.tooltipText
+  //     label.setIcon(tab.icon)
+  //
+  //     tab.tabLabel = label
+  //     infoToPage.put(tab, AccessibleTabPage(parent = this, tabInfo = tab))
+  //   }
+  //
+  //   for (tab in tabs) {
+  //     add(tab.tabLabel!!)
+  //   }
+  //
+  //   assert(visibleTabInfos.isEmpty())
+  //   visibleTabInfos.addAll(tabs)
+  //   resetTabsCache()
+  // }
 
   /** The currently selected tab. */
   override val selectedInfo: EditorGroupTabInfo?
@@ -980,6 +998,7 @@ open class KrTabsImpl(
     label.setIcon(tabInfo.icon)
 
     tabInfo.tabLabel = label
+    infoToPage.put(tabInfo, AccessibleTabPage(parent = this, tabInfo = tabInfo))
     // TODO REMOVE THIS once we remove infoToLabel
     infoToLabel.put(tabInfo, label)
 
@@ -1832,6 +1851,7 @@ open class KrTabsImpl(
     }
 
     visibleTabInfos.remove(tabInfo)
+    infoToPage.remove(tabInfo)
     hiddenInfos.remove(tabInfo)
     infoToLabel.remove(tabInfo)
 
@@ -2097,6 +2117,297 @@ open class KrTabsImpl(
   override fun getTabsPosition(): EditorGroupsTabsPosition = position
 
   override fun toString(): String = "KrTabs visible=$visibleTabInfos selected=$mySelectedInfo"
+
+  override fun getAccessibleContext(): AccessibleContext {
+    if (accessibleContext == null) accessibleContext = AccessibleKrTabsImpl()
+    return accessibleContext
+  }
+
+  protected inner class AccessibleKrTabsImpl internal constructor() : AccessibleJComponent(), AccessibleSelection {
+    init {
+      accessibleComponent
+      addListener(object : EditorGroupsTabsListener {
+        override fun selectionChanged(oldSelection: EditorGroupTabInfo?, newSelection: EditorGroupTabInfo?) {
+          if (!SystemInfo.isMac) firePropertyChange(ACCESSIBLE_SELECTION_PROPERTY, null, null)
+        }
+      })
+    }
+
+    override fun getAccessibleName(): String? {
+      var name = accessibleName ?: getClientProperty(ACCESSIBLE_NAME_PROPERTY) as String?
+
+      if (name == null) {
+        // Similar to JTabbedPane, we return the name of our selected tab as our own name.
+        val selectedLabel = selectedLabel
+        if (selectedLabel != null) {
+          name = selectedLabel.accessibleContext.accessibleName
+        }
+      }
+
+      return name ?: super.getAccessibleName()
+    }
+
+    override fun getAccessibleRole(): AccessibleRole = AccessibleRole.PAGE_TAB_LIST
+
+    override fun getAccessibleChild(i: Int): Accessible? {
+      val accessibleChild = super.getAccessibleChild(i)
+      // Note: Unlike a JTabbedPane, JBTabsImpl has many more child types than just pages.
+      // So we wrap TabLabel instances with their corresponding AccessibleTabPage, while
+      // leaving other types of children untouched.
+      return when (accessibleChild) {
+        is EditorGroupTabLabel -> infoToPage.get(accessibleChild.info)
+        else                   -> accessibleChild
+      }
+    }
+
+    override fun getAccessibleSelection(): AccessibleSelection = this
+
+    override fun getAccessibleSelectionCount(): Int = if (selectedInfo == null) 0 else 1
+
+    override fun getAccessibleSelection(i: Int): Accessible? {
+      return infoToPage.get(selectedInfo ?: return null)
+    }
+
+    override fun isAccessibleChildSelected(i: Int): Boolean = selectedInfo?.let { i == getIndexOf(it) } == true
+
+    override fun addAccessibleSelection(i: Int) {
+      select(tabInfo = getTabAt(tabIndex = i), requestFocus = false)
+    }
+
+    override fun removeAccessibleSelection(i: Int) {
+      // can't do
+    }
+
+    override fun clearAccessibleSelection() {
+      // can't do
+    }
+
+    override fun selectAllAccessibleSelection() {
+      // can't do
+    }
+  }
+
+  private class AccessibleTabPage(
+    private val parent: KrTabsImpl,
+    private val tabInfo: EditorGroupTabInfo,
+  ) : AccessibleContext(), Accessible, AccessibleComponent, AccessibleAction {
+    private val component = tabInfo.component
+
+    init {
+      setAccessibleParent(parent)
+      initAccessibleContext()
+    }
+
+    private val tabIndex: Int
+      get() = parent.getIndexOf(tabInfo)
+
+    private val tabLabel: EditorGroupTabLabel?
+      get() = parent.getTabLabel(tabInfo)
+
+    /** initializes the AccessibleContext for the page */
+    fun initAccessibleContext() {
+      // Note: null checks because we do not want to load Accessibility classes unnecessarily.
+      if (component is Accessible) {
+        val ac = component.getAccessibleContext()
+        if (ac != null) ac.accessibleParent = this
+      }
+    }
+
+    // Accessibility support
+    override fun getAccessibleContext(): AccessibleContext = this
+
+    // AccessibleContext methods
+    override fun getAccessibleName(): String? {
+      var name = accessibleName
+      if (name == null) {
+        name = parent.getClientProperty(ACCESSIBLE_NAME_PROPERTY) as String?
+      }
+
+      if (name == null) {
+        val label = tabLabel
+        if (label != null) name = label.accessibleContext.accessibleName
+      }
+
+      if (name == null) {
+        name = super.getAccessibleName()
+      }
+
+      return name
+    }
+
+    override fun getAccessibleDescription(): String? {
+      var description = accessibleDescription
+
+      if (description == null) {
+        description = parent.getClientProperty(ACCESSIBLE_DESCRIPTION_PROPERTY) as String?
+      }
+
+      if (description == null) {
+        val label = tabLabel
+        if (label != null) description = label.accessibleContext.accessibleDescription
+      }
+
+      if (description == null) {
+        description = super.getAccessibleDescription()
+      }
+
+      return description
+    }
+
+    override fun getAccessibleRole(): AccessibleRole = AccessibleRole.PAGE_TAB
+
+    override fun getAccessibleStateSet(): AccessibleStateSet {
+      val states = parent.accessibleContext.accessibleStateSet
+      states.add(AccessibleState.SELECTABLE)
+
+      val info = parent.selectedInfo
+      if (info == tabInfo) {
+        states.add(AccessibleState.SELECTED)
+      }
+
+      return states
+    }
+
+    override fun getAccessibleIndexInParent(): Int {
+      for (i in 0 until parent.accessibleContext.accessibleChildrenCount) {
+        if (parent.accessibleContext.getAccessibleChild(i) == this) return i
+      }
+
+      return tabIndex
+    }
+
+    override fun getAccessibleChildrenCount(): Int = when {
+      parent.selectedInfo == tabInfo && component is Accessible -> 1
+      else                                                      -> 0
+    }
+
+    override fun getAccessibleChild(i: Int): Accessible? = when {
+      parent.selectedInfo == tabInfo && component is Accessible -> component
+      else                                                      -> null
+    }
+
+    override fun getLocale(): Locale = parent.locale
+
+    override fun getAccessibleComponent(): AccessibleComponent = this
+
+    override fun getAccessibleAction(): AccessibleAction = this
+
+    // AccessibleComponent methods
+    override fun getBackground(): Color = parent.background
+
+    override fun setBackground(c: Color) {
+      parent.background = c
+    }
+
+    override fun getForeground(): Color = parent.foreground
+
+    override fun setForeground(c: Color) {
+      parent.foreground = c
+    }
+
+    override fun getCursor(): Cursor = parent.cursor
+
+    override fun setCursor(c: Cursor) {
+      parent.cursor = c
+    }
+
+    override fun getFont(): Font = parent.font
+
+    override fun setFont(f: Font) {
+      parent.font = f
+    }
+
+    override fun getFontMetrics(f: Font): FontMetrics = parent.getFontMetrics(f)
+
+    override fun isEnabled(): Boolean = tabInfo.isEnabled
+
+    override fun setEnabled(b: Boolean) {
+      tabInfo.isEnabled = b
+    }
+
+    override fun isVisible(): Boolean = !tabInfo.isHidden
+
+    override fun setVisible(b: Boolean) {
+      tabInfo.isHidden = !b
+    }
+
+    override fun isShowing(): Boolean = parent.isShowing
+
+    override fun contains(p: Point): Boolean {
+      return (bounds ?: return false).contains(p)
+    }
+
+    override fun getLocationOnScreen(): Point? {
+      val parentLocation = parent.locationOnScreen
+      val componentLocation = location ?: return null
+
+      componentLocation.translate(parentLocation.x, parentLocation.y)
+      return componentLocation
+    }
+
+    override fun getLocation(): Point? {
+      val r = bounds ?: return null
+      return Point(r.x, r.y)
+    }
+
+    override fun setLocation(p: Point) {
+      // do nothing
+    }
+
+    /** Returns the bounds of tab. The bounds are with respect to the JBTabsImpl coordinate space. */
+    override fun getBounds(): Rectangle? = tabLabel?.bounds
+
+    override fun setBounds(r: Rectangle) {
+      // do nothing
+    }
+
+    override fun getSize(): Dimension? {
+      val r = bounds ?: return null
+      return Dimension(r.width, r.height)
+    }
+
+    override fun setSize(d: Dimension) {
+      // do nothing
+    }
+
+    override fun getAccessibleAt(p: Point): Accessible? = when (component) {
+      is Accessible -> component
+      else          -> null
+    }
+
+    override fun isFocusTraversable(): Boolean = false
+
+    override fun requestFocus() {
+      // do nothing
+    }
+
+    override fun addFocusListener(l: FocusListener) {
+      // do nothing
+    }
+
+    override fun removeFocusListener(l: FocusListener) {
+      // do nothing
+    }
+
+    override fun getAccessibleIcon(): Array<AccessibleIcon>? {
+      return arrayOf((tabInfo.icon as? ImageIcon)?.accessibleContext as? AccessibleIcon ?: return null)
+    }
+
+    // AccessibleAction methods
+    override fun getAccessibleActionCount(): Int = 1
+
+    override fun getAccessibleActionDescription(i: Int): String? = when (i) {
+      0    -> "Activate" // NON-NLS
+      else -> null
+    }
+
+    override fun doAccessibleAction(i: Int): Boolean {
+      if (i != 0) return false
+
+      parent.select(tabInfo = tabInfo, requestFocus = true)
+      return true
+    }
+  }
 
   private class DefaultTabDecorator : TabUiDecorator {
     override val decoration = TabUiDecorator.TabUiDecoration(
