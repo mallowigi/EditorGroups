@@ -43,7 +43,7 @@ interface EditorGroupsTabsBase {
   fun getTabAt(tabIndex: Int): EditorGroupTabInfo
 
   /** The tab presentation. */
-  fun getPresentation(): KrTabsPresentation
+  fun getPresentation(): EditorGroupTabsPresentation
 
   fun setDataProvider(dataProvider: DataProvider): EditorGroupsTabsBase?
 

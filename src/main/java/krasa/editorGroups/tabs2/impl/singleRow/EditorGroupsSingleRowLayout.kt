@@ -24,6 +24,7 @@ abstract class EditorGroupsSingleRowLayout(
     get() = when (tabs.getPresentation().tabsPosition) {
       EditorGroupsTabsPosition.TOP    -> topStrategy
       EditorGroupsTabsPosition.BOTTOM -> bottomStrategy
+      else                            -> topStrategy
     }
 
   /** Check whether to relayout tab labels. */

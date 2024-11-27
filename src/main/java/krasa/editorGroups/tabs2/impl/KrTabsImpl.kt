@@ -70,7 +70,7 @@ open class KrTabsImpl(
   PropertyChangeListener,
   UiDataProvider,
   PopupMenuListener,
-  KrTabsPresentation,
+  EditorGroupTabsPresentation,
   UISettingsListener,
   QuickActionProvider,
   MorePopupAware,
@@ -143,9 +143,8 @@ open class KrTabsImpl(
   // Tabs to remove in the next layout pass
   private val deferredToRemove = WeakHashMap<Component, Component>()
 
-  // todo add override
-  // val override tabsPosition: EditorGroupsTabsPosition
-  //   get() = tabListOptions.tabPosition
+  override val tabsPosition: EditorGroupsTabsPosition
+    get() = position
 
   // The row layout to lay the tabs over
   internal var effectiveLayout: EditorGroupsTabLayout? = createRowLayout()
@@ -510,6 +509,7 @@ open class KrTabsImpl(
     return when (tabsPosition) {
       EditorGroupsTabsPosition.TOP    -> y <= area.height
       EditorGroupsTabsPosition.BOTTOM -> y >= height - area.height
+      else                            -> false
     }
   }
 
@@ -525,6 +525,7 @@ open class KrTabsImpl(
   private fun getScrollBarBounds(): Rectangle = when (tabsPosition) {
     EditorGroupsTabsPosition.TOP    -> Rectangle(0, 1, width, SCROLL_BAR_THICKNESS)
     EditorGroupsTabsPosition.BOTTOM -> Rectangle(0, height - SCROLL_BAR_THICKNESS, width, SCROLL_BAR_THICKNESS)
+    else                            -> Rectangle()
   }
 
   /** Revalidate tabs on settings change. */
@@ -787,7 +788,7 @@ open class KrTabsImpl(
     layout(component = component, bounds = Rectangle(x, y, width, height))
 
   /** Set the offset of the first tab. */
-  override fun setFirstTabOffset(offset: Int): KrTabsPresentation {
+  override fun setFirstTabOffset(offset: Int): EditorGroupTabsPresentation {
     this.firstTabOffset = offset
     return this
   }
@@ -1600,7 +1601,7 @@ open class KrTabsImpl(
     )
   }
 
-  override fun setInnerInsets(innerInsets: Insets): KrTabsPresentation {
+  override fun setInnerInsets(innerInsets: Insets): EditorGroupTabsPresentation {
     this.innerInsets = innerInsets
     return this
   }
@@ -1742,7 +1743,7 @@ open class KrTabsImpl(
   }
 
   /** Returns this component. */
-  override fun getPresentation(): KrTabsPresentation = this
+  override fun getPresentation(): EditorGroupTabsPresentation = this
 
   /** Removes a tab. */
   override fun removeTab(info: EditorGroupTabInfo?): ActionCallback = doRemoveTab(tabInfo = info)
@@ -2018,7 +2019,7 @@ open class KrTabsImpl(
   }
 
   /** Sets the UI Decorator. */
-  override fun setUiDecorator(decorator: TabUiDecorator?): KrTabsPresentation {
+  override fun setUiDecorator(decorator: TabUiDecorator?): EditorGroupTabsPresentation {
     uiDecorator = decorator ?: defaultDecorator
     applyDecoration()
     return this
@@ -2088,14 +2089,12 @@ open class KrTabsImpl(
   }
 
   /** Changes the tabs position. */
-  override fun setTabsPosition(position: EditorGroupsTabsPosition): KrTabsPresentation {
+  override fun setTabsPosition(position: EditorGroupsTabsPosition): EditorGroupTabsPresentation {
     this.position = position
     applyDecoration()
     relayout(forced = true, layoutNow = false)
     return this
   }
-
-  override fun getTabsPosition(): EditorGroupsTabsPosition = position
 
   override fun toString(): String = "KrTabs visible=$visibleTabInfos selected=$mySelectedInfo"
 
