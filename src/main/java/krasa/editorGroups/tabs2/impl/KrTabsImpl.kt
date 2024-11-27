@@ -13,7 +13,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.fill2DRoundRect
 import com.intellij.openapi.ui.popup.*
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
-import com.intellij.openapi.util.*
+import com.intellij.openapi.util.ActionCallback
+import com.intellij.openapi.util.ActiveRunnable
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.text.NaturalComparator
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.ui.*
@@ -1769,14 +1772,14 @@ open class KrTabsImpl(
     val toSelect = getToSelectOnRemoveOf(tabInfo)
 
     if (toSelect == null) {
-      processRemove(info = tabInfo, forcedNow = true, setSelectedToNull = selectedInfo == tabInfo)
+      processRemove(tabInfo = tabInfo, forcedNow = true, setSelectedToNull = selectedInfo == tabInfo)
       removeDeferred().notifyWhenDone(callback)
     } else {
       val clearSelection = tabInfo == mySelectedInfo
       val transferFocus = isFocused(tabInfo)
 
       // Remove tab
-      processRemove(info = tabInfo, forcedNow = false, setSelectedToNull = false)
+      processRemove(tabInfo = tabInfo, forcedNow = false, setSelectedToNull = false)
 
       if (clearSelection) {
         mySelectedInfo = tabInfo
@@ -1795,71 +1798,75 @@ open class KrTabsImpl(
     return callback
   }
 
-  private fun isFocused(info: EditorGroupTabInfo): Boolean {
-    val label = infoToLabel[info]
-    val component = info.component
+  /** Checks whether a tabinfo is focused. */
+  private fun isFocused(tabInfo: EditorGroupTabInfo): Boolean {
+    val label = tabInfo.tabLabel
+    val component = tabInfo.component
+
     val ancestorChecker = Predicate<Component?> { focusOwner ->
       var focusOwner = focusOwner
       while (focusOwner != null) {
-        if (focusOwner === label || focusOwner === component) {
-          return@Predicate true
-        }
+        if (focusOwner === label || focusOwner === component) return@Predicate true
         focusOwner = focusOwner.parent
       }
       false
     }
-    if (ancestorChecker.test(KeyboardFocusManager.getCurrentKeyboardFocusManager().permanentFocusOwner)) {
-      return true
-    }
+
+    if (ancestorChecker.test(KeyboardFocusManager.getCurrentKeyboardFocusManager().permanentFocusOwner)) return true
+
     val ourWindow = SwingUtilities.getWindowAncestor(this)
     return ourWindow != null && !ourWindow.isFocused && ancestorChecker.test(ourWindow.mostRecentFocusOwner)
   }
 
-  private fun processRemove(info: EditorGroupTabInfo?, forcedNow: Boolean, setSelectedToNull: Boolean) {
-    val tabLabel = infoToLabel[info]
+  /** Remove a tab and it's related components. */
+  private fun processRemove(tabInfo: EditorGroupTabInfo, forcedNow: Boolean, setSelectedToNull: Boolean) {
+    // Remove label
+    val tabLabel = tabInfo.tabLabel
     tabLabel?.let { remove(it) }
 
-    val tabComponent = info!!.component!!
-
-    if (forcedNow || !isToDeferRemoveForLater(tabComponent)) {
-      remove(tabComponent)
-    } else {
-      addToDeferredRemove(tabComponent)
+    // Remove component
+    val tabComponent = tabInfo.component!!
+    when {
+      forcedNow || !isToDeferRemoveForLater(tabComponent) -> remove(tabComponent)
+      else                                                -> addToDeferredRemove(tabComponent)
     }
 
-    visibleTabInfos.remove(info)
-    hiddenInfos.remove(info)
-    infoToLabel.remove(info)
+    visibleTabInfos.remove(tabInfo)
+    hiddenInfos.remove(tabInfo)
+    infoToLabel.remove(tabInfo)
 
-    if (tabLabelAtMouse === tabLabel) {
-      tabLabelAtMouse = null
-    }
+    // Reset tabLabelAtMouse
+    if (tabLabelAtMouse === tabLabel) tabLabelAtMouse = null
 
     resetTabsCache()
-    updateAll(false)
+
+    // Clear selected info
+    if (setSelectedToNull) mySelectedInfo = null
+
+    // Clear other states
+    updateContainer(forced = false, layoutNow = false)
+    removeDeferred()
+    updateListeners()
+    updateEnabledState()
   }
 
-  override fun findInfo(component: Component): EditorGroupTabInfo? {
-    for (each in tabs) {
-      if (each.component === component) {
-        return each
-      }
-    }
-    return null
-  }
+  /** Find the tabinfo from a component. */
+  override fun findInfo(component: Component): EditorGroupTabInfo? = tabs.firstOrNull { it.component === component }
 
-  override fun findInfo(event: MouseEvent): EditorGroupTabInfo? {
-    val point = SwingUtilities.convertPoint(event.component, event.point, this)
-    return doFindInfo(point)
-  }
+  /** Find the tab info at the given point. */
+  override fun findInfo(event: MouseEvent): EditorGroupTabInfo? =
+    doFindInfo(point = SwingUtilities.convertPoint(event.component, event.point, this), labelsOnly = false)
 
-  private fun doFindInfo(point: Point): EditorGroupTabInfo? {
+  /** Finds the tab information at the specified point, optionally only considering the labels of the tabs. */
+  private fun doFindInfo(point: Point, labelsOnly: Boolean): EditorGroupTabInfo? {
     var component = findComponentAt(point)
     while (component !== this) {
-      if (component == null) return null
-      if (component is EditorGroupTabLabel) {
-        return component.info
+      when {
+        component == null                -> return null
+        component is EditorGroupTabLabel -> return component.info
+        !labelsOnly                      -> return findInfo(component)
       }
+
       component = component.parent
     }
     return null
@@ -1884,14 +1891,9 @@ open class KrTabsImpl(
         mySelectedInfo -> {
           deferredToRemove.remove(component)
           val parent = component.parent
+          if (parent != null && parent !== this) parent.remove(component)
 
-          if (parent != null && parent !== this) {
-            parent.remove(component)
-          }
-
-          if (component.parent == null) {
-            add(component)
-          }
+          if (component.parent == null) add(component)
         }
 
         else           -> {
@@ -1904,25 +1906,28 @@ open class KrTabsImpl(
         }
       }
     }
+
     relayout(forced, layoutNow)
   }
 
+  /** When a tab is added at the given index. */
   override fun addImpl(component: Component, constraints: Any?, index: Int) {
     deferredToRemove.remove(component)
+
     if (component is EditorGroupTabLabel) {
       val uiDecorator = uiDecorator
       component.apply(uiDecorator?.decoration ?: defaultDecorator.decoration)
     }
+
     super.addImpl(component, constraints, index)
   }
 
+  /** Relayout the tabs. */
   fun relayout(forced: Boolean, layoutNow: Boolean) {
-    if (!forcedRelayout) {
-      forcedRelayout = forced
-    }
-    if (moreToolbar != null) {
-      moreToolbar.component.isVisible = true
-    }
+    if (!forcedRelayout) forcedRelayout = forced
+
+    if (moreToolbar != null) moreToolbar.component.isVisible = true
+
     revalidateAndRepaint(layoutNow)
   }
 
@@ -1935,92 +1940,97 @@ open class KrTabsImpl(
 
   override fun getComponent(): JComponent = this
 
-  override fun getName(): @NlsActions.ActionText String? {
-    return ""
-  }
-
+  /** Adds mouse listeners to the tab labels of all visible tab info objects. */
   private fun addListeners() {
-    for (eachInfo in visibleTabInfos) {
-      val label = infoToLabel[eachInfo]
-      for (eachListener in tabMouseListeners) {
-        when (eachListener) {
-          is MouseListener       -> label!!.addMouseListener(eachListener)
-          is MouseMotionListener -> label!!.addMouseMotionListener(eachListener)
-          else                   -> assert(false)
+    for (tabInfo in visibleTabInfos) {
+      val label = tabInfo.tabLabel ?: continue
+      for (listener in tabMouseListeners) {
+        when (listener) {
+          is MouseListener       -> label.addMouseListener(listener)
+          is MouseMotionListener -> label.addMouseMotionListener(listener)
         }
       }
     }
   }
 
+  /** Removes all mouse and mouse motion listeners from the tab labels of the currently visible tab information objects. */
   private fun removeListeners() {
-    for (eachInfo in visibleTabInfos) {
-      val label = infoToLabel[eachInfo]
+    for (tabInfo in visibleTabInfos) {
+      val label = tabInfo.tabLabel ?: continue
       for (eachListener in tabMouseListeners) {
         when (eachListener) {
-          is MouseListener       -> label!!.removeMouseListener(eachListener)
-          is MouseMotionListener -> label!!.removeMouseMotionListener(eachListener)
-          else                   -> assert(false)
+          is MouseListener       -> label.removeMouseListener(eachListener)
+          is MouseMotionListener -> label.removeMouseMotionListener(eachListener)
         }
       }
     }
   }
 
+  /** Re-adds listeners. */
   private fun updateListeners() {
     removeListeners()
     addListeners()
   }
 
+  /** Add a listener. */
   override fun addListener(listener: EditorGroupsTabsListener): EditorGroupsTabsBase = addListener(listener = listener, disposable = null)
 
+  /** Adds a listener. */
   override fun addListener(listener: EditorGroupsTabsListener, disposable: Disposable?): EditorGroupsTabsBase {
     tabListeners.add(listener)
+
     if (disposable != null) {
       Disposer.register(disposable) { tabListeners.remove(listener) }
     }
     return this
   }
 
+  /** Set the selection change handler. */
   override fun setSelectionChangeHandler(handler: EditorGroupsTabsBase.SelectionChangeHandler): EditorGroupsTabsBase {
     selectionChangeHandler = handler
     return this
   }
 
+  /** Set the focused state. */
   fun setFocused(focused: Boolean) {
-    if (isFocused == focused) {
-      return
-    }
+    if (isFocused == focused) return
 
     isFocused = focused
   }
 
+  /** Index Of delegate. */
   override fun getIndexOf(tabInfo: EditorGroupTabInfo?): Int = visibleTabInfos.indexOf(tabInfo)
 
+  /** Dispose active listeners. */
   private fun disposePopupListener() {
-    if (activePopup != null) {
-      activePopup!!.removePopupMenuListener(popupListener)
-      activePopup = null
-    }
+    if (activePopup == null) return
+
+    activePopup!!.removePopupMenuListener(popupListener)
+    activePopup = null
   }
 
+  /** Sets a new TabLayout. */
   private fun setLayout(layout: EditorGroupsTabLayout): Boolean {
-    if (effectiveLayout === layout) {
-      return false
-    }
+    if (effectiveLayout === layout) return false
+
     effectiveLayout = layout
     return true
   }
 
+  /** Sets the UI Decorator. */
   override fun setUiDecorator(decorator: TabUiDecorator?): KrTabsPresentation {
     uiDecorator = decorator ?: defaultDecorator
     applyDecoration()
     return this
   }
 
+  /** Sets the UI for the component. */
   override fun setUI(newUI: ComponentUI) {
     super.setUI(newUI)
     applyDecoration()
   }
 
+  /** Updates the UI. */
   override fun updateUI() {
     super.updateUI()
     SwingUtilities.invokeLater {
@@ -2029,22 +2039,23 @@ open class KrTabsImpl(
     }
   }
 
+  /** Apply decoration to all visible tabs. */
   private fun applyDecoration() {
     uiDecorator?.decoration?.let { uiDecoration ->
-      for (tabLabel in infoToLabel.values) {
-        tabLabel.apply(uiDecoration)
-      }
+      visibleTabInfos.forEach { it.tabLabel?.apply(uiDecoration) }
     }
-    for (tabInfo in tabs) {
-      adjust(tabInfo)
-    }
+
+    tabs.forEach { adjust(it) }
+
     relayout(forced = true, layoutNow = false)
   }
 
-  protected open fun adjust(tabInfo: EditorGroupTabInfo) {
+  /** Adjusts the tab info component to remove the scroll border. */
+  private fun adjust(tabInfo: EditorGroupTabInfo) {
     @Suppress("DEPRECATION") UIUtil.removeScrollBorder(tabInfo.component!!)
   }
 
+  /** Sorts the tabs using the provided comparator. */
   override fun sortTabs(comparator: Comparator<EditorGroupTabInfo>) {
     visibleTabInfos.sortWith(comparator)
     resetTabsCache()
@@ -2057,6 +2068,7 @@ open class KrTabsImpl(
     sink[MorePopupAware.KEY] = this@KrTabsImpl
   }
 
+  /** No actions (no close/pin) */
   override fun getActions(originalProvider: Boolean): List<AnAction> = emptyList()
 
   override fun setDataProvider(dataProvider: DataProvider): KrTabsImpl {
@@ -2064,6 +2076,7 @@ open class KrTabsImpl(
     return this
   }
 
+  /** Resets the layout for each JComponent within the container. */
   private fun applyResetComponents() {
     for (i in 0 until componentCount) {
       val each = getComponent(i)
@@ -2073,6 +2086,7 @@ open class KrTabsImpl(
     }
   }
 
+  /** Changes the tabs position. */
   override fun setTabsPosition(position: EditorGroupsTabsPosition): KrTabsPresentation {
     this.position = position
     applyDecoration()
