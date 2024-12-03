@@ -1148,7 +1148,7 @@ class EditorGroupPanel(
       try {
         // Remove from current favorites
         val action = ActionManager.getInstance().getAction(RemoveFromCurrentBookmarksAction.ID)
-        val e = AnActionEvent.createEvent(
+        val ev = AnActionEvent.createEvent(
           DataManager.getInstance().getDataContext(tabs),
           Presentation(),
           TAB_PLACE,
@@ -1156,7 +1156,7 @@ class EditorGroupPanel(
           e,
         )
 
-        ActionWrapperUtil.actionPerformed(e, action, action)
+        ActionWrapperUtil.actionPerformed(ev, action, action)
       } finally {
         tabs.setTabInfo(null)
       }
