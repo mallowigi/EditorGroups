@@ -203,7 +203,11 @@ open class FileResolver {
     val fileName = StringUtils.substringAfterLast(path, "/")
 
     if (!fileName.isEmpty() && !file.isDirectory && parentDir.isDirectory) {
-      val filter: FileFilter = WildcardFileFilter(fileName, IOCase.SYSTEM)
+      val builder = WildcardFileFilter.builder()
+      builder.setWildcards(fileName)
+      builder.setIoCase(IOCase.SYSTEM)
+      val filter = builder.get() as FileFilter
+
       var foundFiles = parentDir.listFiles(filter)
       Objects.requireNonNull(foundFiles)
         .asSequence()
@@ -236,13 +240,13 @@ open class FileResolver {
   protected fun useMacros(virtualFile: VirtualFile?, folder: String): String {
     when {
       folder.startsWith(PROJECT)                       -> {
-        val baseDir = project!!.guessProjectDir()
+        val baseDir = project.guessProjectDir()
         val canonicalPath = baseDir?.canonicalPath
         return folder.replace(PROJECT_REGEX.toRegex(), canonicalPath ?: "")
       }
 
       virtualFile != null && folder.startsWith(MODULE) -> {
-        val moduleForFile = ProjectRootManager.getInstance(project!!).fileIndex.getModuleForFile(virtualFile)
+        val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(virtualFile)
         val moduleDirPath = ModuleUtilCore.getModuleDirPath(moduleForFile!!)
         return folder.replace(MODULE_REGEX.toRegex(), moduleDirPath)
       }
@@ -252,10 +256,10 @@ open class FileResolver {
   }
 
   companion object {
-    const val PROJECT_REGEX = "^PROJECT"
-    const val PROJECT = "PROJECT"
-    const val MODULE_REGEX = "^MODULE"
-    const val MODULE = "MODULE"
+    const val PROJECT_REGEX: String = "^PROJECT"
+    const val PROJECT: String = "PROJECT"
+    const val MODULE_REGEX: String = "^MODULE"
+    const val MODULE: String = "MODULE"
 
     @Throws(ProcessCanceledException::class)
     fun resolveLinks(group: EditorGroupIndexValue, project: Project): List<Link> {
