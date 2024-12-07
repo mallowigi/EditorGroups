@@ -57,10 +57,11 @@
                            key="notification.group.editor.groups"/>
 
         <!-- Tab Color and Title Providers -->
-        <!-- TODO I'm not sure of the utility of this-->
-        <!--<editorTabTitleProvider implementation="krasa.editorGroups.extensions.EditorGroupTabTitleProvider" order="first"/>-->
         <editorTabColorProvider implementation="krasa.editorGroups.extensions.CustomEditorGroupsTabColorProvider" order="first"/>
         <editorTabColorProvider implementation="krasa.editorGroups.extensions.CurrentEditorGroupColorProvider" order="last"/>
+
+        <!-- TODO: Custom size (WIP) -->
+        <!--<iconLayerProvider implementation="krasa.editorGroups.extensions.CustomFileIconLayerProvider"/>-->
 
         <!-- Indices -->
         <fileBasedIndex implementation="krasa.editorGroups.index.EditorGroupIndex"/>
