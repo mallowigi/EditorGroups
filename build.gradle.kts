@@ -49,7 +49,6 @@ dependencies {
 
   intellijPlatform {
     intellijIdeaUltimate(platformVersion, useInstaller = false)
-    instrumentationTools()
     pluginVerifier()
     zipSigner()
   }
@@ -112,7 +111,7 @@ intellijPlatform {
   }
 
   publishing {
-    token = environment("PUBLISH_TOKEN")
+    token = environment("INTELLIJ_PUBLISH_TOKEN")
     channels = listOf(pluginVersion.split('-').getOrElse(1) { "default" }.split('.').first())
   }
 
