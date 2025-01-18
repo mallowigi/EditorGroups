@@ -1,14 +1,18 @@
 # Changelog
 
-## Changelog
-
-### Features
+## 3.1.0
 
 ### Fixes
 
-### Removals
+- Set Colorize Tabs default false
+- Do not show the "Switch File" in regular textareas
 
-### Other
+## 3.0.0
+
+### Features
+
+- Rewrote project in Kotlin
+- See README for the list of new features
 
 ## 2.0.0
 
