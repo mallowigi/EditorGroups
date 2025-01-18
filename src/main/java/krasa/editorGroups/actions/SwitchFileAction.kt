@@ -5,6 +5,9 @@ import com.intellij.ide.actions.QuickSwitchSchemeAction
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.impl.ActionMenuItem
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorKind
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
@@ -56,6 +59,22 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
 
       else          -> popup.showCenteredInCurrentWindow(project)
     }
+  }
+
+  override fun update(e: AnActionEvent) {
+    val editor = e.getData<Editor?>(CommonDataKeys.EDITOR)
+    if (editor == null || editor.editorKind != EditorKind.MAIN_EDITOR) {
+      e.presentation.setEnabledAndVisible(false)
+      return
+    }
+
+    val file = FileDocumentManager.getInstance().getFile(editor.document)
+    if (file == null) {
+      e.presentation.setEnabledAndVisible(false)
+      return
+    }
+
+    super.update(e)
   }
 
   private fun registerActions(popup: ListPopupImpl) = popup.run {
@@ -193,6 +212,22 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
         newTab = openInNewTab,
         split = Splitters.from(e)
       )
+    }
+
+    override fun update(e: AnActionEvent) {
+      val editor = e.getData<Editor?>(CommonDataKeys.EDITOR)
+      if (editor == null || editor.editorKind != EditorKind.MAIN_EDITOR || e.place != ActionPlaces.EDITOR_TAB_POPUP) {
+        e.presentation.setEnabledAndVisible(false)
+        return
+      }
+
+      val file = FileDocumentManager.getInstance().getFile(editor.document)
+      if (file == null) {
+        e.presentation.setEnabledAndVisible(false)
+        return
+      }
+
+      super.update(e)
     }
   }
 
