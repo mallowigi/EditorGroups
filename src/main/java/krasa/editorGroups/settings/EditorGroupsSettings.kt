@@ -37,7 +37,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     var isShowMeta: Boolean by property(false)
 
     // Color tabs of the current group
-    var isColorTabs: Boolean by property(true)
+    var isColorTabs: Boolean by property(false)
 
     // Small labels
     var isSmallLabels: Boolean by property(true)

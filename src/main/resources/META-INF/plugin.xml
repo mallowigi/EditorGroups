@@ -270,15 +270,15 @@
         </group>
         <!-- Tab Actions -->
         <group id="krasa.editorGroups.EditorGroupsTabPopupMenu">
-            <reference id="CompareFileWithEditor"/>
+            <reference ref="CompareFileWithEditor"/>
             <separator/>
-            <reference id="krasa.editorGroups.Next"/>
-            <reference id="krasa.editorGroups.NextInNewTab"/>
-            <reference id="krasa.editorGroups.NextInNewWindow"/>
+            <reference ref="krasa.editorGroups.Next"/>
+            <reference ref="krasa.editorGroups.NextInNewTab"/>
+            <reference ref="krasa.editorGroups.NextInNewWindow"/>
             <separator/>
-            <reference id="krasa.editorGroups.Previous"/>
-            <reference id="krasa.editorGroups.PreviousInNewTab"/>
-            <reference id="krasa.editorGroups.PreviousInNewWindow"/>
+            <reference ref="krasa.editorGroups.Previous"/>
+            <reference ref="krasa.editorGroups.PreviousInNewTab"/>
+            <reference ref="krasa.editorGroups.PreviousInNewWindow"/>
         </group>
 
     </actions>
