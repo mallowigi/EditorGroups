@@ -5,10 +5,8 @@ import com.intellij.ide.actions.QuickSwitchSchemeAction
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.impl.ActionMenuItem
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.IndexNotReadyException
@@ -62,7 +60,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   }
 
   override fun update(e: AnActionEvent) {
-    val editor = e.getData<Editor?>(CommonDataKeys.EDITOR)
+    val editor = e.getData(CommonDataKeys.EDITOR)
     if (editor == null || editor.editorKind != EditorKind.MAIN_EDITOR) {
       e.presentation.setEnabledAndVisible(false)
       return
@@ -120,14 +118,14 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
 
   private fun getDataContext(popup: ListPopupImpl): DataContext {
     val dataContext = DataManager.getInstance().getDataContext(popup.owner)
-    val project = dataContext.getData<Project?>(CommonDataKeys.PROJECT)
+    val project = dataContext.getData(CommonDataKeys.PROJECT)
 
     checkNotNull(project) { message("project.is.null.for.0", popup.owner) }
     return dataContext
   }
 
   /**
-   * Populates the popup with the group's files
+   * Populates the popup with the group's files.
    *
    * @param project The current project within which the method is called.
    * @param defaultActionGroup The group of actions to populate.
@@ -135,7 +133,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
    */
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
-      val data = dataContext.getData<FileEditor?>(PlatformDataKeys.FILE_EDITOR) ?: return
+      val data = dataContext.getData(PlatformDataKeys.FILE_EDITOR) ?: return
       var panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return
 
       val currentFile = panel.file.path
@@ -212,22 +210,6 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
         newTab = openInNewTab,
         split = Splitters.from(e)
       )
-    }
-
-    override fun update(e: AnActionEvent) {
-      val editor = e.getData<Editor?>(CommonDataKeys.EDITOR)
-      if (editor == null || editor.editorKind != EditorKind.MAIN_EDITOR || e.place != ActionPlaces.EDITOR_TAB_POPUP) {
-        e.presentation.setEnabledAndVisible(false)
-        return
-      }
-
-      val file = FileDocumentManager.getInstance().getFile(editor.document)
-      if (file == null) {
-        e.presentation.setEnabledAndVisible(false)
-        return
-      }
-
-      super.update(e)
     }
   }
 
