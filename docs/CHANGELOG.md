@@ -2,6 +2,12 @@
 
 ## Changelog
 
+## 3.2.0
+
+### Fixes
+
+- Support for 2025.2
+
 ## 3.1.0
 
 ### Fixes
