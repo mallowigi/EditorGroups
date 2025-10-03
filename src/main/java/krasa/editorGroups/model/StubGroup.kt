@@ -12,12 +12,12 @@ class StubGroup : EditorGroup() {
   override val title: String = ""
 
   override val isValid: Boolean = true
-  override val switchDescription: String?
-    get() = TODO("Not yet implemented")
+  override val switchDescription: String
+    get() = ""
 
   override fun icon(): Icon = AllIcons.Actions.GroupByModule
 
-  @Suppress("detekt:EmptyFunctionBlock")
+  @Suppress("detekt:EmptyFunctionBlock") // NON-NLS
   override fun invalidate() {
   }
 

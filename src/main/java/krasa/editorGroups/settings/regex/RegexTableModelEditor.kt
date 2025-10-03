@@ -333,7 +333,7 @@ class RegexTableModelEditor(
       val colorValue: Any = model.getValueAt(row, Columns.COLOR.index)
       val modelColor: Color = ColorUtil.fromHex(colorValue as String)
 
-      ColorChooserService.instance.showPopup(null, modelColor, { color, _ ->
+      ColorChooserService.getInstance().showPopup(null, modelColor, { color, _ ->
         color?.let {
           model.setValueAt(
             aValue = it.toHex(),
@@ -355,7 +355,7 @@ class RegexTableModelEditor(
     const val PREFERABLE_VIEWPORT_WIDTH: Int = 200
     const val PREFERABLE_VIEWPORT_HEIGHT: Int = 280
 
-    @Suppress("unused")
+    @Suppress("unused") // NON-NLS
     private enum class Columns(val index: Int) {
       ENABLED(0),
       TOUCHED(1),

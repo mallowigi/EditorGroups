@@ -1,4 +1,4 @@
-@file:Suppress("detekt:Filename")
+@file:Suppress("detekt:Filename") // NON-NLS
 
 package krasa.editorGroups.settings
 

@@ -11,8 +11,8 @@ import krasa.editorGroups.support.Notifications
 
 class ReindexAction : AnAction() {
   override fun actionPerformed(e: AnActionEvent) {
-    thisLogger().debug("INDEXING START ${System.currentTimeMillis()}")
-    IndexCache.getInstance(e.project!!).clear()
+    thisLogger().debug("INDEXING START ${System.currentTimeMillis()}") // NON-NLS
+    IndexCache.getInstance(e.project ?: return).clear()
     FileBasedIndex.getInstance().requestRebuild(EditorGroupIndex.NAME)
 
     Notifications.notifySimple(message("reindexing.started"))

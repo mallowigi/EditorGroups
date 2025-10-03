@@ -119,6 +119,7 @@ class RegexGroupModel : BaseState() {
     val size = split.size
     val arr = IntArray(size)
 
+    @Suppress("ReplaceManualRangeWithIndicesCalls")
     for (i in 0 until size) {
       try {
         var s = split[i]

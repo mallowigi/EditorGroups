@@ -18,14 +18,14 @@ class FileNameIndexService {
    * @return a mutable collection of virtual files that match the specified name and scope.
    */
   fun getVirtualFilesByName(name: String, scope: GlobalSearchScope): MutableCollection<VirtualFile> {
-    val files: MutableSet<VirtualFile> = mutableSetOf<VirtualFile>()
+    val files: MutableSet<VirtualFile> = mutableSetOf()
 
     FileBasedIndex.getInstance()
       .processValues<String?, Void?>(
         FilenameWithoutExtensionIndex.NAME,
         name,
         null,
-        ValueProcessor { file: VirtualFile?, value: Void? ->
+        ValueProcessor { file: VirtualFile?, _: Void? ->
           files.add(file!!)
           true
         },
@@ -43,11 +43,11 @@ class FileNameIndexService {
    * @return a mutable set of virtual files that match the specified name (ignoring case) and scope.
    */
   private fun getVirtualFilesByNameIgnoringCase(name: String, scope: GlobalSearchScope): MutableSet<VirtualFile> {
-    val keys: MutableSet<String> = mutableSetOf<String>()
+    val keys: MutableSet<String> = mutableSetOf()
 
     // Retrieve all files related with name, ignoring case
     processAllFileNames(
-      Processor { fileName: String? ->
+      { fileName: String? ->
         if (name.equals(fileName, ignoreCase = true)) keys.add(fileName!!)
         true
       },

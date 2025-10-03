@@ -100,7 +100,7 @@ class RegexpEditor(textField: JTextField, parent: Disposable) :
       }
     }
 
-    myDocument!!.addDocumentListener(dl)
+    myDocument!!.addDocumentListener(dl, parent)
     Disposer.register(parent) { (myDocument ?: return@register).removeDocumentListener(dl) }
   }
 

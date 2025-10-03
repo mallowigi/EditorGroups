@@ -7,7 +7,7 @@ import com.intellij.openapi.fileTypes.LanguageFileType
 import com.intellij.openapi.vfs.VirtualFile
 
 object EditorGroupsLanguage : Language("EditorGroups", "text/egroups") {
-  @Suppress("unused")
+  @Suppress("unused") // NON-NLS
   private fun readResolve(): Any = EditorGroupsLanguage
 
   @JvmStatic

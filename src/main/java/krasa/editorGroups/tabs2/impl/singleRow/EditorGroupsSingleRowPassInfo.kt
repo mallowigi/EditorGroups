@@ -29,7 +29,7 @@ class EditorGroupsSingleRowPassInfo(
   var toFitLength: Int = 0
 
   @JvmField
-  val toLayout: MutableList<EditorGroupTabInfo> = mutableListOf<EditorGroupTabInfo>()
+  val toLayout: MutableList<EditorGroupTabInfo> = mutableListOf()
 
   @JvmField
   val entryPointAxisSize: Int = layout.strategy.entryPointAxisSize

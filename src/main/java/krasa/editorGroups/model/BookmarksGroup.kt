@@ -118,12 +118,11 @@ class BookmarksGroup(val bookmarkGroup: BookmarkGroup?, val project: Project) : 
   override fun toString(): String = "BookmarksGroup{links=$links, name='$name'}"
 
   override fun getTabTitle(project: Project, presentableNameForUI: String): String {
-    var nameForUI = presentableNameForUI
     val isEmptyName = name.isEmpty()
 
     return when {
-      !isEmptyName -> "[$name] $nameForUI"
-      else         -> nameForUI
+      !isEmptyName -> "[$name] $presentableNameForUI"
+      else         -> presentableNameForUI
     }
   }
 

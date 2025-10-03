@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NonNls
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
-import kotlin.Throws
 
 internal class EditorGroupIndex : FileBasedIndexExtension<String, EditorGroupIndexValue>() {
 
@@ -20,7 +19,7 @@ internal class EditorGroupIndex : FileBasedIndexExtension<String, EditorGroupInd
       // WATCH OUT FOR HASHCODE AND EQUALS!!
       out.writeUTF(value.id)
       out.writeUTF(value.ownerPath)
-      out.writeUTF(value.root!!)
+      out.writeUTF(value.root ?: return)
       out.writeUTF(value.title)
       out.writeUTF(value.backgroundColor)
       out.writeUTF(value.foregroundColor)

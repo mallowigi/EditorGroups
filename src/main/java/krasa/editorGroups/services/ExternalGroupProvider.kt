@@ -35,7 +35,7 @@ class ExternalGroupProvider(private val project: Project) {
     val bookmarkGroups = this.bookmarkGroups
       .filter { it.containsLink(project, currentFile) }
 
-    thisLogger().debug("findGroups ${System.currentTimeMillis() - start}ms")
+    thisLogger().debug("findGroups ${System.currentTimeMillis() - start}ms") // NON-NLS
 
     return bookmarkGroups
   }

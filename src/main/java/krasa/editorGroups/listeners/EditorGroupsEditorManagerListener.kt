@@ -19,12 +19,10 @@ class EditorGroupsEditorManagerListener : FileEditorManagerListener {
   /** When a tab is selected, refresh the editor group panel. */
   override fun selectionChanged(event: FileEditorManagerEvent) {
     val project = event.manager.project
-    thisLogger().debug("selectionChanged $event")
-    val fileEditor = event.newEditor
-    if (fileEditor == null) return
+    thisLogger().debug("selectionChanged $event") // NON-NLS
+    val fileEditor = event.newEditor ?: return
 
-    val panel = fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL)
-    if (panel == null) return
+    val panel = fileEditor.getUserData(EditorGroupPanel.EDITOR_PANEL) ?: return
 
     val instance = EditorGroupManager.getInstance(project)
     val switchRequest = instance.getAndClearSwitchingRequest(panel.file)

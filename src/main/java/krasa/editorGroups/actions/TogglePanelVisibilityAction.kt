@@ -12,7 +12,7 @@ class TogglePanelVisibilityAction : DumbAwareAction() {
   override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
   override fun actionPerformed(e: AnActionEvent) {
-    PanelRefresher.getInstance(getEventProject(e)!!).refresh()
+    PanelRefresher.getInstance(getEventProject(e) ?: return).refresh()
     Notifications.notifyState(message("editor.groups.panel"), false)
   }
 

@@ -36,7 +36,7 @@ object Notifications {
 
   @JvmStatic
   fun indexingWarn(project: Project, file: VirtualFile, message: String) {
-    val content = message("notification.content.indexing", message, href(file).toString())
+    val content = message("notification.content.indexing", message, href(file))
     val notification = notificationGroup.createNotification(ID, content, NotificationType.WARNING)
       .addAction(object : NotificationAction(message("notification.content.open")) {
         override fun actionPerformed(e: AnActionEvent, notification: Notification) {
@@ -48,7 +48,7 @@ object Notifications {
     show(notification)
   }
 
-  fun href(file: VirtualFile): String? = href(file.name)
+  fun href(file: VirtualFile): String = href(file.name)
 
   @NonNls
   fun href(name: String): String = "<a href=\"$name\">$name<a/>"

@@ -105,13 +105,13 @@ class EditorGroupTabLabel(
     addMouseListener(object : MouseAdapter() {
       override fun mousePressed(e: MouseEvent) {
         // Right click
-        if (!KrTabsImpl.Companion.isSelectionClick(e) || !info.isEnabled) {
+        if (!KrTabsImpl.isSelectionClick(e) || !info.isEnabled) {
           handlePopup(e)
           return
         }
 
         // Select tab
-        tabs.select(tabInfo = info, requestFocus = true)
+        tabs.select(info = info, requestFocus = true)
 
         // Close previously opened right click popups
         val container = PopupUtil.getPopupContainerFor(this@EditorGroupTabLabel)
@@ -151,7 +151,7 @@ class EditorGroupTabLabel(
                 val previous = tabs.findEnabledBackward(index, cycle = true)
                 if (previous != null) {
                   tabs.select(previous, requestFocus = false).doWhenDone {
-                    tabs.selectedLabel!!.requestFocusInWindow()
+                    (tabs.selectedLabel ?: return@doWhenDone).requestFocusInWindow()
                   }
                 }
               }
@@ -165,7 +165,7 @@ class EditorGroupTabLabel(
                 val next = tabs.findEnabledForward(index, cycle = true)
                 if (next != null) {
                   tabs.select(next, requestFocus = false).doWhenDone {
-                    tabs.selectedLabel!!.requestFocusInWindow()
+                    (tabs.selectedLabel ?: return@doWhenDone).requestFocusInWindow()
                   }
                 }
               }
@@ -188,7 +188,6 @@ class EditorGroupTabLabel(
     // We don't want the focus unless we are the selected tab.
     if (tabs.selectedLabel !== this) return false
 
-    @Suppress("UsePropertyAccessSyntax")
     return super.isFocusable()
   }
 
@@ -235,8 +234,8 @@ class EditorGroupTabLabel(
   override fun getPreferredSize(): Dimension {
     val size = super.getPreferredSize()
     when {
-      EditorGroupsSettings.Companion.instance.isCompactTabs -> size.height = EditorGroupsUI.compactTabHeight()
-      else                                                  -> size.height = EditorGroupsUI.tabHeight()
+      EditorGroupsSettings.instance.isCompactTabs -> size.height = EditorGroupsUI.compactTabHeight()
+      else                                        -> size.height = EditorGroupsUI.tabHeight()
     }
     return size
   }
@@ -267,7 +266,7 @@ class EditorGroupTabLabel(
   /** Paint the fadeout. */
   private fun paintFadeout(g: Graphics) {
     val g2d = g.create() as Graphics2D
-    val fadeoutDefaultWidth = Registry.Companion.intValue("ide.editor.tabs.fadeout.width", FADEOUT_WIDTH)
+    val fadeoutDefaultWidth = Registry.intValue("ide.editor.tabs.fadeout.width", FADEOUT_WIDTH)
 
     try {
       val tabBg = effectiveBackground
@@ -357,7 +356,7 @@ class EditorGroupTabLabel(
     if (e.x < 0 || e.x >= e.component.width) return
     if (e.y < 0 || e.y >= e.component.height) return
 
-    var place = tabs.popupPlace ?: ActionPlaces.UNKNOWN
+    val place = tabs.popupPlace ?: ActionPlaces.UNKNOWN
 
     // Sets this tabInfo to the current tabs' popupInfo
     tabs.popupInfo = this.info
@@ -365,7 +364,7 @@ class EditorGroupTabLabel(
     // Add the tab actions
     val toShow = DefaultActionGroup()
     if (tabs.popupGroup != null) {
-      toShow.addAll(tabs.popupGroup!!)
+      toShow.addAll(tabs.popupGroup ?: return)
       toShow.addSeparator()
     }
 
@@ -374,18 +373,18 @@ class EditorGroupTabLabel(
     // Sets the popup to the activePopup prop
     tabs.activePopup = ActionManager.getInstance().createActionPopupMenu(place, toShow).component
     // Add the tabs' popup listener
-    tabs.activePopup!!.addPopupMenuListener(tabs.popupListener)
+    (tabs.activePopup ?: return).addPopupMenuListener(tabs.popupListener)
     // Basic tabs listener
-    tabs.activePopup!!.addPopupMenuListener(tabs)
+    (tabs.activePopup ?: return).addPopupMenuListener(tabs)
 
     // Show the popup at the event's position
-    JBPopupMenu.showByEvent(e, tabs.activePopup!!)
+    JBPopupMenu.showByEvent(e, tabs.activePopup ?: return)
   }
 
   /** Apply decorations. */
   fun apply(decoration: TabUiDecorator.TabUiDecoration) {
     val decorations =
-      mergeUiDecorations(decoration, defaultDecoration = KrTabsImpl.Companion.defaultDecorator.decoration)
+      mergeUiDecorations(decoration, defaultDecoration = KrTabsImpl.defaultDecorator.decoration)
 
     border = EmptyBorder(decorations.labelInsets)
     label.iconTextGap = decorations.iconTextGap
@@ -460,7 +459,7 @@ class EditorGroupTabLabel(
   }
 
   override fun uiDataSnapshot(sink: DataSink) {
-    DataSink.Companion.uiDataSnapshot(sink, info.component)
+    DataSink.uiDataSnapshot(sink, info.component)
   }
 
   override fun getAccessibleContext(): AccessibleContext = accessibleContext ?: AccessibleTabLabel()

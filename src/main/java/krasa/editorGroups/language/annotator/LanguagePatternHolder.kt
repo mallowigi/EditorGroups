@@ -96,10 +96,7 @@ object LanguagePatternHolder {
   val pathPattern: Pattern = Pattern.compile("(?m)^\\s*/.*$")
 
   /** Get the description for the provided keyword or macro. */
-  fun getDescription(keywordOrMacro: String): String {
-    val key = keywordOrMacro
-    return allWithDescription[key] ?: ""
-  }
+  fun getDescription(keywordOrMacro: String): String = allWithDescription[keywordOrMacro] ?: ""
 
   /** Create a regex pattern to encapsulate the provided tokens. */
   private fun createPipePattern(tokens: Set<String>, caseSensitive: Boolean, withModifiers: Boolean = false): Pattern {

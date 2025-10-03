@@ -9,6 +9,7 @@ import krasa.editorGroups.model.EditorGroup
 import krasa.editorGroups.model.EditorGroupIndexValue
 import java.awt.Color
 
+@Suppress("UnstableApiUsage")
 internal class CustomEditorGroupsTabColorProvider : EditorTabColorProvider {
   override fun getEditorTabColor(project: Project, file: VirtualFile): Color? = getBgColor(file)
 
@@ -19,14 +20,14 @@ internal class CustomEditorGroupsTabColorProvider : EditorTabColorProvider {
   }
 
   private fun getFgColor(file: VirtualFile): Color? {
-    var group: EditorGroup = file.getUserData(EditorGroupPanel.EDITOR_GROUP) ?: return null
+    val group: EditorGroup = file.getUserData(EditorGroupPanel.EDITOR_GROUP) ?: return null
     if (group.isStub) return null
     if (group !is EditorGroupIndexValue) return null
     return group.fgColor
   }
 
   private fun getBgColor(file: VirtualFile): Color? {
-    var group: EditorGroup = file.getUserData(EditorGroupPanel.EDITOR_GROUP) ?: return null
+    val group: EditorGroup = file.getUserData(EditorGroupPanel.EDITOR_GROUP) ?: return null
     if (group.isStub) return null
     if (group !is EditorGroupIndexValue) return null
     return group.bgColor

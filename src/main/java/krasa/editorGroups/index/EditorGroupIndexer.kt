@@ -39,7 +39,7 @@ class EditorGroupIndexer : DataIndexer<String, EditorGroupIndexValue, FileConten
    * @param inputData the file
    * @return the map of indexed values
    */
-  @Suppress("detekt:NestedBlockDepth")
+  @Suppress("detekt:NestedBlockDepth") // NON-NLS
   override fun map(inputData: FileContent): Map<String, EditorGroupIndexValue> {
     val file = inputData.file
     val isEGroup = EditorGroupsLanguage.isEditorGroupsLanguage(file)
@@ -288,7 +288,7 @@ class EditorGroupIndexer : DataIndexer<String, EditorGroupIndexValue, FileConten
   }
 
   /** Disable consumer: throws a DisableException, thus discarding the group. */
-  private inner class DisableConsumer : Consumer() {
+  private class DisableConsumer : Consumer() {
     override fun consume(
       inputData: FileContent?,
       groupIndexValue: EditorGroupIndexValue?,

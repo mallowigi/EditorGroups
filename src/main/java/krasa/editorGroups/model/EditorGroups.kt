@@ -18,7 +18,7 @@ class EditorGroups : EditorGroup, GroupsHolder {
   override val id: String
     get() = ID
 
-  override val switchDescription: String?
+  override val switchDescription: String
     get() = message("owner.0", ownerPath)
 
   override val title: String = ""
@@ -64,7 +64,7 @@ class EditorGroups : EditorGroup, GroupsHolder {
     groupsMap.remove(editorGroup.id)
   }
 
-  override fun icon(): Icon? = EditorGroupsIcons.groupBy
+  override fun icon(): Icon = EditorGroupsIcons.groupBy
 
   override fun invalidate(): Unit = Unit
 
@@ -91,7 +91,7 @@ class EditorGroups : EditorGroup, GroupsHolder {
     }
   }
 
-  fun first(): EditorGroup? = groupsMap.values.iterator().next()
+  fun first(): EditorGroup = groupsMap.values.iterator().next()
 
   fun getById(id: String): EditorGroup = groupsMap[id] ?: EMPTY
 

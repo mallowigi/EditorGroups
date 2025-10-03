@@ -74,7 +74,7 @@ class ScopeEditableColumnInfo(private val editable: Boolean) :
 
   override fun getColumnClass(): Class<*> = Scope::class.java
 
-  inner class ScopeCellRenderer : DefaultTableCellRenderer(), ListCellRenderer<Scope> {
+  class ScopeCellRenderer : DefaultTableCellRenderer(), ListCellRenderer<Scope> {
     private val renderer = DefaultListCellRenderer()
 
     override fun getListCellRendererComponent(

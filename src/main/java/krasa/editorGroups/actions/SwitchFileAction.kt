@@ -37,7 +37,7 @@ import javax.swing.KeyStroke
  */
 class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   override fun showPopup(e: AnActionEvent, popup: ListPopup) {
-    registerActions((popup as? ListPopupImpl?)!!)
+    registerActions(popup as? ListPopupImpl? ?: return)
 
     val project = e.project
     if (project == null) {
@@ -45,11 +45,9 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
       return
     }
 
-    val inputEvent = e.inputEvent
-    when (inputEvent) {
+    when (val inputEvent = e.inputEvent) {
       is MouseEvent -> {
-        val component = inputEvent.component
-        when (component) {
+        when (val component = inputEvent.component) {
           is ActionMenuItem -> popup.showInBestPositionFor(e.dataContext)
           else              -> popup.showUnderneathOf(component)
         }
@@ -134,7 +132,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
       val data = dataContext.getData(PlatformDataKeys.FILE_EDITOR) ?: return
-      var panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return
+      val panel: EditorGroupPanel = data.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: return
 
       val currentFile = panel.file.path
       val group = panel.getDisplayedGroupOrEmpty()
@@ -159,7 +157,7 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
         )
       }
     } catch (e: IndexNotReadyException) {
-      thisLogger().error("That should not happen", e)
+      thisLogger().error("That should not happen", e) // NON-NLS
     }
   }
 

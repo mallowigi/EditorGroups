@@ -13,30 +13,28 @@ import krasa.editorGroups.support.RegexFileResolver
 @Service(Service.Level.PROJECT)
 class RegexGroupProvider {
   fun findFirstMatchingRegexGroup(file: VirtualFile): EditorGroup {
-    thisLogger().debug("<findFirstMatchingRegexGroup: $file")
+    thisLogger().debug("<findFirstMatchingRegexGroup: $file") // NON-NLS
 
     val start = System.currentTimeMillis()
     val fileName = file.name
-    val matching = RegexGroupsSettings.instance.regexGroupModels.findFirstMatching(fileName)
-
-    val result = when (matching) {
+    val result = when (val matching = RegexGroupsSettings.instance.regexGroupModels.findFirstMatching(fileName)) {
       null -> EditorGroup.EMPTY
       else -> RegexGroup(matching, file.parent, fileName)
     }
 
-    thisLogger().debug("<findFirstMatchingRegexGroup: result=$result in ${System.currentTimeMillis() - start}ms")
+    thisLogger().debug("<findFirstMatchingRegexGroup: result=$result in ${System.currentTimeMillis() - start}ms") // NON-NLS
 
     return result
   }
 
   fun findMatchingRegexGroups(file: VirtualFile): List<RegexGroup> {
-    thisLogger().debug("findMatchingRegexGroups: $file")
+    thisLogger().debug("findMatchingRegexGroups: $file") // NON-NLS
 
     val start = System.currentTimeMillis()
     val fileName = file.name
     val matching: List<RegexGroupModel> = RegexGroupsSettings.instance.regexGroupModels.findMatching(fileName)
 
-    thisLogger().debug("findMatchingRegexGroups: ${System.currentTimeMillis() - start}ms")
+    thisLogger().debug("findMatchingRegexGroups: ${System.currentTimeMillis() - start}ms") // NON-NLS
 
     return toRegexGroup(file, fileName, matching)
   }
@@ -64,7 +62,7 @@ class RegexGroupProvider {
     val links = RegexFileResolver(project).resolveRegexGroupLinks(group, currentFile)
 
     if (currentFile != null && links.isEmpty()) {
-      thisLogger().error("should contain the current file at least: $group")
+      thisLogger().error("should contain the current file at least: $group") // NON-NLS
     }
 
     return RegexGroup(

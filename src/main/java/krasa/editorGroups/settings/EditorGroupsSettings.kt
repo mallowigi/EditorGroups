@@ -222,14 +222,14 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
   var groupSizeLimit: Int
     get() = state.groupSizeLimitInt
     set(value) {
-      state.groupSizeLimitInt = value.toInt().coerceIn(MIN_GROUP_SIZE_LIMIT, MAX_GROUP_SIZE_LIMIT)
+      state.groupSizeLimitInt = value.coerceIn(MIN_GROUP_SIZE_LIMIT, MAX_GROUP_SIZE_LIMIT)
     }
 
   @EditorGroupSetting([EditorGroupSetting.Category.TABS, EditorGroupSetting.Category.PERFORMANCE])
   var tabSizeLimit: Int
     get() = state.tabSizeLimitInt
     set(value) {
-      state.tabSizeLimitInt = value.toInt().coerceIn(MIN_TAB_SIZE_LIMIT, MAX_TAB_SIZE_LIMIT)
+      state.tabSizeLimitInt = value.coerceIn(MIN_TAB_SIZE_LIMIT, MAX_TAB_SIZE_LIMIT)
     }
 
   @EditorGroupSetting([EditorGroupSetting.Category.UI, EditorGroupSetting.Category.TABS])
@@ -354,7 +354,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     this.fireChanged()
   }
 
-  @Suppress("detekt:CyclomaticComplexMethod")
+  @Suppress("detekt:CyclomaticComplexMethod") // NON-NLS
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false

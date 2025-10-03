@@ -57,7 +57,7 @@ class AutoGroupProvider(private val project: Project) {
       ).toMutableList()
     }
       .onSuccess { virtualFilesByName ->
-        thisLogger().debug("<getVirtualFilesByName=$virtualFilesByName")
+        thisLogger().debug("<getVirtualFilesByName=$virtualFilesByName") // NON-NLS
 
         val groupSizeLimitInt = EditorGroupsSettings.instance.groupSizeLimit
         val size = virtualFilesByName.size
@@ -68,7 +68,7 @@ class AutoGroupProvider(private val project: Project) {
 
           if (paths.size == groupSizeLimitInt) {
             notifyTooManyFiles()
-            thisLogger().warn("<getSameNameGroup: too many results for $nameWithoutExtension = $size")
+            thisLogger().warn("<getSameNameGroup: too many results for $nameWithoutExtension = $size") // NON-NLS
             break
           }
 
@@ -92,9 +92,9 @@ class AutoGroupProvider(private val project: Project) {
       }
 
     val duration = System.currentTimeMillis() - start
-    if (duration > DURATION) thisLogger().warn("getSameNameGroup took ${duration}ms for '$nameWithoutExtension', results: ${paths.size}")
+    if (duration > DURATION) thisLogger().warn("getSameNameGroup took ${duration}ms for '$nameWithoutExtension', results: ${paths.size}") // NON-NLS
 
-    thisLogger().debug("getSameNameGroup ${duration}ms for '$nameWithoutExtension', results: ${paths.size}")
+    thisLogger().debug("getSameNameGroup ${duration}ms for '$nameWithoutExtension', results: ${paths.size}") // NON-NLS
 
     return SameNameGroup(
       fileNameWithoutExtension = nameWithoutExtension,
@@ -123,7 +123,7 @@ class AutoGroupProvider(private val project: Project) {
       ).toMutableList()
     }
       .onSuccess { virtualFilesByName ->
-        thisLogger().debug("<getVirtualFilesByName=$virtualFilesByName")
+        thisLogger().debug("<getVirtualFilesByName=$virtualFilesByName") // NON-NLS
 
         val groupSizeLimitInt = EditorGroupsSettings.instance.groupSizeLimit
         val size = virtualFilesByName.size
@@ -134,7 +134,7 @@ class AutoGroupProvider(private val project: Project) {
 
           if (paths.size == groupSizeLimitInt) {
             notifyTooManyFiles()
-            thisLogger().warn("<getSameNameGroup: too many results for $nameWithoutExtension = $size")
+            thisLogger().warn("<getSameNameGroup: too many results for $nameWithoutExtension = $size") // NON-NLS
             break
           }
 
@@ -158,9 +158,9 @@ class AutoGroupProvider(private val project: Project) {
       }
 
     val duration = System.currentTimeMillis() - start
-    if (duration > DURATION) thisLogger().warn("getSameNameGroup took ${duration}ms for '$nameWithoutExtension', results: ${paths.size}")
+    if (duration > DURATION) thisLogger().warn("getSameNameGroup took ${duration}ms for '$nameWithoutExtension', results: ${paths.size}") // NON-NLS
 
-    thisLogger().debug("getSameNameGroup ${duration}ms for '$nameWithoutExtension', results: ${paths.size}")
+    thisLogger().debug("getSameNameGroup ${duration}ms for '$nameWithoutExtension', results: ${paths.size}") // NON-NLS
 
     return SameFeatureGroup(
       fileNameWithoutExtension = nameWithoutExtension,
@@ -180,6 +180,6 @@ class AutoGroupProvider(private val project: Project) {
     const val INDEXING: String = "Indexing..."
     const val DURATION: Long = 500
 
-    fun getInstance(project: Project): AutoGroupProvider = project.getService<AutoGroupProvider>(AutoGroupProvider::class.java)
+    fun getInstance(project: Project): AutoGroupProvider = project.getService(AutoGroupProvider::class.java)
   }
 }

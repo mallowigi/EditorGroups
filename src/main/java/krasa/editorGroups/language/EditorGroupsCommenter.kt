@@ -3,7 +3,7 @@ package krasa.editorGroups.language
 import com.intellij.lang.Commenter
 
 internal class EditorGroupsCommenter : Commenter {
-  override fun getLineCommentPrefix(): String? = "#"
+  override fun getLineCommentPrefix(): String = "#"
 
   override fun getBlockCommentPrefix(): String? = null
 

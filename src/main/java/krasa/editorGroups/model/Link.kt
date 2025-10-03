@@ -42,7 +42,7 @@ abstract class Link(private val project: Project) {
       val virtualFile: VirtualFile? = this.virtualFile
 
       if (virtualFile == null) {
-        thisLogger().warn("VirtualFile is null for $path")
+        thisLogger().warn("VirtualFile is null for $path") // NON-NLS
         return path
       }
 

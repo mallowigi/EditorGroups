@@ -18,7 +18,7 @@ open class RegexFileResolver(private val project: Project) {
   protected var links: MutableSet<VirtualFile> = HashSet()
 
   fun resolveRegexGroupLinks(regexGroup: RegexGroup, currentFile: VirtualFile?): List<Link> {
-    thisLogger().debug("<resolveRegexGroupLinks")
+    thisLogger().debug("<resolveRegexGroupLinks") // NON-NLS
 
     val start = System.currentTimeMillis()
     val regexGroupModel = regexGroup.regexGroupModel
@@ -49,14 +49,14 @@ open class RegexFileResolver(private val project: Project) {
         }
     } catch (e: TooManyFilesException) {
       e.showNotification()
-      thisLogger().warn("Found too many matching files, skipping. Size=${links.size} $regexGroup")
+      thisLogger().warn("Found too many matching files, skipping. Size=${links.size} $regexGroup") // NON-NLS
       thisLogger().debug(links.toString())
     }
 
     val duration = System.currentTimeMillis() - start
-    if (duration > DURATION) thisLogger().warn("<resolveRegexGroup ${duration}ms $regexGroup; links=$links")
+    if (duration > DURATION) thisLogger().warn("<resolveRegexGroup ${duration}ms $regexGroup; links=$links") // NON-NLS
 
-    thisLogger().debug("<resolveRegexGroup ${duration}ms links=$links")
+    thisLogger().debug("<resolveRegexGroup ${duration}ms links=$links") // NON-NLS
 
     return Link.fromVirtualFiles(links, project)
   }

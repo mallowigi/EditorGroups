@@ -21,12 +21,10 @@ internal class FilenameWithoutExtensionIndex : ScalarIndexExtension<String?>() {
    *
    * @return A DataIndexer instance for indexing filenames without extensions.
    */
-  override fun getIndexer(): DataIndexer<String?, Void?, FileContent?> = object : DataIndexer<String?, Void?, FileContent?> {
-    override fun map(inputData: FileContent): MutableMap<String?, Void?> {
-      val fileName = inputData.fileName
-      val key = StringUtils.substringBefore(fileName, ".")
-      return Collections.singletonMap<String?, Void?>(key, null)
-    }
+  override fun getIndexer(): DataIndexer<String?, Void?, FileContent> = DataIndexer<String?, Void?, FileContent> { inputData ->
+    val fileName = inputData.fileName
+    val key = StringUtils.substringBefore(fileName, ".")
+    Collections.singletonMap<String?, Void?>(key, null)
   }
 
   /**
@@ -47,6 +45,7 @@ internal class FilenameWithoutExtensionIndex : ScalarIndexExtension<String?>() {
    *
    * @return an InputFilter instance to determine which files are eligible for indexing.
    */
+  @Suppress("UnstableApiUsage")
   override fun getInputFilter(): FileBasedIndex.InputFilter =
     FileBasedIndex.InputFilter { file: VirtualFile? -> file is VirtualFileSystemEntry }
 

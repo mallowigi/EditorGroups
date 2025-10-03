@@ -28,7 +28,7 @@ internal class EditorGroupColorSettings : ColorSettingsPage {
     <keyword>@group.disable</keyword> <constant>true</constant>
   """.trimIndent()
 
-  override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String, TextAttributesKey>? = DESCRIPTORS
+  override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String, TextAttributesKey> = DESCRIPTORS
 
   override fun getAttributeDescriptors(): Array<out AttributesDescriptor?> = ATTRIBUTES
 

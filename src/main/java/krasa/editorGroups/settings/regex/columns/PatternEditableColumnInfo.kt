@@ -26,9 +26,9 @@ package krasa.editorGroups.settings.regex.columns
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.util.ui.table.TableModelEditor.EditableColumnInfo
-import com.mallowigi.config.associations.ui.internal.RegExpTableCellRenderer
 import krasa.editorGroups.messages.EditorGroupsBundle.message
 import krasa.editorGroups.model.RegexGroupModel
+import krasa.editorGroups.settings.regex.internal.RegExpTableCellRenderer
 import krasa.editorGroups.settings.regex.internal.RegexpEditor
 import javax.swing.table.TableCellEditor
 import javax.swing.table.TableCellRenderer

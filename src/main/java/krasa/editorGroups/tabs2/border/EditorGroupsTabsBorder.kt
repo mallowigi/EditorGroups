@@ -25,7 +25,7 @@ class EditorGroupsTabsBorder(val tabs: KrTabsImpl) : Border {
         val startY = firstLabel.y - highlightThickness
         val lastRow = 1
 
-        val yl = lastRow * tabs.headerFitSize!!.height + startY
+        val yl = lastRow * (tabs.headerFitSize ?: return).height + startY
         tabs.tabPainter.paintBorderLine(
           g = g,
           thickness = thickness,
@@ -35,7 +35,7 @@ class EditorGroupsTabsBorder(val tabs: KrTabsImpl) : Border {
       }
 
       EditorGroupsTabsPosition.BOTTOM -> {
-        val curY = height - 1 * tabs.headerFitSize!!.height
+        val curY = height - 1 * (tabs.headerFitSize ?: return).height
         tabs.tabPainter.paintBorderLine(
           g = g,
           thickness = thickness,
