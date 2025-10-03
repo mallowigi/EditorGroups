@@ -136,6 +136,12 @@ internal class EditorSettingsConfigurable : BoundSearchableConfigurable(
             .comment(message("EditorGroupsSettings.isCompactTabsCheckbox.toolTipText"))
         }
 
+        row {
+          checkBox(message("EditorGroupsSettings.isRoundedTabsCheckbox.text"))
+            .bindSelected(settingsClone::isRoundedTabs)
+            .comment(message("EditorGroupsSettings.isRoundedTabsCheckbox.toolTipText"))
+        }
+
         separator()
 
         row {
