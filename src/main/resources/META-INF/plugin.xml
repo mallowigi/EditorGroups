@@ -118,6 +118,9 @@
 
         <!-- Theme -->
         <themeMetadataProvider path="/themes/metadata/EditorGroups.themeMetadata.json"/>
+
+        <applicationService serviceInterface="krasa.editorGroups.tabs2.impl.islands.KrTabsPainterProvider"
+                            serviceImplementation="krasa.editorGroups.tabs2.impl.islands.IslandsTabsPainterProvider"/>
     </extensions>
 
     <!--suppress PluginXmlValidity -->

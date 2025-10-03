@@ -83,6 +83,9 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
 
     // Placement of the tab panel
     var tabsPlacement: Int by property(SwingConstants.TOP)
+
+    // Islands
+    var isIslands: Boolean by property(true)
   }
 
   @EditorGroupSetting([EditorGroupSetting.Category.REGEX, EditorGroupSetting.Category.GROUPS])
@@ -253,6 +256,13 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
       state.customFont = value
     }
 
+  @EditorGroupSetting([EditorGroupSetting.Category.UI, EditorGroupSetting.Category.TABS])
+  var isIslands: Boolean
+    get() = state.isIslands
+    set(value) {
+      state.isIslands = value
+    }
+
   fun fireChanged() {
     ApplicationManager.getApplication().messageBus
       .syncPublisher(TOPIC)
@@ -285,6 +295,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     clone.reuseCurrentTab = this.reuseCurrentTab
     clone.tabSizeLimit = this.tabSizeLimit
     clone.tabsPlacement = this.tabsPlacement
+    clone.isIslands = this.isIslands
     return clone
   }
 
@@ -313,6 +324,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     this.reuseCurrentTab = state.reuseCurrentTab
     this.tabSizeLimit = state.tabSizeLimit
     this.tabsPlacement = state.tabsPlacement
+    this.isIslands = state.isIslands
     this.fireChanged()
   }
 
@@ -351,6 +363,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     this.tabsPlacement = SwingConstants.TOP
     this.isCustomFont = false
     this.customFont = DEFAULT_FONT
+    this.isIslands = true
     this.fireChanged()
   }
 
@@ -385,6 +398,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     if (reuseCurrentTab != other.reuseCurrentTab) return false
     if (tabSizeLimit != other.tabSizeLimit) return false
     if (tabsPlacement != other.tabsPlacement) return false
+    if (isIslands != other.isIslands) return false
 
     return true
   }
@@ -414,6 +428,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     result = 31 * result + reuseCurrentTab.hashCode()
     result = 31 * result + tabSizeLimit
     result = 31 * result + tabsPlacement
+    result = 31 * result + isIslands.hashCode()
     return result
   }
 
@@ -443,6 +458,7 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     |reuseCurrentTab=$reuseCurrentTab,
     |tabSizeLimit=$tabSizeLimit,
     |tabsPlacement=$tabsPlacement,
+    |isIslands=$isIslands,
     )
   """.trimMargin()
 

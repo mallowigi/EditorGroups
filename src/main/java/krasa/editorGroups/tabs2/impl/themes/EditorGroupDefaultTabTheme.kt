@@ -37,6 +37,9 @@ open class EditorGroupDefaultTabTheme : EditorGroupTabTheme {
     get() = globalScheme.getAttributes(EditorColors.TAB_SELECTED).foregroundColor
       ?: JBUI.CurrentTheme.EditorTabs.underlinedTabForeground()
 
+  override val underlinedTabBorderColor: Color
+    get() = JBColor("EditorTabs.underlinedBorderColor", JBColor(0x7F99C3, 0x7F99C3))
+
   override val underlineHeight: Int
     get() = JBUI.CurrentTheme.EditorTabs.underlineHeight()
 
@@ -54,6 +57,9 @@ open class EditorGroupDefaultTabTheme : EditorGroupTabTheme {
 
   override val hoverSelectedInactiveBackground: Color
     get() = JBUI.CurrentTheme.EditorTabs.hoverBackground(true, false)
+
+  override val hoverBorderColor: Color
+    get() = JBColor("EditorTabs.hoverBorderColor", null)
 
   override val underlinedTabInactiveBackground: Color?
     get() = globalScheme.getAttributes(EditorColors.TAB_SELECTED_INACTIVE).backgroundColor ?: underlinedTabBackground
@@ -75,4 +81,10 @@ open class EditorGroupDefaultTabTheme : EditorGroupTabTheme {
 
   override val compactTabHeight: Int
     get() = COMPACT_TAB_HEIGHT
+
+  override val roundTabArc: Int
+    get() = JBUI.CurrentTheme.MainToolbar.Button.hoverArc().float.toInt()
+
+  override val roundTabOpacity: Float
+    get() = 0.9f
 }

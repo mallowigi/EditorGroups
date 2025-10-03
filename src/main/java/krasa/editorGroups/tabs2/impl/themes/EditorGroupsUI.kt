@@ -57,6 +57,11 @@ object EditorGroupsUI {
     defaultTheme.hoverSelectedInactiveBackground
   )
 
+  fun hoverBorderColor(): Color = JBColor.namedColor(
+    "EditorGroupsTabs.hoverBorderColor",
+    defaultTheme.hoverBorderColor
+  )
+
   fun underlinedTabBackground(): Color = JBColor.namedColor(
     "EditorGroupsTabs.underlinedTabBackground",
     defaultTheme.underlinedTabBackground
@@ -65,6 +70,11 @@ object EditorGroupsUI {
   fun underlinedTabForeground(): Color = JBColor.namedColor(
     "EditorGroupsTabs.underlinedTabForeground",
     defaultTheme.underlinedTabForeground
+  )
+
+  fun underlinedTabBorderColor(): Color = JBColor.namedColor(
+    "EditorGroupsTabs.underlinedTabBorderColor",
+    defaultTheme.underlinedTabBorderColor
   )
 
   fun underlineArc(): Int = JBUI.getInt(
@@ -85,6 +95,16 @@ object EditorGroupsUI {
   fun fontSizeOffset(): Int = JBUI.getInt(
     "EditorGroupsTabs.fontSizeOffset",
     defaultTheme.fontSizeOffset
+  )
+
+  fun arc(): Int = JBUI.getInt(
+    "EditorGroupsTabs.arc",
+    defaultTheme.roundTabArc
+  )
+
+  fun backgroundOpacity(): Float = JBUI.getFloat(
+    "EditorGroupsTabs.backgroundOpacity",
+    defaultTheme.roundTabOpacity
   )
 
   fun font(): Font {
