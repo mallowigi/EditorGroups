@@ -36,6 +36,7 @@ import krasa.editorGroups.tabs2.border.EditorGroupsTabsBorder
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsDefaultTabPainterAdapter
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsTabPainter
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsTabPainterAdapter
+import krasa.editorGroups.tabs2.impl.rounded.KrRoundedTabsPainterProvider
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsLayoutPassInfo
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsScrollableSingleRowLayout
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsSingleRowLayout
@@ -91,7 +92,7 @@ open class KrTabsImpl(
   var mySelectedInfo: EditorGroupTabInfo? = null
 
   // The more tabs toolbar
-  val moreToolbar: ActionToolbar?
+  var moreToolbar: ActionToolbar? = null
   var entryPointToolbar: ActionToolbar? = null
 
   // Returns default one action horizontal toolbar size (26x24)
@@ -289,6 +290,7 @@ open class KrTabsImpl(
 
       assert(visibleTabInfos.isEmpty())
       visibleTabInfos.addAll(tabs)
+      setTabsPosition(tabsPosition)
       resetTabsCache()
     }
 
@@ -349,7 +351,7 @@ open class KrTabsImpl(
       targetComponent = this,
       actionManager = actionManager
     )
-    add(moreToolbar.component)
+    add(moreToolbar?.component)
 
     // Entry point toolbar (needed for a smooth scrolling)
     when (val entryPointActionGroup = entryPointActionGroup) {
@@ -488,7 +490,8 @@ open class KrTabsImpl(
   protected fun createTabBorder(): EditorGroupsTabsBorder = EditorGroupsTabsBorder(this)
 
   // Tab painter adapter
-  protected open fun createTabPainterAdapter(): EditorGroupsTabPainterAdapter = EditorGroupsDefaultTabPainterAdapter()
+  protected open fun createTabPainterAdapter(): EditorGroupsTabPainterAdapter =
+    KrRoundedTabsPainterProvider.getInstance()?.createTabPainter() ?: EditorGroupsDefaultTabPainterAdapter()
 
   /** Check whether the current position is inside the tabs area (for scrolling) */
   private fun isInsideTabsArea(y: Int): Boolean {
@@ -984,7 +987,6 @@ open class KrTabsImpl(
     resetTabsCache()
     add(label)
     // Remove scroll border
-    adjust(tabInfo)
     return false
   }
 
@@ -1892,7 +1894,7 @@ open class KrTabsImpl(
   fun relayout(forced: Boolean, layoutNow: Boolean) {
     if (!forcedRelayout) forcedRelayout = forced
 
-    if (moreToolbar != null) moreToolbar.component.isVisible = true
+    moreToolbar?.let { it.component.isVisible = true }
 
     revalidateAndRepaint(layoutNow)
   }
@@ -1900,6 +1902,13 @@ open class KrTabsImpl(
   override fun addTabMouseListener(listener: MouseListener): EditorGroupsTabsBase {
     removeListeners()
     tabMouseListeners.add(listener)
+    addListeners()
+    return this
+  }
+
+  override fun removeTabMouseListener(listener: MouseListener): KrTabsImpl {
+    removeListeners()
+    tabMouseListeners.remove(listener)
     addListeners()
     return this
   }
@@ -2011,15 +2020,7 @@ open class KrTabsImpl(
       visibleTabInfos.forEach { it.tabLabel?.apply(uiDecoration) }
     }
 
-    tabs.forEach { adjust(it) }
-
     relayout(forced = true, layoutNow = false)
-  }
-
-  /** Adjusts the tab info component to remove the scroll border. */
-  private fun adjust(tabInfo: EditorGroupTabInfo) {
-    @Suppress("DEPRECATION")
-    UIUtil.removeScrollBorder(tabInfo.component ?: return)
   }
 
   /** Sorts the tabs using the provided comparator. */
@@ -2030,18 +2031,12 @@ open class KrTabsImpl(
   }
 
   override fun uiDataSnapshot(sink: DataSink) {
-    DataSink.uiDataSnapshot(sink, dataProvider)
     sink[QuickActionProvider.KEY] = this@KrTabsImpl
     sink[MorePopupAware.KEY] = this@KrTabsImpl
   }
 
   /** No actions (no close/pin) */
   override fun getActions(originalProvider: Boolean): List<AnAction> = emptyList()
-
-  override fun setDataProvider(dataProvider: DataProvider): KrTabsImpl {
-    this.dataProvider = dataProvider
-    return this
-  }
 
   /** Resets the layout for each JComponent within the container. */
   private fun applyResetComponents() {

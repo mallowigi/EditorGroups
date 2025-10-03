@@ -118,6 +118,10 @@
 
         <!-- Theme -->
         <themeMetadataProvider path="/themes/metadata/EditorGroups.themeMetadata.json"/>
+
+        <!-- Rounded Tabs (Islands) -->
+        <applicationService serviceInterface="krasa.editorGroups.tabs2.impl.rounded.KrRoundedTabsPainterProvider"
+                            serviceImplementation="krasa.editorGroups.tabs2.impl.rounded.RoundedTabsPainterProvider"/>
     </extensions>
 
     <!--suppress PluginXmlValidity -->

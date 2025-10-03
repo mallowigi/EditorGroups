@@ -25,11 +25,17 @@ open class EditorGroupCustomTabTheme : EditorGroupTabTheme {
   override val hoverSelectedInactiveBackground: Color
     get() = EditorGroupsUI.hoverSelectedInactiveBackground()
 
+  override val hoverBorderColor: Color?
+    get() = EditorGroupsUI.hoverBorderColor()
+
   override val underlinedTabBackground: Color?
     get() = EditorGroupsUI.underlinedTabBackground()
 
   override val underlinedTabForeground: Color
     get() = EditorGroupsUI.underlinedTabForeground()
+
+  override val underlinedTabBorderColor: Color
+    get() = EditorGroupsUI.underlinedTabBorderColor()
 
   override val underlineHeight: Int
     get() = EditorGroupsUI.underlineHeight()
@@ -60,4 +66,10 @@ open class EditorGroupCustomTabTheme : EditorGroupTabTheme {
 
   override val compactTabHeight: Int
     get() = EditorGroupsUI.compactTabHeight()
+
+  override val roundTabArc: Int
+    get() = EditorGroupsUI.arc()
+
+  override val roundTabOpacity: Float
+    get() = EditorGroupsUI.backgroundOpacity()
 }
