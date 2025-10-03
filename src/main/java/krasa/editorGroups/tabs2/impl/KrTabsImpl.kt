@@ -6,6 +6,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.toolbarLayout.ToolbarLayoutStrategy
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.fill2DRoundRect
@@ -60,7 +61,7 @@ import javax.swing.event.PopupMenuListener
 import javax.swing.plaf.ComponentUI
 import kotlin.math.max
 
-@Suppress("detekt:LargeClass", "detekt:MagicNumber", "detekt:StringLiteralDuplication", "UnstableApiUsage")
+@Suppress("detekt:LargeClass", "detekt:MagicNumber", "detekt:StringLiteralDuplication", "UnstableApiUsage") // NON-NLS
 @DirtyUI
 open class KrTabsImpl(
   private var project: Project?,
@@ -917,8 +918,8 @@ open class KrTabsImpl(
   /** Request focus. */
   override fun requestFocus() {
     when (val toFocus = toFocus) {
-      null -> focusManager.doWhenFocusSettlesDown { super.requestFocus() }
-      else -> focusManager.doWhenFocusSettlesDown { focusManager.requestFocus(toFocus, true) }
+      null -> invokeLater { super.requestFocus() }
+      else -> invokeLater { focusManager.requestFocus(toFocus, true) }
     }
   }
 
@@ -1210,7 +1211,7 @@ open class KrTabsImpl(
     val callback = ActionCallback()
     val executionRequest = ++removeDeferredRequest
 
-    focusManager.doWhenFocusSettlesDown {
+    invokeLater {
       if (removeDeferredRequest == executionRequest) removeDeferredNow()
       callback.setDone()
     }

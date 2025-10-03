@@ -383,13 +383,14 @@ class EditorGroupTabLabel(
 
   /** Apply decorations. */
   fun apply(decoration: TabUiDecorator.TabUiDecoration) {
-    val decorations =
-      mergeUiDecorations(decoration, defaultDecoration = KrTabsImpl.defaultDecorator.decoration)
+    val (labelInsets, contentInsets, iconTextGap) = mergeUiDecorations(
+      decoration,
+      defaultDecoration = KrTabsImpl.defaultDecorator.decoration
+    )
 
-    border = EmptyBorder(decorations.labelInsets)
-    label.iconTextGap = decorations.iconTextGap
+    border = EmptyBorder(labelInsets)
+    label.iconTextGap = iconTextGap
 
-    val contentInsets = decorations.contentInsetsSupplier
     labelPlaceholder.border = EmptyBorder(contentInsets)
   }
 
