@@ -5,6 +5,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.ColoredListCellRenderer
@@ -15,6 +16,9 @@ import com.intellij.ui.content.ContentFactory
 import com.intellij.util.ui.JBUI
 import krasa.editorGroups.EditorGroupManager
 import krasa.editorGroups.EditorGroupPanel
+import krasa.editorGroups.events.EditorGroupChangeListener
+import krasa.editorGroups.messages.EditorGroupsBundle.message
+import krasa.editorGroups.model.EditorGroup
 import krasa.editorGroups.support.Splitters
 import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
@@ -68,11 +72,21 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
     updateTabs()
 
     // Listen for tab changes and update selection
-    project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
+    val connect = project.messageBus.connect()
+
+    connect.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
       override fun selectionChanged(event: FileEditorManagerEvent) {
         updateTabs()
       }
     })
+
+    // Listen for editor group changes and update tabs
+    connect.subscribe(
+      EditorGroupChangeListener.TOPIC,
+      object : EditorGroupChangeListener {
+        override fun groupChanged(newGroup: EditorGroup) = updateTabs()
+      }
+    )
 
     // Switch tab on click, only if not already open
     tabList.addMouseListener(object : MouseAdapter() {
@@ -100,7 +114,7 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
     })
 
     val contentFactory = ContentFactory.getInstance()
-    val content = contentFactory.createContent(panel, "Current Editor Group", false)
+    val content = contentFactory.createContent(panel, message("tab.title.current.editor.group"), false)
     toolWindow.contentManager.addContent(content)
   }
 
@@ -110,7 +124,7 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
     return selectedEditor?.getUserData(EditorGroupPanel.EDITOR_PANEL)
   }
 
-  private fun getCurrentFile(project: Project): com.intellij.openapi.vfs.VirtualFile? {
+  private fun getCurrentFile(project: Project): VirtualFile? {
     val fileEditorManager = FileEditorManager.getInstance(project)
     return fileEditorManager.selectedFiles.firstOrNull()
   }

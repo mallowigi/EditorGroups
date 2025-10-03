@@ -41,6 +41,7 @@ import krasa.editorGroups.actions.PopupMenu
 import krasa.editorGroups.actions.RefreshAction
 import krasa.editorGroups.actions.RemoveFromCurrentBookmarksAction
 import krasa.editorGroups.actions.SwitchGroupAction
+import krasa.editorGroups.events.EditorGroupChangeListener
 import krasa.editorGroups.index.IndexNotReady
 import krasa.editorGroups.language.EditorGroupsLanguage.isEditorGroupsLanguage
 import krasa.editorGroups.model.*
@@ -984,6 +985,9 @@ class EditorGroupPanel(
     fileEditorManager.updateFilePresentation(file)
     toolbar.updateActionsAsync()
     groupManager.stopSwitching()
+
+    // Fire editor group change event
+    project.messageBus.syncPublisher(EditorGroupChangeListener.TOPIC).groupChanged(renderingGroup)
 
     thisLogger().debug("<refreshOnEDT ${System.currentTimeMillis() - start}ms ${fileEditor.name}, displayedGroup=$displayedGroup") // NON-NLS
   }
