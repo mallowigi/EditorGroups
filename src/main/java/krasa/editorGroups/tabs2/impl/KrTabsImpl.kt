@@ -33,10 +33,10 @@ import kotlinx.coroutines.Runnable
 import krasa.editorGroups.support.lazyUiDisposable
 import krasa.editorGroups.tabs2.*
 import krasa.editorGroups.tabs2.border.EditorGroupsTabsBorder
-import krasa.editorGroups.tabs2.impl.islands.KrTabsPainterProvider
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsDefaultTabPainterAdapter
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsTabPainter
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsTabPainterAdapter
+import krasa.editorGroups.tabs2.impl.rounded.KrRoundedTabsPainterProvider
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsLayoutPassInfo
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsScrollableSingleRowLayout
 import krasa.editorGroups.tabs2.impl.singleRow.EditorGroupsSingleRowLayout
@@ -491,7 +491,7 @@ open class KrTabsImpl(
 
   // Tab painter adapter
   protected open fun createTabPainterAdapter(): EditorGroupsTabPainterAdapter =
-    KrTabsPainterProvider.getInstance()?.createTabPainter() ?: EditorGroupsDefaultTabPainterAdapter()
+    KrRoundedTabsPainterProvider.getInstance()?.createTabPainter() ?: EditorGroupsDefaultTabPainterAdapter()
 
   /** Check whether the current position is inside the tabs area (for scrolling) */
   private fun isInsideTabsArea(y: Int): Boolean {

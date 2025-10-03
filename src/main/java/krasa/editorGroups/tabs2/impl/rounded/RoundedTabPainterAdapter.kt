@@ -1,4 +1,4 @@
-package krasa.editorGroups.tabs2.impl.islands
+package krasa.editorGroups.tabs2.impl.rounded
 
 import com.intellij.util.ui.GraphicsUtil
 import com.intellij.util.ui.JBInsets
@@ -12,14 +12,14 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Rectangle
 
-class IslandsTabPainterAdapter : EditorGroupsTabPainterAdapter {
+class RoundedTabPainterAdapter : EditorGroupsTabPainterAdapter {
   private val editorAdapter = EditorGroupsDefaultTabPainterAdapter()
 
   val isEnabled: Boolean
-    get() = EditorGroupsSettings.instance.isIslands
+    get() = EditorGroupsSettings.instance.isRoundedTabs
 
   override val tabPainter: EditorGroupsTabPainter
-    get() = if (isEnabled) IslandsTabPainter() else editorAdapter.tabPainter
+    get() = if (isEnabled) RoundedTabPainter() else editorAdapter.tabPainter
 
   override fun paintBackground(
     label: EditorGroupTabLabel,
@@ -48,7 +48,7 @@ class IslandsTabPainterAdapter : EditorGroupsTabPainterAdapter {
       val accentedRect = Rectangle(rect)
       JBInsets.removeFrom(accentedRect, JBInsets(5, 3, 5, 3))
 
-      (tabPainter as IslandsTabPainter).paintTab(
+      (tabPainter as RoundedTabPainter).paintTab(
         g = g2d,
         rect = accentedRect,
         tabColor = info.tabColor,

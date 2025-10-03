@@ -1,4 +1,4 @@
-package krasa.editorGroups.tabs2.impl.islands
+package krasa.editorGroups.tabs2.impl.rounded
 
 import com.intellij.ui.ColorUtil
 import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
@@ -11,7 +11,7 @@ import java.awt.Point
 import java.awt.Rectangle
 import java.awt.geom.RoundRectangle2D
 
-internal open class IslandsTabPainter : EditorGroupsTabPainter {
+internal open class RoundedTabPainter : EditorGroupsTabPainter {
   private val theme = EditorGroupDefaultTabTheme()
 
   private val regularColors = theme.background to theme.borderColor
