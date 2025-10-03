@@ -333,7 +333,7 @@ class RegexTableModelEditor(
       val colorValue: Any = model.getValueAt(row, Columns.COLOR.index)
       val modelColor: Color = ColorUtil.fromHex(colorValue as String)
 
-      ColorChooserService.instance.showPopup(null, modelColor, { color, _ ->
+      ColorChooserService.getInstance().showPopup(null, modelColor, { color, _ ->
         color?.let {
           model.setValueAt(
             aValue = it.toHex(),

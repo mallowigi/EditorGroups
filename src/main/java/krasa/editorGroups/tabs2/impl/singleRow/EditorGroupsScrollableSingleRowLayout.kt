@@ -131,8 +131,8 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
   }
 
   /** Check whether the given tab is hidden (needs scrolling) */
-  override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean {
-    val label = tabs.getTabLabel(tabInfo)!!
+  override fun isTabHidden(info: EditorGroupTabInfo): Boolean {
+    val label = tabs.getTabLabel(info)!!
     val bounds = label.bounds
     val deadzone = JBUI.scale(DEADZONE_TAB_HIDDEN)
 
@@ -145,7 +145,7 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
     var i = passInfo.toLayout.size - 1
     while (i >= 0) {
       val info = passInfo.toLayout[i]
-      val label = tabs.getTabLabel(info)!!
+      val label = tabs.getTabLabel(info) ?: return null
 
       if (!label.bounds.isEmpty) return label
 

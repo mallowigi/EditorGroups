@@ -51,8 +51,7 @@ import javax.swing.SwingUtilities
 class EditorGroupManager(private val project: Project) {
   private var cache: IndexCache = IndexCache.getInstance(project)
   private val config: EditorGroupsSettings = EditorGroupsSettings.instance
-  private val panelRefresher: PanelRefresher = PanelRefresher.Companion.getInstance(project)
-  private val ideFocusManager = IdeFocusManager.findInstance()
+  private val panelRefresher: PanelRefresher = PanelRefresher.getInstance(project)
   private var warningShown = false
   private val externalGroupProvider: ExternalGroupProvider = ExternalGroupProvider.getInstance(project)
   private val autoGroupProvider: AutoGroupProvider = AutoGroupProvider.getInstance(project)
@@ -378,10 +377,8 @@ class EditorGroupManager(private val project: Project) {
    */
   fun stopSwitching() {
     SwingUtilities.invokeLater {
-      ideFocusManager.doWhenFocusSettlesDown {
-        thisLogger().debug("enabling switching")
-        this.switching = false
-      }
+      thisLogger().debug("enabling switching")
+      this.switching = false
     }
   }
 
@@ -587,8 +584,8 @@ class EditorGroupManager(private val project: Project) {
       project,
       {
         val manager = FileEditorManagerEx.getInstanceEx(project)
-        var curWindow = currentWindow ?: manager.currentWindow
-        var selectedFile = currentFile ?: curWindow?.selectedFile
+        val curWindow = currentWindow ?: manager.currentWindow
+        val selectedFile = currentFile ?: curWindow?.selectedFile
         val selectedComposite = curWindow?.getSelectedComposite(ignorePopup = true)
 
         // If the file is already open, scroll to it (if line is provided)

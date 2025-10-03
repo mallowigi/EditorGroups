@@ -85,7 +85,7 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
       return length
     }
 
-    override fun getLengthIncrement(labelPrefSize: Dimension): Int = max(labelPrefSize.width, MIN_TAB_WIDTH)
+    override fun getLengthIncrement(dimension: Dimension): Int = max(dimension.width, MIN_TAB_WIDTH)
 
     override fun getMinPosition(bounds: Rectangle): Int = bounds.x
 

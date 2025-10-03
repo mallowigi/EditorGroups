@@ -208,5 +208,5 @@ abstract class EditorGroupsSingleRowLayout(
     return strategy.getLengthIncrement(label?.preferredSize ?: Dimension()) + tabs.tabHGap
   }
 
-  override fun isTabHidden(tabInfo: EditorGroupTabInfo): Boolean = lastSingleRowLayout != null
+  override fun isTabHidden(info: EditorGroupTabInfo): Boolean = lastSingleRowLayout != null
 }

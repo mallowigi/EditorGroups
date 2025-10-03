@@ -160,10 +160,6 @@ open class KrTabsImpl(
   // Instance of tab decorator
   internal var uiDecorator: TabUiDecorator? = null
 
-  // Keep a state for recent activity for the scrollbar
-  val isRecentlyActive: Boolean
-    get() = scrollBarActivityTracker.isRecentlyActive
-
   // tabs cache
   private var allTabs: List<EditorGroupTabInfo>? = null
 
@@ -314,7 +310,7 @@ open class KrTabsImpl(
   private val toFocus: JComponent?
     get() {
       val info = selectedInfo ?: return null
-      var toFocus: JComponent? = info.component
+      val toFocus: JComponent? = info.component
       if (toFocus == null || !toFocus.isShowing) return null
 
       val policyToFocus = focusManager.getFocusTargetFor(toFocus)
@@ -347,7 +343,6 @@ open class KrTabsImpl(
     val actionManager = ActionManager.getInstance()
 
     // More tabs toolbar
-    @Suppress("UnresolvedPluginConfigReference")
     moreToolbar = createToolbar(
       group = DefaultActionGroup(actionManager.getAction("TabList")),
       targetComponent = this,
@@ -356,8 +351,7 @@ open class KrTabsImpl(
     add(moreToolbar.component)
 
     // Entry point toolbar (needed for a smooth scrolling)
-    val entryPointActionGroup = entryPointActionGroup
-    when (entryPointActionGroup) {
+    when (val entryPointActionGroup = entryPointActionGroup) {
       null -> entryPointToolbar = null
       else -> {
         entryPointToolbar = createToolbar(entryPointActionGroup, targetComponent = this, actionManager = actionManager)
@@ -458,11 +452,6 @@ open class KrTabsImpl(
     tabs.sortWith { o1, o2 -> NaturalComparator.INSTANCE.compare(o1.text, o2.text) }
   }
 
-  /** Reset scrollbar activity. */
-  protected fun resetScrollBarActivity() {
-    scrollBarActivityTracker.reset()
-  }
-
   /** Whether the scrollbar is adjusting. */
   internal fun isScrollBarAdjusting(): Boolean = scrollBar.valueIsAdjusting
 
@@ -475,7 +464,7 @@ open class KrTabsImpl(
       val point = event.point
       SwingUtilities.convertPointToScreen(point, event.component)
 
-      var rectangle = visibleRect.intersection(tabRectangle)
+      val rectangle = visibleRect.intersection(tabRectangle)
       val p = rectangle.location
       SwingUtilities.convertPointToScreen(p, this@KrTabsImpl)
       rectangle.location = p
@@ -506,7 +495,6 @@ open class KrTabsImpl(
     return when (tabsPosition) {
       EditorGroupsTabsPosition.TOP    -> y <= area.height
       EditorGroupsTabsPosition.BOTTOM -> y >= height - area.height
-      else                            -> false
     }
   }
 
@@ -522,7 +510,6 @@ open class KrTabsImpl(
   private fun getScrollBarBounds(): Rectangle = when (tabsPosition) {
     EditorGroupsTabsPosition.TOP    -> Rectangle(0, 1, width, SCROLL_BAR_THICKNESS)
     EditorGroupsTabsPosition.BOTTOM -> Rectangle(0, height - SCROLL_BAR_THICKNESS, width, SCROLL_BAR_THICKNESS)
-    else                            -> Rectangle()
   }
 
   /** Revalidate tabs on settings change. */
@@ -631,7 +618,7 @@ open class KrTabsImpl(
   /** Remove a tab. */
   override fun remove(index: Int) {
     if (removeNotifyInProgress) {
-      thisLogger().warn("removeNotify in progress")
+      thisLogger().warn("removeNotify in progress") // NON-NLS
     }
 
     super.remove(index)
@@ -640,7 +627,7 @@ open class KrTabsImpl(
   /** Remove all tabs. */
   override fun removeAll() {
     if (removeNotifyInProgress) {
-      thisLogger().warn("removeNotify in progress")
+      thisLogger().warn("removeNotify in progress") // NON-NLS
     }
 
     super.removeAll()
@@ -929,8 +916,7 @@ open class KrTabsImpl(
 
   /** Request focus. */
   override fun requestFocus() {
-    val toFocus = toFocus
-    when (toFocus) {
+    when (val toFocus = toFocus) {
       null -> focusManager.doWhenFocusSettlesDown { super.requestFocus() }
       else -> focusManager.doWhenFocusSettlesDown { focusManager.requestFocus(toFocus, true) }
     }
@@ -1008,7 +994,7 @@ open class KrTabsImpl(
   protected open fun createTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel = EditorGroupTabLabel(this, info)
 
   /** Get a tab label at the given info. */
-  override fun getTabLabel(info: EditorGroupTabInfo): EditorGroupTabLabel? = info.tabLabel
+  override fun getTabLabel(tabInfo: EditorGroupTabInfo): EditorGroupTabLabel? = tabInfo.tabLabel
 
   override fun setPopupGroup(popupGroup: ActionGroup, place: String, addNavigationGroup: Boolean): EditorGroupsTabsBase =
     setPopupGroupWithSupplier({ popupGroup }, place)
@@ -1035,8 +1021,8 @@ open class KrTabsImpl(
   }
 
   /** Select a tab. */
-  override fun select(tabInfo: EditorGroupTabInfo, requestFocus: Boolean): ActionCallback =
-    doSetSelected(tabInfo = tabInfo, requestFocus = requestFocus, requestFocusInWindow = false)
+  override fun select(info: EditorGroupTabInfo, requestFocus: Boolean): ActionCallback =
+    doSetSelected(tabInfo = info, requestFocus = requestFocus, requestFocusInWindow = false)
 
   /** Select a tab and execute the change selection. */
   private fun doSetSelected(tabInfo: EditorGroupTabInfo, requestFocus: Boolean, requestFocusInWindow: Boolean): ActionCallback {
@@ -1299,7 +1285,7 @@ open class KrTabsImpl(
     // Try to select the requested tab with focus
     val toSelect = getToSelectOnRemoveOf(selected)
     if (toSelect != null) {
-      select(tabInfo = toSelect, requestFocus = focusManager.getFocusedDescendantFor(this) != null)
+      select(info = toSelect, requestFocus = focusManager.getFocusedDescendantFor(this) != null)
     }
   }
 
@@ -1392,10 +1378,10 @@ open class KrTabsImpl(
   }
 
   /** Returns the tab to select after removal. */
-  override fun getToSelectOnRemoveOf(tabInfo: EditorGroupTabInfo): EditorGroupTabInfo? {
-    if (!visibleTabInfos.contains(tabInfo) || mySelectedInfo != tabInfo || visibleTabInfos.size == 1) return null
+  override fun getToSelectOnRemoveOf(info: EditorGroupTabInfo): EditorGroupTabInfo? {
+    if (!visibleTabInfos.contains(info) || mySelectedInfo != info || visibleTabInfos.size == 1) return null
 
-    val index = visibleTabInfos.indexOf(tabInfo)
+    val index = visibleTabInfos.indexOf(info)
     var result: EditorGroupTabInfo? = null
 
     // Find the first enabled tab on the left tabs
@@ -2124,11 +2110,10 @@ open class KrTabsImpl(
     override fun getAccessibleRole(): AccessibleRole = AccessibleRole.PAGE_TAB_LIST
 
     override fun getAccessibleChild(i: Int): Accessible? {
-      val accessibleChild = super.getAccessibleChild(i)
       // Note: Unlike a JTabbedPane, JBTabsImpl has many more child types than just pages.
       // So we wrap TabLabel instances with their corresponding AccessibleTabPage, while
       // leaving other types of children untouched.
-      return when (accessibleChild) {
+      return when (val accessibleChild = super.getAccessibleChild(i)) {
         is EditorGroupTabLabel -> infoToPage.get(accessibleChild.info)
         else                   -> accessibleChild
       }
@@ -2145,7 +2130,7 @@ open class KrTabsImpl(
     override fun isAccessibleChildSelected(i: Int): Boolean = selectedInfo?.let { i == getIndexOf(it) } == true
 
     override fun addAccessibleSelection(i: Int) {
-      select(tabInfo = getTabAt(tabIndex = i), requestFocus = false)
+      select(info = getTabAt(tabIndex = i), requestFocus = false)
     }
 
     override fun removeAccessibleSelection(i: Int) {
@@ -2378,7 +2363,7 @@ open class KrTabsImpl(
     override fun doAccessibleAction(i: Int): Boolean {
       if (i != 0) return false
 
-      parent.select(tabInfo = tabInfo, requestFocus = true)
+      parent.select(info = tabInfo, requestFocus = true)
       return true
     }
   }
@@ -2407,7 +2392,7 @@ open class KrTabsImpl(
 
     override fun onChosen(selectedTab: EditorGroupTabInfo, finalChoice: Boolean): PopupStep<*>? {
       when {
-        shouldSelectTab -> select(tabInfo = selectedTab, requestFocus = true)
+        shouldSelectTab -> select(info = selectedTab, requestFocus = true)
         else            -> shouldSelectTab = true
       }
       return FINAL_CHOICE
@@ -2461,7 +2446,7 @@ open class KrTabsImpl(
 
       if (!relayoutAlarm.isDisposed) {
         relayoutAlarm.addRequest(
-          Runnable {
+          {
             isRecentlyActive = false
             relayout(forced = false, layoutNow = false)
           },
