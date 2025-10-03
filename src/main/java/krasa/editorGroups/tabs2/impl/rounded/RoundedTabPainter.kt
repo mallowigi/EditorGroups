@@ -14,7 +14,7 @@ import java.awt.geom.RoundRectangle2D
 internal open class RoundedTabPainter : EditorGroupsTabPainter {
   private val theme = EditorGroupDefaultTabTheme()
 
-  private val regularColors = theme.background to theme.borderColor
+  private val regularColors = theme.background to theme.background
 
   private val hoveredColors = theme.hoverBackground to theme.hoverBorderColor
 
