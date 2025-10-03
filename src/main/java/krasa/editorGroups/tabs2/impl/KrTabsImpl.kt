@@ -91,7 +91,7 @@ open class KrTabsImpl(
   var mySelectedInfo: EditorGroupTabInfo? = null
 
   // The more tabs toolbar
-  val moreToolbar: ActionToolbar? = null
+  var moreToolbar: ActionToolbar? = null
   var entryPointToolbar: ActionToolbar? = null
 
   // Returns default one action horizontal toolbar size (26x24)
@@ -350,7 +350,7 @@ open class KrTabsImpl(
       targetComponent = this,
       actionManager = actionManager
     )
-    add(moreToolbar.component)
+    add(moreToolbar?.component)
 
     // Entry point toolbar (needed for a smooth scrolling)
     when (val entryPointActionGroup = entryPointActionGroup) {
@@ -1892,7 +1892,7 @@ open class KrTabsImpl(
   fun relayout(forced: Boolean, layoutNow: Boolean) {
     if (!forcedRelayout) forcedRelayout = forced
 
-    if (moreToolbar != null) moreToolbar.component.isVisible = true
+    moreToolbar?.let { it.component.isVisible = true }
 
     revalidateAndRepaint(layoutNow)
   }
