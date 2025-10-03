@@ -57,30 +57,28 @@ abstract class EditorGroup {
    * @return the presentable title
    */
   open fun getPresentableTitle(project: Project, presentableNameForUI: String, showSize: Boolean): String {
-    var nameForUI = presentableNameForUI
     val isEmptyTitle = StringUtil.isEmpty(title)
     val size = size(project)
     val doShowSize = EditorGroupsSettings.instance.isShowSize && showSize
 
     return when {
       doShowSize    -> when {
-        !isEmptyTitle -> "[${this.title}] $nameForUI ($size)"
-        else          -> "$nameForUI ($size)"
+        !isEmptyTitle -> "[${this.title}] $presentableNameForUI ($size)"
+        else          -> "$presentableNameForUI ($size)"
       }
 
-      !isEmptyTitle -> "[$title] $nameForUI"
-      else          -> nameForUI
+      !isEmptyTitle -> "[$title] $presentableNameForUI"
+      else          -> presentableNameForUI
     }
   }
 
   /** Returns the text to display on the tabs (for the EditorTabTitleProvider) */
   open fun getTabTitle(project: Project, presentableNameForUI: String): String {
-    var nameForUI = presentableNameForUI
     val isEmptyTitle = StringUtil.isEmpty(title)
 
     return when {
-      !isEmptyTitle -> "[$title] $nameForUI"
-      else          -> nameForUI
+      !isEmptyTitle -> "[$title] $presentableNameForUI"
+      else          -> presentableNameForUI
     }
   }
 
@@ -140,7 +138,7 @@ abstract class EditorGroup {
    * @param project the project for which the title is generated
    * @return the tab title
    */
-  @Suppress("detekt:UnusedParameter")
+  @Suppress("detekt:UnusedParameter", "HardCodedStringLiteral")
   fun tabTitle(project: Project): String {
     var result = this.title
     if (result.isEmpty()) {
@@ -170,7 +168,7 @@ abstract class EditorGroup {
    * @param project the project for which the tooltip is generated
    * @return the tooltip text for the tab group, or null if not found
    */
-  fun getTabGroupTooltipText(project: Project): String? = getPresentableTitle(
+  fun getTabGroupTooltipText(project: Project): String = getPresentableTitle(
     project = project,
     presentableNameForUI = message("owner.0", ownerPath),
     showSize = true

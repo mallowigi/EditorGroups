@@ -19,7 +19,7 @@ open class EditorGroupsDefaultTabPainter(private val theme: EditorGroupTabTheme 
 
   override fun getBackgroundColor(): Color = theme.background
 
-  @Suppress("detekt:CyclomaticComplexMethod", "detekt:NestedBlockDepth")
+  @Suppress("detekt:CyclomaticComplexMethod", "detekt:NestedBlockDepth") // NON-NLS
   override fun getCustomBackground(tabColor: Color?, selected: Boolean, active: Boolean, hovered: Boolean): Color? {
     var bg: Color? = null
 

@@ -22,7 +22,7 @@ class HidePanelGroup : EditorGroup() {
 
   override fun switchTitle(project: Project): String = title
 
-  override fun icon(): Icon? = EditorGroupsIcons.hide
+  override fun icon(): Icon = EditorGroupsIcons.hide
 
   override fun invalidate(): Unit = Unit
 

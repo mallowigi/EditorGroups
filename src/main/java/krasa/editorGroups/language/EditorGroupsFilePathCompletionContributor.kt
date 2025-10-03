@@ -47,19 +47,14 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
       CompletionType.BASIC,
       PlatformPatterns.psiElement(),
       object : CompletionProvider<CompletionParameters>() {
-        @Suppress("detekt:NestedBlockDepth")
+        @Suppress("detekt:NestedBlockDepth") // NON-NLS
         override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext, result: CompletionResultSet) {
           val position = parameters.position
           val project = position.project
 
           // First, retrieve the file and its context
           val originalFile = parameters.originalFile
-          val contextFile = originalFile.virtualFile
-          if (contextFile == null) return
-
-          val index = ProjectRootManager.getInstance(project).fileIndex
-          val contextModule = index.getModuleForFile(contextFile)
-          if (contextModule == null) return
+          val contextFile = originalFile.virtualFile ?: return
 
           // Next, retrieve the current position info
           val text = parameters.originalFile.text
@@ -106,7 +101,7 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
               if (virtualFile == null || !virtualFile.isValid || Comparing.equal(virtualFile, contextFile)) continue
 
               // Build the list of helpers
-              val helperList: MutableList<FileReferenceHelper> = ArrayList<FileReferenceHelper>()
+              val helperList: MutableList<FileReferenceHelper> = ArrayList()
               for (contextHelper in helpers) {
                 ProgressManager.checkCanceled()
 
@@ -133,7 +128,7 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
                   originalFile = parameters.originalFile,
                   file = virtualFile,
                   macro = macro,
-                  moduleForFile = moduleForFile!!,
+                  moduleForFile = moduleForFile ?: return,
                   helpers = helperList
                 )
               )
@@ -181,7 +176,7 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
             .toSortedSet()
         }
 
-        @Suppress("detekt:NestedBlockDepth")
+        @Suppress("detekt:NestedBlockDepth") // NON-NLS
         private fun filenameMatchesPrefixOrType(fileName: String, prefix: String, invocationCount: Int): Boolean {
           val prefixMatched = prefix.isEmpty() || StringUtil.startsWithIgnoreCase(fileName, prefix)
           if (prefixMatched && (FileType.EMPTY_ARRAY.size == 0 || invocationCount > 2)) return true
@@ -227,7 +222,7 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
 
           // If not a leaf
           if (lastSlashIndex != -1) {
-            val path = newPrefix.substring(0, lastSlashIndex)
+            val path = newPrefix.take(lastSlashIndex)
             parts = path.split("/")
             newPrefix = newPrefix.substring(lastSlashIndex + 1)
           }
@@ -327,7 +322,7 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
         /* endOffset = */
         to,
         /* s = */
-        relativePath!!
+        relativePath ?: return
       )
 
       editor.caretModel.moveToOffset(from + keywordEndIndex + relativePath.length)
@@ -367,14 +362,14 @@ internal class EditorGroupsFilePathCompletionContributor : CompletionContributor
       presentation.setIcon(icon)
     }
 
-    @Suppress("detekt:CyclomaticComplexMethod")
+    @Suppress("detekt:CyclomaticComplexMethod") // NON-NLS
     private fun getRelativePath(): String? {
       val virtualFile = file
 
       for (helper in helpers) {
         val psiFileSystemItem = helper.getPsiFileSystemItem(project, virtualFile)
         var path: String?
-        var projectBaseDir: VirtualFile = project.guessProjectDir() ?: return null
+        val projectBaseDir: VirtualFile = project.guessProjectDir() ?: return null
 
         val moduleFile = moduleForFile.guessModuleDir()
 

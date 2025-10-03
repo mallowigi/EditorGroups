@@ -20,9 +20,9 @@ class UniqueTabNameBuilder(project: Project) {
 
   fun getNamesByPath(paths: List<Link>, currentFile: VirtualFile?, project: Project): MutableMap<Link, String> {
     val uniqueNameBuilder = UniqueNameBuilder<Link>(root, "/")
-    val pathToName: MutableMap<Link, String> = HashMap<Link, String>()
-    val nameToPath: MutableMap<String, Link> = HashMap<String, Link>()
-    val pathsWithDuplicateName: MutableSet<Link> = HashSet<Link>()
+    val pathToName: MutableMap<Link, String> = HashMap()
+    val nameToPath: MutableMap<String, Link> = HashMap()
+    val pathsWithDuplicateName: MutableSet<Link> = HashSet()
 
     // Add all links to the maps
     paths.forEach { link ->
@@ -56,7 +56,7 @@ class UniqueTabNameBuilder(project: Project) {
 
       // Replace the entry with the non duplicated entry
       val uniqueName = uniqueNameBuilder.getShortPath(link)
-      pathToName.put(link, uniqueName)
+      pathToName[link] = uniqueName
     }
     return pathToName
   }
@@ -75,8 +75,8 @@ class UniqueTabNameBuilder(project: Project) {
       pathsWithDuplicateName.add(link)
     }
 
-    pathToName.put(link, name)
+    pathToName[link] = name
 
-    nameToPath.put(name, link)
+    nameToPath[name] = link
   }
 }

@@ -51,7 +51,7 @@ class EditorGroupsScrollableSingleRowLayout(tabs: KrTabsImpl) : EditorGroupsSing
    *
    * @param passInfo The layout information for the current row of tabs.
    */
-  @Suppress("detekt:NestedBlockDepth")
+  @Suppress("detekt:NestedBlockDepth") // NON-NLS
   private fun doScrollToSelectedTab(passInfo: EditorGroupsSingleRowPassInfo) {
     if (tabs.isMouseInsideTabsArea || tabs.isScrollBarAdjusting()) return
 

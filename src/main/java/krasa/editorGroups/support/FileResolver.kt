@@ -32,7 +32,6 @@ import java.io.FileFilter
 import java.io.FilenameFilter
 import java.io.IOException
 import java.util.*
-import kotlin.Throws
 
 open class FileResolver {
   protected val project: Project
@@ -50,7 +49,7 @@ open class FileResolver {
 
   fun getLinks(): Set<String> = links
 
-  @Suppress("detekt:TooGenericExceptionThrown")
+  @Suppress("detekt:TooGenericExceptionThrown") // NON-NLS
   private fun resolve(ownerFilePath: String, root: String?, relatedPaths: List<String>, group: EditorGroupIndexValue): List<Link> {
     try {
       return resolve2(ownerFilePath, root, relatedPaths, group)
@@ -60,7 +59,7 @@ open class FileResolver {
   }
 
   @Throws(IOException::class)
-  @Suppress("detekt:MagicNumber")
+  @Suppress("detekt:MagicNumber") // NON-NLS
   private fun resolve2(ownerFilePath: String?, root: String?, relatedPaths: List<String>, group: EditorGroupIndexValue): List<Link> {
     val start = System.currentTimeMillis()
     val ownerFile = getNullableFileByPath(ownerFilePath)
@@ -85,18 +84,18 @@ open class FileResolver {
         }
       } catch (e: TooManyFilesException) {
         e.showNotification()
-        thisLogger().warn("TooManyFilesException filePath='$filePath rootFolder=$rootFolder, group = [$group]")
+        thisLogger().warn("TooManyFilesException filePath='$filePath rootFolder=$rootFolder, group = [$group]") // NON-NLS
         thisLogger().debug(e)
       }
 
       val delta = System.currentTimeMillis() - newStart
 
       if (delta > 100) {
-        thisLogger().debug("resolveLink $filePath ${delta}ms")
+        thisLogger().debug("resolveLink $filePath ${delta}ms") // NON-NLS
       }
     }
 
-    thisLogger().debug("<resolveLinks ${System.currentTimeMillis() - start}ms links=$links")
+    thisLogger().debug("<resolveLinks ${System.currentTimeMillis() - start}ms links=$links") // NON-NLS
 
     return Link.from(links, project)
   }
@@ -107,7 +106,7 @@ open class FileResolver {
     if (newRoot.startsWith("..")) {
       val file = File(ownerFilePath?.let { File(it).parentFile }, newRoot)
 
-      thisLogger().debug("root $file exists=${file.exists()}")
+      thisLogger().debug("root $file exists=${file.exists()}") // NON-NLS
 
       newRoot = getCanonicalPath(file)
     }
@@ -120,7 +119,6 @@ open class FileResolver {
         message("notifications.root.does.not.exist", newRoot, ownerFile?.let { Notifications.href(it) }.toString(), group),
         object : NotificationAction("") {
           override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-            checkNotNull(project)
             ownerFile?.let { OpenFileAction.openFile(it, project) }
             notification.expire()
           }
@@ -133,7 +131,7 @@ open class FileResolver {
 
   @Throws(IOException::class)
   private fun resolveSameNameProjectFiles(filePath: String?) {
-    var sanitizedPath = filePath!!.substring("*/".length)
+    var sanitizedPath = (filePath ?: return).substring("*/".length)
     sanitizedPath = StringUtils.substringBefore(sanitizedPath, ".*")
 
     var fileName = sanitizedPath
@@ -144,7 +142,7 @@ open class FileResolver {
     val virtualFilesByName = FileNameIndexService.instance.getVirtualFilesByName(
       fileName,
       !SystemInfo.isWindows,
-      GlobalSearchScope.allScope(project!!)
+      GlobalSearchScope.allScope(project)
     )
 
     for (file in virtualFilesByName) {
@@ -157,7 +155,7 @@ open class FileResolver {
 
   @Throws(IOException::class)
   protected fun resolveProjectFiles(filePath: String?) {
-    val sanitizedPath = filePath!!.substring("*/".length)
+    val sanitizedPath = (filePath ?: return).substring("*/".length)
 
     var fileName = sanitizedPath
     if (fileName.contains("/")) {
@@ -167,7 +165,7 @@ open class FileResolver {
     val virtualFilesByName = FilenameIndex.getVirtualFilesByName(
       fileName,
       !SystemInfo.isWindows,
-      GlobalSearchScope.allScope(project!!)
+      GlobalSearchScope.allScope(project)
     )
 
     for (file in virtualFilesByName) {
@@ -263,7 +261,7 @@ open class FileResolver {
 
     @Throws(ProcessCanceledException::class)
     fun resolveLinks(group: EditorGroupIndexValue, project: Project): List<Link> {
-      thisLogger().debug("<resolveLinks [$group], project = [${project.name}]")
+      thisLogger().debug("<resolveLinks [$group], project = [${project.name}]") // NON-NLS
 
       return resolveLinks(
         project = project,
@@ -281,7 +279,7 @@ open class FileResolver {
       relatedPaths: List<String>,
       group: EditorGroupIndexValue
     ): List<Link> {
-      thisLogger().debug("<resolveLinks ownerFilePath=$ownerFilePath, root=$root, relatedPaths=$relatedPaths, group = [$group]")
+      thisLogger().debug("<resolveLinks ownerFilePath=$ownerFilePath, root=$root, relatedPaths=$relatedPaths, group = [$group]") // NON-NLS
 
       return FileResolver(project).resolve(
         ownerFilePath = ownerFilePath,

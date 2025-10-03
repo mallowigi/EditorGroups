@@ -41,7 +41,7 @@ class SyntaxHighlightAnnotation(
         object : GutterIconRenderer() {
           override fun getIcon(): Icon = colorIcon
 
-          override fun getTooltipText(): String? = color.toHex()
+          override fun getTooltipText(): String = color.toHex()
 
           override fun equals(obj: Any?): Boolean = true
 

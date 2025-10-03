@@ -22,7 +22,7 @@
  *  SOFTWARE.
  */
 
-package com.mallowigi.config.associations.ui.internal
+package krasa.editorGroups.settings.regex.internal
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -62,9 +62,8 @@ class RegExpTableCellRenderer : DefaultTableCellRenderer() {
         /* language = */ RegExpFileType.INSTANCE.language,
         /* text = */ value as String
       )
-    val editorTextField: EditorTextField
 
-    editorTextField = object : EditorTextField(
+    val editorTextField = object : EditorTextField(
       /* document = */ documentManager.getDocument(psiFile),
       /* project = */ project,
       /* fileType = */ RegExpFileType.INSTANCE,

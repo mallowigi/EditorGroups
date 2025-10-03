@@ -547,6 +547,7 @@ class EditorGroupManager(private val project: Project) {
    * @param switchRequest The request for switching editor context.
    * @return Result of the file open operation, if any.
    */
+  @Suppress("UnstableApiUsage")
   private fun open(
     currentWindow: EditorWindow?,
     currentFile: VirtualFile?,
@@ -591,7 +592,7 @@ class EditorGroupManager(private val project: Project) {
         // If the file is already open, scroll to it (if line is provided)
         if (!splitters.isSplit && !newWindow && fileToOpen == selectedFile) {
           val editors = selectedComposite?.allEditors?.find { it.file == fileToOpen }
-          val scroll = scroll(line, editors!!)
+          val scroll = scroll(line, editors ?: return@executeCommand)
           if (scroll) {
             resultAtomicReference.set(OpenFileResult(isScrolledOnly = true))
           }
@@ -607,7 +608,7 @@ class EditorGroupManager(private val project: Project) {
         fileToOpen.putUserData(EditorGroupPanel.EDITOR_GROUP, group) // for project view colors
         // Clear lock
         if (initialEditorIndex != null) {
-          fileToOpen.putUserData(initialEditorIndex!!, null)
+          fileToOpen.putUserData(initialEditorIndex ?: return@executeCommand, null)
         }
 
         when {

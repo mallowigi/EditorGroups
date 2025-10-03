@@ -33,6 +33,6 @@ class TabGroupColorizer(private val project: Project) {
   }
 
   companion object {
-    fun getInstance(project: Project): TabGroupColorizer = project.getService<TabGroupColorizer>(TabGroupColorizer::class.java)
+    fun getInstance(project: Project): TabGroupColorizer = project.getService(TabGroupColorizer::class.java)
   }
 }

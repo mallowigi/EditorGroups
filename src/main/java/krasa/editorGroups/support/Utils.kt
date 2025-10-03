@@ -1,4 +1,4 @@
-@file:Suppress("detekt:TooGenericExceptionThrown")
+@file:Suppress("detekt:TooGenericExceptionThrown") // NON-NLS
 
 package krasa.editorGroups.support
 
@@ -209,6 +209,7 @@ fun isJarOrZip(file: VirtualFile): Boolean {
  * @param cs The CharSequence to check for blankness. It can be null.
  * @return true if the input CharSequence is blank, false otherwise.
  */
+@Suppress("unused") // NON-NLS
 fun isBlank(cs: CharSequence?): Boolean {
   if (cs == null) return true
 

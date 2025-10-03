@@ -19,7 +19,7 @@ class EditorGroupProjectStorage(
 
   class State {
     @XCollection(propertyElementName = "lastGroup", elementTypes = [KeyValuePair::class])
-    var lastGroup: MutableList<KeyValuePair> = mutableListOf<KeyValuePair>()
+    var lastGroup: MutableList<KeyValuePair> = mutableListOf()
 
     override fun equals(other: Any?): Boolean {
       if (this === other) return true
@@ -38,7 +38,7 @@ class EditorGroupProjectStorage(
         val start = System.currentTimeMillis()
         val state = IndexCache.getInstance(project).state
 
-        thisLogger().debug("EditorGroupProjectSettings.getState size:${state.lastGroup.size} ${System.currentTimeMillis() - start}ms")
+        thisLogger().debug("EditorGroupProjectSettings.getState size:${state.lastGroup.size} ${System.currentTimeMillis() - start}ms") // NON-NLS
         return state
       }
 
@@ -51,7 +51,7 @@ class EditorGroupProjectStorage(
       val start = System.currentTimeMillis()
       IndexCache.getInstance(project).loadState(state)
 
-      thisLogger().debug("EditorGroupProjectSettings.loadState size:${state.lastGroup.size} ${System.currentTimeMillis() - start}ms")
+      thisLogger().debug("EditorGroupProjectSettings.loadState size:${state.lastGroup.size} ${System.currentTimeMillis() - start}ms") // NON-NLS
     }
   }
 

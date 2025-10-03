@@ -7,7 +7,7 @@ import com.intellij.util.xmlb.annotations.XCollection
 @Tag("regexGroups")
 class RegexGroupModels : BaseState() {
   @get:XCollection
-  var regexModels: MutableList<RegexGroupModel> by list<RegexGroupModel>()
+  var regexModels: MutableList<RegexGroupModel> by list()
 
   override fun toString(): String = "RegExpGroupModels{models=$regexModels}"
 

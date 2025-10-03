@@ -279,7 +279,7 @@ open class KrTabsImpl(
         label.setIcon(tab.icon)
 
         tab.tabLabel = label
-        infoToPage.put(tab, AccessibleTabPage(parent = this, tabInfo = tab))
+        infoToPage[tab] = AccessibleTabPage(parent = this, tabInfo = tab)
       }
 
       for (tab in tabs) {
@@ -546,8 +546,8 @@ open class KrTabsImpl(
     }
 
     if (tabLabelAtMouse != null) {
-      tabLabelAtMouse!!.revalidate()
-      tabLabelAtMouse!!.repaint()
+      (tabLabelAtMouse ?: return).revalidate()
+      (tabLabelAtMouse ?: return).repaint()
     }
   }
 
@@ -609,7 +609,7 @@ open class KrTabsImpl(
     scrollBarModel.addChangeListener(scrollBarChangeListener)
 
     if (deferredFocusRequest != null) {
-      val request = deferredFocusRequest!!
+      val request = deferredFocusRequest ?: return
       deferredFocusRequest = null
       request.run()
     }
@@ -715,7 +715,7 @@ open class KrTabsImpl(
         val compRect = layoutComp(
           componentX = deltaX,
           componentY = toolbarHeight + deltaY,
-          component = passInfo.component?.get()!!,
+          component = passInfo.component?.get() ?: return,
           deltaWidth = deltaWidth,
           deltaHeight = deltaHeight
         )
@@ -732,7 +732,7 @@ open class KrTabsImpl(
       else             -> layoutComp(
         componentX = deltaX,
         componentY = deltaY,
-        component = passInfo.component?.get()!!,
+        component = passInfo.component?.get() ?: return,
         deltaWidth = deltaWidth,
         deltaHeight = deltaHeight
       )
@@ -884,15 +884,15 @@ open class KrTabsImpl(
         }
 
         override fun customizeComponent(list: JList<out EditorGroupTabInfo?>?, tabInfo: EditorGroupTabInfo?, isSelected: Boolean) {
-          iconLabel!!.icon = tabInfo?.icon
-          textLabel!!.clear()
-          tabInfo!!.coloredText.appendToComponent(textLabel!!)
+          (iconLabel ?: return).icon = tabInfo?.icon
+          (textLabel ?: return).clear()
+          (tabInfo ?: return).coloredText.appendToComponent(textLabel ?: return)
 
           val customBackground = tabInfo.tabColor
           myRendererComponent.background = customBackground ?: JBUI.CurrentTheme.Popup.BACKGROUND
 
-          ClientProperty.put(component!!, SELECTED_KEY, if (tabInfo == selectedInfo) true else null)
-          component!!.invalidate()
+          ClientProperty.put(component ?: return, SELECTED_KEY, if (tabInfo == selectedInfo) true else null)
+          (component ?: return).invalidate()
         }
 
         override fun setComponentIcon(icon: Icon?, disabledIcon: Icon?) {
@@ -972,7 +972,7 @@ open class KrTabsImpl(
     label.setIcon(tabInfo.icon)
 
     tabInfo.tabLabel = label
-    infoToPage.put(tabInfo, AccessibleTabPage(parent = this, tabInfo = tabInfo))
+    infoToPage[tabInfo] = AccessibleTabPage(parent = this, tabInfo = tabInfo)
 
     // Add the tab at the given index
     when {
@@ -1107,8 +1107,8 @@ open class KrTabsImpl(
         // Remove deferred and focus the toFocus
         requestFocusLater(requestFocusInWindow).doWhenProcessed {
           when {
-            project!!.isDisposed -> result.setRejected()
-            else                 -> removeDeferred().notifyWhenDone(result)
+            (project ?: return@doWhenProcessed).isDisposed -> result.setRejected()
+            else                                           -> removeDeferred().notifyWhenDone(result)
           }
         }
         return result
@@ -1118,23 +1118,6 @@ open class KrTabsImpl(
         requestFocusLaterOn(this, requestFocusInWindow)
         return removeDeferred()
       }
-    }
-  }
-
-  /** Select tab without firing events. */
-  @RequiresEdt
-  fun selectTabSilently(tab: EditorGroupTabInfo) {
-    mySelectedInfo = tab
-    // Lay components
-    setComponentZOrder(tab.tabLabel!!, 0)
-    setComponentZOrder(scrollBar, 0)
-
-    val oldMouseInsideTabs = isMouseInsideTabsArea
-    try {
-      val component = tab.component
-      if (component?.parent != null) add(component)
-    } finally {
-      isMouseInsideTabsArea = oldMouseInsideTabs
     }
   }
 
@@ -1298,7 +1281,7 @@ open class KrTabsImpl(
     while (visible.hasNext()) {
       val tabInfo = visible.next()
       if (tabInfo.isHidden && !hiddenInfos.containsKey(tabInfo)) {
-        hiddenInfos.put(tabInfo, visibleTabInfos.indexOf(tabInfo))
+        hiddenInfos[tabInfo] = visibleTabInfos.indexOf(tabInfo)
         visible.remove()
         shouldUpdate = true
       }
@@ -1372,7 +1355,7 @@ open class KrTabsImpl(
 
   /** Update text and tooltip text. */
   private fun updateText(tabInfo: EditorGroupTabInfo) {
-    val label = tabInfo.tabLabel!!
+    val label = tabInfo.tabLabel ?: return
     label.setText(tabInfo.coloredText)
     label.toolTipText = tabInfo.tooltipText
   }
@@ -1467,7 +1450,7 @@ open class KrTabsImpl(
 
   /** Add to deferred to remove. */
   private fun addToDeferredRemove(c: Component) {
-    if (!deferredToRemove.containsKey(c)) deferredToRemove.put(c, c)
+    if (!deferredToRemove.containsKey(c)) deferredToRemove[c] = c
   }
 
   /** Updates the scroll bar's model with the latest values from the layout pass and effective layout. */
@@ -1475,9 +1458,9 @@ open class KrTabsImpl(
     val scrollBarModel = scrollBarModel
     if (scrollBarModel.valueIsAdjusting) return
 
-    val maximum = lastLayoutPass!!.requiredLength
-    val value = effectiveLayout!!.scrollOffset
-    val extent = lastLayoutPass!!.scrollExtent
+    val maximum = (lastLayoutPass ?: return).requiredLength
+    val value = (effectiveLayout ?: return).scrollOffset
+    val extent = (lastLayoutPass ?: return).scrollExtent
 
     scrollBarModel.maximum = maximum
     scrollBarModel.value = value
@@ -1493,10 +1476,10 @@ open class KrTabsImpl(
       toggleScrollBar(isMouseInsideTabsArea)
     }
 
-    val currentUnitsOffset = effectiveLayout!!.scrollOffset
+    val currentUnitsOffset = (effectiveLayout ?: return).scrollOffset
     val updatedOffset = scrollBarModel.value
 
-    effectiveLayout!!.scroll(updatedOffset - currentUnitsOffset)
+    (effectiveLayout ?: return).scroll(updatedOffset - currentUnitsOffset)
 
     SwingUtilities.invokeLater {
       relayout(forced = false, layoutNow = false)
@@ -1525,7 +1508,7 @@ open class KrTabsImpl(
     scrollBarActivityTracker.suspend()
 
     try {
-      val moreBoundsBeforeLayout = moreToolbar!!.component.bounds
+      val moreBoundsBeforeLayout = (moreToolbar ?: return).component.bounds
       headerFitSize = computeHeaderFitSize()
 
       val visible = visibleTabInfos.toMutableList()
@@ -1551,8 +1534,8 @@ open class KrTabsImpl(
 
   /** Centers the more toolbar. */
   private fun centerMoreToolbarPosition() {
-    val moreRect = lastLayoutPass!!.moreRect
-    val mComponent = moreToolbar!!.component
+    val moreRect = (lastLayoutPass ?: return).moreRect
+    val mComponent = (moreToolbar ?: return).component
 
     if (!moreRect.isEmpty) {
       val bounds = Rectangle(moreRect)
@@ -1806,7 +1789,7 @@ open class KrTabsImpl(
     tabLabel?.let { remove(it) }
 
     // Remove component
-    val tabComponent = tabInfo.component!!
+    val tabComponent = tabInfo.component ?: return
     when {
       forcedNow || !isToDeferRemoveForLater(tabComponent) -> remove(tabComponent)
       else                                                -> addToDeferredRemove(tabComponent)
@@ -1839,6 +1822,7 @@ open class KrTabsImpl(
     doFindInfo(point = SwingUtilities.convertPoint(event.component, event.point, this), labelsOnly = false)
 
   /** Finds the tab information at the specified point, optionally only considering the labels of the tabs. */
+  @Suppress("SameParameterValue") // NON-NLS
   private fun doFindInfo(point: Point, labelsOnly: Boolean): EditorGroupTabInfo? {
     var component = findComponentAt(point)
     while (component !== this) {
@@ -1986,7 +1970,7 @@ open class KrTabsImpl(
   private fun disposePopupListener() {
     if (activePopup == null) return
 
-    activePopup!!.removePopupMenuListener(popupListener)
+    (activePopup ?: return).removePopupMenuListener(popupListener)
     activePopup = null
   }
 
@@ -2034,7 +2018,7 @@ open class KrTabsImpl(
   /** Adjusts the tab info component to remove the scroll border. */
   private fun adjust(tabInfo: EditorGroupTabInfo) {
     @Suppress("DEPRECATION")
-    UIUtil.removeScrollBorder(tabInfo.component!!)
+    UIUtil.removeScrollBorder(tabInfo.component ?: return)
   }
 
   /** Sorts the tabs using the provided comparator. */
@@ -2114,7 +2098,7 @@ open class KrTabsImpl(
       // So we wrap TabLabel instances with their corresponding AccessibleTabPage, while
       // leaving other types of children untouched.
       return when (val accessibleChild = super.getAccessibleChild(i)) {
-        is EditorGroupTabLabel -> infoToPage.get(accessibleChild.info)
+        is EditorGroupTabLabel -> infoToPage[accessibleChild.info]
         else                   -> accessibleChild
       }
     }
@@ -2124,7 +2108,7 @@ open class KrTabsImpl(
     override fun getAccessibleSelectionCount(): Int = if (selectedInfo == null) 0 else 1
 
     override fun getAccessibleSelection(i: Int): Accessible? {
-      return infoToPage.get(selectedInfo ?: return null)
+      return infoToPage[selectedInfo ?: return null]
     }
 
     override fun isAccessibleChildSelected(i: Int): Boolean = selectedInfo?.let { i == getIndexOf(it) } == true
@@ -2431,11 +2415,6 @@ open class KrTabsImpl(
 
     fun resume() {
       suspended = false
-    }
-
-    fun reset() {
-      relayoutAlarm.cancelAllRequests()
-      isRecentlyActive = false
     }
 
     fun setRecentlyActive() {

@@ -159,7 +159,7 @@ internal class EditorGroupsExternalAnnotator : ExternalAnnotator<EditorGroupsPsi
       val color = matcher.group().toColor()
 
       if (color != null) {
-        var textAttributes = TextAttributes()
+        val textAttributes = TextAttributes()
         textAttributes.backgroundColor = color
         textAttributes.foregroundColor = getContrastedText(color)
         textAttributes.fontType = Font.ITALIC

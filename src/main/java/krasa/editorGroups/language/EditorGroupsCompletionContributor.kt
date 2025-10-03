@@ -76,7 +76,7 @@ internal class EditorGroupsCompletionContributor : CompletionContributor() {
           val provider = EditorGroupsCompletionProvider(
             descriptor = EditorGroupsValueDescriptor(),
             values = values,
-            separators = listOf<Char>(' ')
+            separators = listOf(' ')
           )
           // Try to match the current token against the prefix
           val activeResult = provider.applyPrefixMatcher(result, prefix)
@@ -123,11 +123,11 @@ internal class EditorGroupsCompletionContributor : CompletionContributor() {
     /** Installs an insert handler for the provided LookupElementBuilder with the highest priority. */
     override fun installInsertHandler(builder: LookupElementBuilder): LookupElement {
       val lookupElement = super.installInsertHandler(builder)
-      return PrioritizedLookupElement.withPriority(lookupElement, Double.Companion.MAX_VALUE)
+      return PrioritizedLookupElement.withPriority(lookupElement, Double.MAX_VALUE)
     }
 
     /** Returns the prefix of the text at the specified offset. */
-    override fun getPrefix(text: String, offset: Int): String? {
+    override fun getPrefix(text: String, offset: Int): String {
       val i = text.lastIndexOf(' ', offset - 1) + 1
       val j = text.lastIndexOf('\n', offset - 1) + 1
       return text.substring(max(i, j), offset)

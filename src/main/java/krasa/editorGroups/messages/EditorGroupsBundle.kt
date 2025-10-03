@@ -27,7 +27,6 @@ import com.intellij.openapi.util.NlsContexts
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.PropertyKey
 import java.util.*
-import java.util.function.Supplier
 
 @NonNls
 private const val BUNDLE: String = "messages.EditorGroupsBundle"
@@ -46,6 +45,4 @@ object EditorGroupsBundle : DynamicBundle(BUNDLE) {
   override fun messageOrDefault(key: String, defaultValue: String?, vararg params: Any?): String? =
     messageOrDefault(localizedBundle, key, defaultValue, *params)
 
-  fun messagePointer(@PropertyKey(resourceBundle = BUNDLE) key: String, vararg params: Any): Supplier<String> =
-    Supplier { getMessage(key, *params) }
 }

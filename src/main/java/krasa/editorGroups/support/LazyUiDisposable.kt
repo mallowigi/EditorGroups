@@ -34,12 +34,12 @@ fun <T> lazyUiDisposable(parent: Disposable?, ui: JComponent, child: T, task: (c
         if (parent == null) {
           parent = when (project) {
             null -> {
-              logger<Disposable>().warn("use application as a parent disposable")
+              logger<Disposable>().warn("use application as a parent disposable") // NON-NLS
               ApplicationManager.getApplication()
             }
 
             else -> {
-              logger<Disposable>().warn("use project as a parent disposable")
+              logger<Disposable>().warn("use project as a parent disposable") // NON-NLS
               project
             }
           }
@@ -47,7 +47,7 @@ fun <T> lazyUiDisposable(parent: Disposable?, ui: JComponent, child: T, task: (c
 
         task(child, project)
         if (child is Disposable) {
-          Disposer.register(parent!!, child)
+          Disposer.register(parent ?: return, child)
         }
       }
     }

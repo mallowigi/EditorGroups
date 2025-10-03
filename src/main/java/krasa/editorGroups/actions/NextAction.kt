@@ -19,8 +19,8 @@ class NextAction : EditorGroupsAction(), CustomComponentAction {
   override fun actionPerformed(anActionEvent: AnActionEvent) {
     val panel = getEditorGroupPanel(anActionEvent)
     if (panel != null) {
-      val e = anActionEvent.inputEvent
-      val newTab = BitUtil.isSet(e!!.modifiersEx, InputEvent.CTRL_DOWN_MASK) && e is MouseEvent && e.clickCount > 0
+      val e = anActionEvent.inputEvent ?: return
+      val newTab = BitUtil.isSet(e.modifiersEx, InputEvent.CTRL_DOWN_MASK) && e is MouseEvent && e.clickCount > 0
 
       panel.goToNextTab(
         newTab = newTab,

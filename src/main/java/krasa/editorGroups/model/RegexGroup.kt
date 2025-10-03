@@ -41,7 +41,7 @@ class RegexGroup(
       Scope.WHOLE_PROJECT        -> message("scope.wholeProject")
     }
 
-  override val switchDescription: String?
+  override val switchDescription: String
     get() = scope
 
   val referenceMatcher: Matcher?
@@ -53,13 +53,13 @@ class RegexGroup(
         referenceMatcher = regexGroupModel.regexPattern?.matcher(resultFileName) ?: return null
         val matches = referenceMatcher.matches()
         if (!matches) {
-          thisLogger().error("$resultFileName does not match $regexGroupModel")
+          thisLogger().error("$resultFileName does not match $regexGroupModel") // NON-NLS
         }
       }
       return referenceMatcher
     }
 
-  override val bgColor: Color?
+  override val bgColor: Color
     get() = regexGroupModel.myColor
 
   constructor(model: RegexGroupModel, folder: VirtualFile?) : this(model, folder, emptyList<Link>(), null)

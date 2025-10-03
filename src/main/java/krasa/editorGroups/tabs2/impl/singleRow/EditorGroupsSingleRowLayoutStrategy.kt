@@ -149,16 +149,16 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
         else             -> 0
       }
 
-      val y: Int = myTabs.headerFitSize!!.height + max(hToolbarHeight, 0)
+      val y: Int = (myTabs.headerFitSize ?: return).height + max(hToolbarHeight, 0)
 
-      val comp = passInfo.component!!.get()
+      val comp = (passInfo.component ?: return).get()
 
       when {
         hToolbar != null -> {
           val componentBounds = myTabs.layoutComp(
             componentX = x,
             componentY = y,
-            component = comp!!,
+            component = comp ?: return,
             deltaWidth = 0,
             deltaHeight = 0
           )
@@ -176,7 +176,7 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
         else             -> myTabs.layoutComp(
           componentX = x,
           componentY = y,
-          component = comp!!,
+          component = comp ?: return,
           deltaWidth = 0,
           deltaHeight = 0
         )
@@ -191,7 +191,7 @@ abstract class EditorGroupsSingleRowLayoutStrategy protected constructor(myLayou
         deltaX = 0,
         deltaY = 0,
         deltaWidth = 0,
-        deltaHeight = -myTabs.headerFitSize!!.height
+        deltaHeight = -(myTabs.headerFitSize ?: return).height
       )
     }
 

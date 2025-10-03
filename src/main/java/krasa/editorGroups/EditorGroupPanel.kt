@@ -4,7 +4,8 @@
   "detekt:ComplexCondition",
   "detekt:CyclomaticComplexMethod",
   "detekt:TooGenericExceptionThrown",
-  "detekt:ThrowsCount"
+  "detekt:ThrowsCount",
+  "HardCodedStringLiteral"
 )
 
 package krasa.editorGroups
@@ -301,7 +302,7 @@ class EditorGroupPanel(
       return
     }
 
-    var isVisible = updateVisibility(editorGroup)
+    val isVisible = updateVisibility(editorGroup)
     val parent = this.getParent()
 
     // NPE for Code With Me
@@ -350,8 +351,7 @@ class EditorGroupPanel(
 
   /** Reloads the tabs in the editor panel, clearing existing tabs and fetching new ones based on the currently displayed group. */
   private fun rerenderTabs() {
-    val currentGroup = this.displayedGroup
-    if (currentGroup == null) return
+    val currentGroup = this.displayedGroup ?: return
 
     try {
       // First remove all current tabs
@@ -426,13 +426,12 @@ class EditorGroupPanel(
         start = max(0, currentFilePosition - tabSizeLimitInt / 2)
         end = min(links.size, start + tabSizeLimitInt)
       }
-      thisLogger().debug("Too many tabs, skipping: ${links.size - tabSizeLimitInt}")
+      thisLogger().debug("Too many tabs, skipping: ${links.size - tabSizeLimitInt}") // NON-NLS
     }
 
-    var j = 0
-    for (i1 in start until end) {
+    for ((j, i1) in (start until end).withIndex()) {
       val link = links[i1]
-      val tab = MyEditorGroupTabInfo(link = link, name = pathToNames[link]!!)
+      val tab = MyEditorGroupTabInfo(link = link, name = pathToNames[link] ?: return)
 
       // Add the tab silently from the end
       tabs.addTabSilently(info = tab, index = -1)
@@ -444,7 +443,6 @@ class EditorGroupPanel(
         this.currentIndex = j
       }
 
-      j++
     }
 
     if (this.currentIndex == NOT_INITIALIZED) selectTabFallback()
@@ -470,7 +468,7 @@ class EditorGroupPanel(
       // Editor groups Files
       this.currentIndex < 0 && isEditorGroupsLanguage(file) -> {
         val link = Link.fromFile(file, project)
-        val info = MyEditorGroupTabInfo(link, pathsToNames[link]!!)
+        val info = MyEditorGroupTabInfo(link, pathsToNames[link] ?: return)
 
         // Colorize the groups tab with its color
         customizeSelectedColor(info)
@@ -481,8 +479,8 @@ class EditorGroupPanel(
       }
 
       this.currentIndex < 0 && displayedGroupIsNotCustom    -> {
-        val isStub = displayedGroup!!.isStub
-        val links = displayedGroup!!.getLinks(project)
+        val isStub = (displayedGroup ?: return).isStub
+        val links = (displayedGroup ?: return).getLinks(project)
         val excludeEditorGroupsFiles = EditorGroupsSettings.instance.isExcludeEditorGroupsFiles
 
         when {
@@ -750,7 +748,7 @@ class EditorGroupPanel(
       // Get the links of the current group
       val displayedLinks = when {
         currentDisplayedGroup != null -> currentDisplayedGroup.getLinks(project)
-        else                          -> listOf<Link>()
+        else                          -> listOf()
       }
 
       val isStub = when {
@@ -909,12 +907,10 @@ class EditorGroupPanel(
         val cause = e.cause
 
         // ok try again
-        if (cause is ProcessCanceledException) {
-          waitForSmartMode()
-        } else if (cause is IndexNotReady) {
-          waitForSmartMode()
-        } else {
-          throw RuntimeException(e)
+        when (cause) {
+          is ProcessCanceledException -> waitForSmartMode()
+          is IndexNotReady            -> waitForSmartMode()
+          else                        -> throw RuntimeException(e)
         }
       } catch (e: InterruptedException) {
         thisLogger().error(e)
@@ -928,7 +924,7 @@ class EditorGroupPanel(
 
   /** Wait for smart mode to start during indexing. */
   fun waitForSmartMode() {
-    thisLogger().debug("waiting on smart mode")
+    thisLogger().debug("waiting on smart mode") // NON-NLS
 
     val application = ApplicationManager.getApplication()
     if (application.isReadAccessAllowed || application.isDispatchThread) {
@@ -948,7 +944,7 @@ class EditorGroupPanel(
 
   /** Return the last selected group. */
   private fun getLastGroup(): EditorGroup {
-    var lastGroup = when (groupToBeRendered) {
+    val lastGroup = when (groupToBeRendered) {
       null -> displayedGroup
       else -> groupToBeRendered
     }
@@ -958,18 +954,18 @@ class EditorGroupPanel(
 
   /** Refresh the panel on the EDT. */
   private fun refreshOnEDT(paintNow: Boolean) {
-    thisLogger().debug("doRender paintNow=$paintNow")
+    thisLogger().debug("doRender paintNow=$paintNow") // NON-NLS
     if (this.disposed) return
 
     val renderingGroup = this.groupToBeRendered
     if (renderingGroup == null) {
-      thisLogger().debug("skipping refreshOnEDT toBeRendered=$renderingGroup file=${file.name}")
+      thisLogger().debug("skipping refreshOnEDT toBeRendered=$renderingGroup file=${file.name}") // NON-NLS
       return
     }
 
     // In case the panel is not selected (e.g. in a split view), the scroll might break
     this.brokenScroll = !isSelected()
-    if (this.brokenScroll) thisLogger().debug("rendering editor that is not selected, scrolling might break: ${file.name}")
+    if (this.brokenScroll) thisLogger().debug("rendering editor that is not selected, scrolling might break: ${file.name}") // NON-NLS
 
     // Update the displayed group and reset the groupToBeRendered
     this.displayedGroup = renderingGroup
@@ -989,7 +985,7 @@ class EditorGroupPanel(
     toolbar.updateActionsAsync()
     groupManager.stopSwitching()
 
-    thisLogger().debug("<refreshOnEDT ${System.currentTimeMillis() - start}ms ${fileEditor.name}, displayedGroup=$displayedGroup")
+    thisLogger().debug("<refreshOnEDT ${System.currentTimeMillis() - start}ms ${fileEditor.name}, displayedGroup=$displayedGroup") // NON-NLS
   }
 
   /** Hide the panel according to different conditions. */
@@ -1012,7 +1008,7 @@ class EditorGroupPanel(
       else                                                           -> visible = true
     }
 
-    thisLogger().debug("updateVisibility=$visible")
+    thisLogger().debug("updateVisibility=$visible") // NON-NLS
 
     this.isVisible = visible
     return visible
@@ -1030,9 +1026,9 @@ class EditorGroupPanel(
     if (displayedGroup == group) return
 
     // If the current displayed group doesn't include the provided path, no need to refresh
-    if (!displayedGroup!!.isOwner(ownerPath)) return
+    if (!(displayedGroup ?: return).isOwner(ownerPath)) return
 
-    thisLogger().debug("onIndexingDone ownerPath = [$ownerPath], group = [$group]")
+    thisLogger().debug("onIndexingDone ownerPath = [$ownerPath], group = [$group]") // NON-NLS
     // concurrency is a bitch, do not alter data
     refreshPane(refresh = false, newGroup = null)
   }
@@ -1043,8 +1039,8 @@ class EditorGroupPanel(
   /** Sets bg and fg color of the selected tab, according to the settings. */
   private fun customizeSelectedColor(tab: MyEditorGroupTabInfo) {
     // custom group colors
-    val bgColor = displayedGroup!!.bgColor
-    val fgColor = displayedGroup!!.fgColor
+    val bgColor = (displayedGroup ?: return).bgColor
+    val fgColor = (displayedGroup ?: return).fgColor
 
     if (displayedGroup !is EditorGroups) return
 
@@ -1134,7 +1130,7 @@ class EditorGroupPanel(
   }
 
   /** Remove favorites on right click. */
-  internal inner class EditorTabMouseListener(val tabs: EditorGroupsTabs) : MouseAdapter() {
+  internal class EditorTabMouseListener(val tabs: EditorGroupsTabs) : MouseAdapter() {
     override fun mouseReleased(e: MouseEvent) {
       // if right click a tab (or shift-click)
       if (!UIUtil.isCloseClick(e, MouseEvent.MOUSE_RELEASED)) return
@@ -1170,8 +1166,7 @@ class EditorGroupPanel(
       // doChangeSelection.run()
 
       // First check the mouse modifiers
-      val trueCurrentEvent = IdeEventQueue.getInstance().trueCurrentEvent
-      val modifiers = when (trueCurrentEvent) {
+      val modifiers = when (val trueCurrentEvent = IdeEventQueue.getInstance().trueCurrentEvent) {
         is MouseEvent  -> trueCurrentEvent.getModifiersEx()
         is ActionEvent -> trueCurrentEvent.getModifiers()
         else           -> null
@@ -1213,7 +1208,7 @@ class EditorGroupPanel(
     const val TOOLBAR_PLACE: String = "krasa.editorGroups.EditorGroupPanel"
     const val TAB_PLACE: String = "EditorGroupsTabPopup"
     const val COMPACT_TAB_HEIGHT: Int = 30
-    val BOOKMARK_GROUP: DataKey<BookmarksGroup> = DataKey.create<BookmarksGroup>("krasa.BookmarksGroup")
+    val BOOKMARK_GROUP: DataKey<BookmarksGroup> = DataKey.create("krasa.BookmarksGroup")
     val EDITOR_PANEL: Key<EditorGroupPanel?> = Key.create<EditorGroupPanel?>("EDITOR_GROUPS_PANEL")
     val EDITOR_GROUP: Key<EditorGroup?> = Key.create<EditorGroup?>("EDITOR_GROUP")
   }

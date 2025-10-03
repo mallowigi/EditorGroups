@@ -352,13 +352,13 @@ fun getColorInstance(color: String): Color? {
 
   val lighterIndex = color.indexOf("-")
   if (lighterIndex > 0) {
-    colorName = color.substring(0, lighterIndex)
+    colorName = color.take(lighterIndex)
     modifier = color.substring(lighterIndex).toCharArray()
   }
 
   val darkerIndex = color.indexOf("+")
   if (darkerIndex > 0) {
-    colorName = color.substring(0, darkerIndex)
+    colorName = color.take(darkerIndex)
     modifier = color.substring(darkerIndex).toCharArray()
   }
 
@@ -375,7 +375,7 @@ fun getColorInstance(color: String): Color? {
           tones = number.toInt()
           number = ""
         }
-        myColor = ColorUtil.brighter(myColor!!, tones)
+        myColor = ColorUtil.brighter(myColor ?: return@forEach, tones)
       }
 
       c == '-'             -> {
@@ -384,7 +384,7 @@ fun getColorInstance(color: String): Color? {
           tones = number.toInt()
           number = ""
         }
-        myColor = ColorUtil.darker(myColor!!, tones)
+        myColor = ColorUtil.darker(myColor ?: return@forEach, tones)
       }
     }
   }
@@ -398,7 +398,7 @@ fun getColorInstance(color: String): Color? {
  * @param size The size of the icon, default is 12.
  * @return An Icon instance with the specified color and size.
  */
-@Suppress("detekt:MagicNumber")
+@Suppress("detekt:MagicNumber") // NON-NLS
 fun gutterColorIcon(color: Color, size: Int = 12): Icon {
   val borderColor = JBColor(Color.black, Color.white)
   return ColorIcon(
@@ -439,7 +439,7 @@ fun dimmer(color: Color, factor: Int): Color = (0 until factor).fold(color) { ac
 
 fun softer(color: Color, factor: Int): Color = (0 until factor).fold(color) { acc, _ -> ColorUtil.softer(acc) }
 
-@Suppress("detekt:MagicNumber")
+@Suppress("detekt:MagicNumber") // NON-NLS
 fun generateColor(string: String? = null): Color {
   val name = string ?: randomString(10)
   val tones = 6
@@ -455,10 +455,11 @@ fun generateColor(string: String? = null): Color {
 }
 
 /** Converts a string to a color. */
-@Suppress("detekt:MagicNumber")
+@Suppress("detekt:MagicNumber") // NON-NLS
 fun stringToARGB(charSequence: CharSequence): Int {
   var hash = 0
   val length = charSequence.length
+  @Suppress("ReplaceManualRangeWithIndicesCalls")
   for (i in 0 until length) {
     hash = charSequence[i].code + ((hash shl 5) - hash)
   }

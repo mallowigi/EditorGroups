@@ -43,8 +43,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
       return
     }
 
-    val component = inputEvent.component
-    when (component) {
+    when (val component = inputEvent.component) {
       is ActionMenuItem -> popup.showInBestPositionFor(e.dataContext)
       else              -> popup.showUnderneathOf(component)
     }
@@ -186,7 +185,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
         add(ActionManager.getInstance().getAction(OpenConfigurationAction.ID))
       }
     } catch (e: IndexNotReadyException) {
-      thisLogger().error("That should not happen", e)
+      thisLogger().error("That should not happen", e) // NON-NLS
     }
   }
 
@@ -493,7 +492,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
   private fun refreshHandler(panel: EditorGroupPanel): Handler = object : Handler() {
     override fun run(editorGroup: EditorGroup) {
-      thisLogger().debug("switching group")
+      thisLogger().debug("switching group") // NON-NLS
       panel.refreshPane(false, editorGroup)
     }
   }
@@ -544,19 +543,10 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
       }
 
       showWarning(message("no.matching.file.found"))
-      thisLogger().debug("opening failed, no file and not even owner exist $editorGroup")
+      thisLogger().debug("opening failed, no file and not even owner exist $editorGroup") // NON-NLS
     }
   }
 
-  /**
-   * Creates a new action for switching the editor group.
-   *
-   * @param displayedGroup the currently displayed editor group
-   * @param targetGroup the target editor group to switch to
-   * @param project the project in which the switch is to be made
-   * @param actionHandler the handler for the action to be performed
-   * @return a new DumbAwareAction configured for the switch action
-   */
   /**
    * Creates a new action for switching the editor group.
    *
@@ -576,7 +566,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
   ): DumbAwareAction {
     val isSelected = displayedGroup.isSelected(targetGroup)
     val description = targetGroup.switchDescription // NON-NLS
-    var title = targetGroup.switchTitle(project) // NON-NLS
+    val title = targetGroup.switchTitle(project) // NON-NLS
 
     return object : DumbAwareAction(title, description, targetGroup.icon()) {
       override fun actionPerformed(event: AnActionEvent) = actionHandler.run(targetGroup)

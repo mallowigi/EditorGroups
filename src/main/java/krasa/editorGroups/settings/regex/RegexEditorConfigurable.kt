@@ -72,7 +72,7 @@ internal class RegexEditorConfigurable :
       }
 
       row {
-        cell(regexTablePanel!!)
+        cell(regexTablePanel ?: return@row)
           .align(Align.FILL)
       }
 
@@ -137,7 +137,7 @@ internal class RegexEditorConfigurable :
   override fun getDisplayName(): String = message("settings.regex")
 
   override fun isModified(): Boolean {
-    var isModified = super<BoundSearchableConfigurable>.isModified()
+    var isModified = super.isModified()
     if (regexModelTableEditor != null) {
       isModified = isModified || settings.isModified(regexModelTableEditor!!.getModel().allItems)
     }

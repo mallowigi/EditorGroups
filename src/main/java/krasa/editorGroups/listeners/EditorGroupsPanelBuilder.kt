@@ -21,7 +21,7 @@ import javax.swing.SwingConstants.TOP
 class EditorGroupsPanelBuilder {
   fun addPanelToEditor(manager: FileEditorManager, file: VirtualFile) {
     val project = manager.project
-    thisLogger().debug(">fileOpenedSync [$file]")
+    thisLogger().debug(">fileOpenedSync [$file]") // NON-NLS
 
     val fileToOpen = unwrapPreview(file) ?: return
     val editorGroupManager = EditorGroupManager.getInstance(project)
@@ -44,7 +44,7 @@ class EditorGroupsPanelBuilder {
       )
 
       thisLogger().debug(
-        "<fileOpenedSync EditorGroupPanel created, file=$fileToOpen in ${System.currentTimeMillis() - start}ms, fileEditor=$fileEditor"
+        "<fileOpenedSync EditorGroupPanel created, file=$fileToOpen in ${System.currentTimeMillis() - start}ms, fileEditor=$fileEditor" // NON-NLS
       )
     }
   }
@@ -60,7 +60,7 @@ class EditorGroupsPanelBuilder {
    */
   fun createPanel(project: Project, manager: FileEditorManager, file: VirtualFile, switchRequest: SwitchRequest?, fileEditor: FileEditor) {
     if (!fileEditor.isValid) {
-      thisLogger().debug(">createPanel: fileEditor already disposed")
+      thisLogger().debug(">createPanel: fileEditor already disposed") // NON-NLS
       return
     }
 
@@ -72,11 +72,10 @@ class EditorGroupsPanelBuilder {
     )
 
     // Add panel
-    val editorTabPlacement = EditorGroupsSettings.instance.tabsPlacement
-    when (editorTabPlacement) {
+    when (val editorTabPlacement = EditorGroupsSettings.instance.tabsPlacement) {
       TOP    -> manager.addTopComponent(fileEditor, panel.root)
       BOTTOM -> manager.addBottomComponent(fileEditor, panel.root)
-      else   -> thisLogger().warn("Unsupported tab placement: $editorTabPlacement")
+      else   -> thisLogger().warn("Unsupported tab placement: $editorTabPlacement") // NON-NLS
     }
     panel.postConstruct()
 
@@ -99,7 +98,7 @@ class EditorGroupsPanelBuilder {
                 when (panel.currentTabPlacement) {
                   TOP    -> manager.addTopComponent(fileEditor, panel.root)
                   BOTTOM -> manager.addBottomComponent(fileEditor, panel.root)
-                  else   -> thisLogger().warn("Unsupported tab placement: $panel.currentTabPlacement")
+                  else   -> thisLogger().warn("Unsupported tab placement: $panel.currentTabPlacement") // NON-NLS
                 }
 
                 panel.updateTabPlacement()

@@ -121,7 +121,7 @@ abstract class EditorGroupsSingleRowLayout(
     // Save the insets
     passInfo.insets = tabs.layoutInsets
     // Add offset left
-    passInfo.insets!!.left += tabs.firstTabOffset
+    (passInfo.insets ?: return).left += tabs.firstTabOffset
 
     // Set the fit length
     passInfo.toFitLength = strategy.getToFitLength(passInfo)
@@ -134,14 +134,14 @@ abstract class EditorGroupsSingleRowLayout(
 
   /** Sets the entry point bounds. */
   protected fun layoutEntryPointButton(passInfo: EditorGroupsSingleRowPassInfo) {
-    passInfo.entryPointRect = strategy.getEntryPointRect(passInfo)!!
+    passInfo.entryPointRect = (strategy.getEntryPointRect(passInfo) ?: return)
   }
 
   protected fun layoutLabels(passInfo: EditorGroupsSingleRowPassInfo) {
     var layoutStopped = false
 
     for (tabInfo in passInfo.toLayout) {
-      val tabLabel = tabs.getTabLabel(tabInfo)!!
+      val tabLabel = tabs.getTabLabel(tabInfo) ?: return
 
       if (layoutStopped) {
         val rect = strategy.getLayoutRect(
@@ -193,14 +193,14 @@ abstract class EditorGroupsSingleRowLayout(
   protected abstract fun recomputeToLayout(passInfo: EditorGroupsSingleRowPassInfo)
 
   protected fun calculateRequiredLength(passInfo: EditorGroupsSingleRowPassInfo) {
-    passInfo.requiredLength = passInfo.requiredLength + passInfo.insets!!.left + passInfo.insets!!.right
+    passInfo.requiredLength += (passInfo.insets ?: return).left + (passInfo.insets ?: return).right
 
     for (eachInfo in passInfo.visibleTabInfos) {
-      passInfo.requiredLength = passInfo.requiredLength + getRequiredLength(eachInfo)
+      passInfo.requiredLength += getRequiredLength(eachInfo)
       passInfo.toLayout.add(eachInfo)
     }
 
-    passInfo.requiredLength = passInfo.requiredLength + strategy.additionalLength
+    passInfo.requiredLength += strategy.additionalLength
   }
 
   protected fun getRequiredLength(tabInfo: EditorGroupTabInfo?): Int {

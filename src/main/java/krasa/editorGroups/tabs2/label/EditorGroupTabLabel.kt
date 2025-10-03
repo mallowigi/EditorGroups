@@ -151,7 +151,7 @@ class EditorGroupTabLabel(
                 val previous = tabs.findEnabledBackward(index, cycle = true)
                 if (previous != null) {
                   tabs.select(previous, requestFocus = false).doWhenDone {
-                    tabs.selectedLabel!!.requestFocusInWindow()
+                    (tabs.selectedLabel ?: return@doWhenDone).requestFocusInWindow()
                   }
                 }
               }
@@ -165,7 +165,7 @@ class EditorGroupTabLabel(
                 val next = tabs.findEnabledForward(index, cycle = true)
                 if (next != null) {
                   tabs.select(next, requestFocus = false).doWhenDone {
-                    tabs.selectedLabel!!.requestFocusInWindow()
+                    (tabs.selectedLabel ?: return@doWhenDone).requestFocusInWindow()
                   }
                 }
               }
@@ -373,12 +373,12 @@ class EditorGroupTabLabel(
     // Sets the popup to the activePopup prop
     tabs.activePopup = ActionManager.getInstance().createActionPopupMenu(place, toShow).component
     // Add the tabs' popup listener
-    tabs.activePopup!!.addPopupMenuListener(tabs.popupListener)
+    (tabs.activePopup ?: return).addPopupMenuListener(tabs.popupListener)
     // Basic tabs listener
-    tabs.activePopup!!.addPopupMenuListener(tabs)
+    (tabs.activePopup ?: return).addPopupMenuListener(tabs)
 
     // Show the popup at the event's position
-    JBPopupMenu.showByEvent(e, tabs.activePopup!!)
+    JBPopupMenu.showByEvent(e, tabs.activePopup ?: return)
   }
 
   /** Apply decorations. */

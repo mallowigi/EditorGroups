@@ -16,7 +16,7 @@ class ViewPanelToggleAction : ToggleAction(), DumbAware {
     val editorGroupsSettingsState = EditorGroupsSettings.instance
     editorGroupsSettingsState.isShowPanel = !editorGroupsSettingsState.isShowPanel
 
-    PanelRefresher.getInstance(event.project!!).refresh()
+    PanelRefresher.getInstance(event.project ?: return).refresh()
   }
 
   companion object {

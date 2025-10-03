@@ -96,7 +96,7 @@ class EditorGroupsTabs(private val project: Project, parent: Disposable, private
   fun adjustScroll() {
     if (project.isDisposed) return
 
-    val switchingRequest = EditorGroupManager.Companion.getInstance(project).getSwitchingRequest(file)
+    val switchingRequest = EditorGroupManager.getInstance(project).getSwitchingRequest(file)
     if (switchingRequest != null) {
       val myScrollOffset = switchingRequest.myScrollOffset
       val relativeScroll = myScrollOffset - this.scrollOffset

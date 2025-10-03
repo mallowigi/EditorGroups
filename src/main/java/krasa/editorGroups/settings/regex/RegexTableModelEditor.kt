@@ -355,7 +355,7 @@ class RegexTableModelEditor(
     const val PREFERABLE_VIEWPORT_WIDTH: Int = 200
     const val PREFERABLE_VIEWPORT_HEIGHT: Int = 280
 
-    @Suppress("unused")
+    @Suppress("unused") // NON-NLS
     private enum class Columns(val index: Int) {
       ENABLED(0),
       TOUCHED(1),

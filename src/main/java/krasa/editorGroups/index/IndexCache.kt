@@ -18,7 +18,6 @@ import krasa.editorGroups.settings.EditorGroupsSettings
 import krasa.editorGroups.support.FileResolver
 import krasa.editorGroups.support.Notifications
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.Throws
 
 @Service(Service.Level.PROJECT)
 class IndexCache(private val project: Project) {
@@ -90,7 +89,7 @@ class IndexCache(private val project: Project) {
     // init
     result.getLinks(project)
 
-    thisLogger().debug("<getOwningOrSingleGroup result = $result")
+    thisLogger().debug("<getOwningOrSingleGroup result = $result") // NON-NLS
 
     return result
   }
@@ -144,7 +143,7 @@ class IndexCache(private val project: Project) {
 
     val valid = group.isValid
 
-    thisLogger().debug("<validate $valid")
+    thisLogger().debug("<validate $valid") // NON-NLS
   }
 
   /**
@@ -172,7 +171,7 @@ class IndexCache(private val project: Project) {
       else             -> values[0]
     }
 
-    thisLogger().debug("<getGroupFromIndexById $editorGroup")
+    thisLogger().debug("<getGroupFromIndexById $editorGroup") // NON-NLS
 
     return editorGroup
   }
@@ -215,7 +214,7 @@ class IndexCache(private val project: Project) {
    */
   @Throws(ProcessCanceledException::class)
   fun initGroup(group: EditorGroupIndexValue) {
-    thisLogger().debug("<initGroup = [$group]")
+    thisLogger().debug("<initGroup = [$group]") // NON-NLS
 
     if (!group.exists()) return
     // Add the group to the cache
@@ -247,14 +246,14 @@ class IndexCache(private val project: Project) {
   ): EditorGroup {
     var result = EditorGroup.EMPTY
     if (!config.isRememberLastGroup) {
-      thisLogger().debug("<getLastEditorGroup $result (isRememberLastGroup=false)")
+      thisLogger().debug("<getLastEditorGroup $result (isRememberLastGroup=false)") // NON-NLS
       return result
     }
 
     val groups = groupsByLinks[currentFilePath]
     if (groups != null) {
       val last = groups.last
-      thisLogger().debug("last = $last")
+      thisLogger().debug("last = $last") // NON-NLS
 
       if (last != null && config.isRememberLastGroup) {
         result = getResultGroup(
@@ -271,7 +270,7 @@ class IndexCache(private val project: Project) {
       }
     }
 
-    thisLogger().debug("<getLastEditorGroup $result")
+    thisLogger().debug("<getLastEditorGroup $result") // NON-NLS
 
     return result
   }
@@ -286,7 +285,7 @@ class IndexCache(private val project: Project) {
    * @param currentFile The VirtualFile currently open in the editor.
    * @return The calculated EditorGroup based on the input parameters.
    */
-  @Suppress("detekt:CyclomaticComplexMethod")
+  @Suppress("detekt:CyclomaticComplexMethod") // NON-NLS
   private fun getResultGroup(
     last: String,
     includeAutoGroups: Boolean,
@@ -333,7 +332,7 @@ class IndexCache(private val project: Project) {
 
     result.addAll(externalGroupProvider.findGroups(currentFile))
 
-    thisLogger().debug("<findGroups $result")
+    thisLogger().debug("<findGroups $result") // NON-NLS
     return result
   }
 
@@ -352,7 +351,7 @@ class IndexCache(private val project: Project) {
       favouriteGroups.size > 1  -> result = EditorGroups(favouriteGroups)
     }
 
-    thisLogger().debug("<getMultiGroup $result")
+    thisLogger().debug("<getMultiGroup $result") // NON-NLS
 
     return result
   }
@@ -397,10 +396,10 @@ class IndexCache(private val project: Project) {
   fun getLast(currentFilePath: String): String? = groupsByLinks[currentFilePath]?.last
 
   fun loadState(state: EditorGroupProjectStorage.State) {
-    state.lastGroup.forEach { stringStringPair ->
+    state.lastGroup.forEach { (key, value) ->
       val editorGroups = EditorGroups()
-      groupsByLinks[stringStringPair.key] = editorGroups
-      editorGroups.last = stringStringPair.value
+      groupsByLinks[key] = editorGroups
+      editorGroups.last = value
     }
   }
 
@@ -414,7 +413,7 @@ class IndexCache(private val project: Project) {
       editorGroups.all
         .filter { it.isOwner(ownerPath) }
         .forEach { editorGroup ->
-          thisLogger().debug("removeGroup invalidating $editorGroup")
+          thisLogger().debug("removeGroup invalidating $editorGroup") // NON-NLS
 
           editorGroup.invalidate()
 

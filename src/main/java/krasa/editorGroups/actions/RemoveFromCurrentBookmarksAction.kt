@@ -65,8 +65,8 @@ class RemoveFromCurrentBookmarksAction : EditorGroupsAction() {
     }
 
     // Switch to another file if the current file is part of the files to remove
-    val editorGroupPanel = getEditorGroupPanel(e)
-    if (filesToRemoveSet.contains(editorGroupPanel!!.file)) {
+    val editorGroupPanel = getEditorGroupPanel(e) ?: return
+    if (filesToRemoveSet.contains(editorGroupPanel.file)) {
       val next = editorGroupPanel.goToNextTab(newTab = false, newWindow = false, split = Splitters.NONE)
       if (!next) editorGroupPanel.goToPreviousTab(newTab = false, newWindow = false, split = Splitters.NONE)
     }

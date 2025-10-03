@@ -77,7 +77,7 @@ class PanelRefresher(private val project: Project) : Disposable {
               BiConsumer { panel: EditorGroupPanel, displayedGroup: EditorGroup ->
                 if (displayedGroup !is BookmarksGroup) return@BiConsumer
 
-                thisLogger().debug("BookmarksListener refreshing ${panel.file.name}")
+                thisLogger().debug("BookmarksListener refreshing ${panel.file.name}") // NON-NLS
                 panel.refreshPane(refresh = true, newGroup = displayedGroup)
               }
             )
@@ -94,8 +94,7 @@ class PanelRefresher(private val project: Project) : Disposable {
   private fun iteratePanels(biConsumer: BiConsumer<EditorGroupPanel, EditorGroup>) {
     val manager = FileEditorManager.getInstance(project)
     for (selectedEditor in manager.allEditors) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
-      if (panel == null) continue
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: continue
 
       val displayedGroup = panel.getDisplayedGroupOrEmpty()
       biConsumer.accept(panel, displayedGroup)
@@ -113,24 +112,23 @@ class PanelRefresher(private val project: Project) : Disposable {
       override fun run() {
         if (project.isDisposed) return
 
-        thisLogger().debug(">onSmartMode")
+        thisLogger().debug("> onSmartMode") // NON-NLS
 
         val start = System.currentTimeMillis()
         val manager = FileEditorManager.getInstance(project)
 
         for (selectedEditor in manager.selectedEditors) {   // refreshing not selected one fucks up tabs scrolling
-          val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
-          if (panel == null) continue
+          val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: continue
 
           val displayedGroup = panel.getDisplayedGroupOrEmpty()
           if (displayedGroup is FolderGroup) continue
 
-          thisLogger().debug("onSmartMode: refreshing panel for ${panel.file}")
+          thisLogger().debug("onSmartMode: refreshing panel for ${panel.file}") // NON-NLS
 
           panel.refreshPane(refresh = false, newGroup = null)
         }
 
-        thisLogger().debug("onSmartMode ${System.currentTimeMillis() - start}ms ${Thread.currentThread().name}")
+        thisLogger().debug("onSmartMode ${System.currentTimeMillis() - start}ms ${Thread.currentThread().name}") // NON-NLS
       }
     })
   }
@@ -143,8 +141,7 @@ class PanelRefresher(private val project: Project) : Disposable {
   fun refresh(owner: String) {
     val manager = FileEditorManager.getInstance(project)
     for (selectedEditor in manager.allEditors) {
-      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL)
-      if (panel == null) continue
+      val panel = selectedEditor.getUserData<EditorGroupPanel?>(EditorGroupPanel.EDITOR_PANEL) ?: continue
 
       if (panel.getDisplayedGroupOrEmpty().isOwner(owner)) {
         panel.refreshPane(refresh = false, newGroup = null)
@@ -162,7 +159,7 @@ class PanelRefresher(private val project: Project) : Disposable {
   }
 
   fun onIndexingDone(ownerPath: String, group: EditorGroupIndexValue): EditorGroupIndexValue {
-    var resultGroup = cache.onIndexingDone(ownerPath, group)
+    val resultGroup = cache.onIndexingDone(ownerPath, group)
 
     if (DumbService.isDumb(project)) return resultGroup
 
@@ -175,7 +172,7 @@ class PanelRefresher(private val project: Project) : Disposable {
     }
 
     thisLogger().debug(
-      "onIndexingDone $ownerPath - ${System.currentTimeMillis() - start}ms ${Thread.currentThread().name}"
+      "onIndexingDone $ownerPath - ${System.currentTimeMillis() - start}ms ${Thread.currentThread().name}" // NON-NLS
     )
 
     return resultGroup
@@ -199,7 +196,7 @@ class PanelRefresher(private val project: Project) : Disposable {
     } catch (e: ProcessCanceledException) {
       throw e
     } catch (_: IndexNotReadyException) {
-      thisLogger().debug("initCache failed on IndexNotReadyException, will be executed again")
+      thisLogger().debug("initCache failed on IndexNotReadyException, will be executed again") // NON-NLS
       initCache()
       return
     }
@@ -207,7 +204,7 @@ class PanelRefresher(private val project: Project) : Disposable {
     cacheReady.set(true)
     onSmartMode()
 
-    thisLogger().debug("initCache done ${System.currentTimeMillis() - start}")
+    thisLogger().debug("initCache done ${System.currentTimeMillis() - start}") // NON-NLS
     // .inSmartMode(project)
     // .expireWith(project)
     // .submit(ourThreadExecutorsService)
@@ -222,9 +219,9 @@ class PanelRefresher(private val project: Project) : Disposable {
    */
   private suspend fun initializeCache(fileBasedIndex: FileBasedIndex, cache: IndexCache) {
     withContext(Dispatchers.IO) {
-      fileBasedIndex.getAllKeys<String>(EditorGroupIndex.NAME, this@PanelRefresher.project)
+      fileBasedIndex.getAllKeys(EditorGroupIndex.NAME, this@PanelRefresher.project)
         .forEach {
-          fileBasedIndex.getValues<String, EditorGroupIndexValue>(
+          fileBasedIndex.getValues(
             EditorGroupIndex.NAME,
             it,
             GlobalSearchScope.allScope(this@PanelRefresher.project)
@@ -239,6 +236,6 @@ class PanelRefresher(private val project: Project) : Disposable {
   }
 
   companion object {
-    fun getInstance(project: Project): PanelRefresher = project.getService<PanelRefresher>(PanelRefresher::class.java)
+    fun getInstance(project: Project): PanelRefresher = project.getService(PanelRefresher::class.java)
   }
 }
