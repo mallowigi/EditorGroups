@@ -122,6 +122,12 @@
         <!-- Rounded Tabs (Islands) -->
         <applicationService serviceInterface="krasa.editorGroups.tabs2.impl.rounded.KrRoundedTabsPainterProvider"
                             serviceImplementation="krasa.editorGroups.tabs2.impl.rounded.RoundedTabsPainterProvider"/>
+
+        <toolWindow id="Editor Groups"
+                    anchor="right"
+                    factoryClass="krasa.editorGroups.toolwindow.EditorGroupsToolWindowFactory"
+                    icon="AllIcons.Actions.GroupBy"
+                    secondary="false"/>
     </extensions>
 
     <!--suppress PluginXmlValidity -->
@@ -286,5 +292,4 @@
         </group>
 
     </actions>
-
 </idea-plugin>
