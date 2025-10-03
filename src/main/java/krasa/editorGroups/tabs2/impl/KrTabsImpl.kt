@@ -91,7 +91,7 @@ open class KrTabsImpl(
   var mySelectedInfo: EditorGroupTabInfo? = null
 
   // The more tabs toolbar
-  val moreToolbar: ActionToolbar?
+  val moreToolbar: ActionToolbar? = null
   var entryPointToolbar: ActionToolbar? = null
 
   // Returns default one action horizontal toolbar size (26x24)
@@ -289,6 +289,7 @@ open class KrTabsImpl(
 
       assert(visibleTabInfos.isEmpty())
       visibleTabInfos.addAll(tabs)
+      setTabsPosition(tabsPosition)
       resetTabsCache()
     }
 
@@ -984,7 +985,6 @@ open class KrTabsImpl(
     resetTabsCache()
     add(label)
     // Remove scroll border
-    adjust(tabInfo)
     return false
   }
 
@@ -1904,6 +1904,13 @@ open class KrTabsImpl(
     return this
   }
 
+  override fun removeTabMouseListener(listener: MouseListener): KrTabsImpl {
+    removeListeners()
+    tabMouseListeners.remove(listener)
+    addListeners()
+    return this
+  }
+
   override fun getComponent(): JComponent = this
 
   /** Adds mouse listeners to the tab labels of all visible tab info objects. */
@@ -2011,15 +2018,7 @@ open class KrTabsImpl(
       visibleTabInfos.forEach { it.tabLabel?.apply(uiDecoration) }
     }
 
-    tabs.forEach { adjust(it) }
-
     relayout(forced = true, layoutNow = false)
-  }
-
-  /** Adjusts the tab info component to remove the scroll border. */
-  private fun adjust(tabInfo: EditorGroupTabInfo) {
-    @Suppress("DEPRECATION")
-    UIUtil.removeScrollBorder(tabInfo.component ?: return)
   }
 
   /** Sorts the tabs using the provided comparator. */
@@ -2030,18 +2029,12 @@ open class KrTabsImpl(
   }
 
   override fun uiDataSnapshot(sink: DataSink) {
-    DataSink.uiDataSnapshot(sink, dataProvider)
     sink[QuickActionProvider.KEY] = this@KrTabsImpl
     sink[MorePopupAware.KEY] = this@KrTabsImpl
   }
 
   /** No actions (no close/pin) */
   override fun getActions(originalProvider: Boolean): List<AnAction> = emptyList()
-
-  override fun setDataProvider(dataProvider: DataProvider): KrTabsImpl {
-    this.dataProvider = dataProvider
-    return this
-  }
 
   /** Resets the layout for each JComponent within the container. */
   private fun applyResetComponents() {

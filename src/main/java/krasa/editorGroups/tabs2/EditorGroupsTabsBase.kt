@@ -2,7 +2,6 @@ package krasa.editorGroups.tabs2
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.util.ActionCallback
 import com.intellij.openapi.util.ActiveRunnable
 import krasa.editorGroups.tabs2.label.EditorGroupTabInfo
@@ -45,8 +44,6 @@ interface EditorGroupsTabsBase {
   /** The tab presentation. */
   fun getPresentation(): EditorGroupTabsPresentation
 
-  fun setDataProvider(dataProvider: DataProvider): EditorGroupsTabsBase?
-
   fun getTargetInfo(): EditorGroupTabInfo?
 
   fun addTabMouseListener(listener: MouseListener): EditorGroupsTabsBase
@@ -54,6 +51,8 @@ interface EditorGroupsTabsBase {
   fun addListener(listener: EditorGroupsTabsListener): EditorGroupsTabsBase?
 
   fun addListener(listener: EditorGroupsTabsListener, disposable: Disposable?): EditorGroupsTabsBase?
+
+  fun removeTabMouseListener(listener: MouseListener): EditorGroupsTabsBase?
 
   fun setSelectionChangeHandler(handler: SelectionChangeHandler): EditorGroupsTabsBase?
 
