@@ -127,7 +127,7 @@
                     anchor="right"
                     doNotActivateOnStart="true"
                     factoryClass="krasa.editorGroups.toolwindow.EditorGroupsToolWindowFactory"
-                    icon="AllIcons.Actions.GroupBy"
+                    icon="/icons/pluginIcon.svg"
                     secondary="false"/>
     </extensions>
 
