@@ -76,8 +76,11 @@ fun cutExtension(result: String, separator: String): String {
 fun getFileIcon(path: String?, project: Project?): Icon {
   if (path == null) return AllIcons.FileTypes.Any_type
 
-  val file = getFileByPath(path) ?: return AllIcons.FileTypes.Any_type
-  return computeFileIcon(file, Iconable.ICON_FLAG_READ_STATUS, project)
+  return ApplicationManager.getApplication().runReadAction<Icon> {
+    val file = getFileByPath(path)
+    if (file == null) AllIcons.FileTypes.Any_type
+    else computeFileIcon(file, Iconable.ICON_FLAG_READ_STATUS, project)
+  }
 }
 
 /**
