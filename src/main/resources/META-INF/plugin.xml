@@ -227,11 +227,13 @@
 
             <action id="krasa.editorGroups.ToggleFloatingButton"
                     class="krasa.editorGroups.actions.ToggleFloatingButtonAction"
-                    icon="AllIcons.General.Filter"/>
+                    icon="AllIcons.General.Menu"/>
 
             <action id="krasa.editorGroups.ToggleToolWindow"
                     class="krasa.editorGroups.actions.ToggleToolWindowAction"
-                    icon="AllIcons.General.Filter"/>
+                    icon="AllIcons.General.HideToolWindow"/>
+
+            <separator/>
 
             <action id="krasa.editorGroups.ToggleAutoSameFeatureGroups"
                     class="krasa.editorGroups.actions.ToggleAutoSameFeatureGroupsAction"
@@ -256,6 +258,12 @@
             <action id="krasa.editorGroups.ToggleReuseCurrentTabAction"
                     class="krasa.editorGroups.actions.ToggleReuseCurrentTabAction"
                     icon="AllIcons.General.Pin_tab"/>
+
+            <separator/>
+
+            <action id="krasa.editorGroups.ToggleRoundedTabs"
+                    class="krasa.editorGroups.actions.ToggleRoundedTabsAction"
+                    icon="AllIcons.Actions.GroupByModule"/>
 
             <action id="krasa.editorGroups.ToggleShowSize"
                     class="krasa.editorGroups.actions.ToggleShowSizeAction"

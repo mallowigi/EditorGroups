@@ -27,6 +27,7 @@ object PopupMenu {
     ToggleForceAction.ID,
     ToggleHideEmptyAction.ID,
     "-",
+    ToggleRoundedTabsAction.ID,
     ToggleCompactModeGroupsAction.ID,
     ToggleColorizeGroupsAction.ID,
     ToggleShowSizeAction.ID,
