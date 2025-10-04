@@ -97,8 +97,8 @@ object EditorGroupsUI {
     defaultTheme.fontSizeOffset
   )
 
-  fun arc(): Int = JBUI.getInt(
-    "EditorGroupsTabs.arc",
+  fun roundTabArc(): Int = JBUI.getInt(
+    "EditorGroupsTabs.roundTabArc",
     defaultTheme.roundTabArc
   )
 
