@@ -66,6 +66,12 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     // Show the panel at all
     var isShowPanel: Boolean by property(true)
 
+    // Show the floating button
+    var isShowFloatingButton: Boolean by property(true)
+
+    // Show the tool window
+    var isShowToolWindow: Boolean by property(true)
+
     // Reuse the current tab
     var reuseCurrentTab: Boolean by property(false)
 
@@ -221,6 +227,20 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
       state.isShowPanel = value
     }
 
+  @EditorGroupSetting([EditorGroupSetting.Category.UI])
+  var isShowFloatingButton: Boolean
+    get() = state.isShowFloatingButton
+    set(value) {
+      state.isShowFloatingButton = value
+    }
+
+  @EditorGroupSetting([EditorGroupSetting.Category.UI])
+  var isShowToolWindow: Boolean
+    get() = state.isShowToolWindow
+    set(value) {
+      state.isShowToolWindow = value
+    }
+
   @EditorGroupSetting([EditorGroupSetting.Category.GROUPS, EditorGroupSetting.Category.PERFORMANCE])
   var groupSizeLimit: Int
     get() = state.groupSizeLimitInt
@@ -287,15 +307,17 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     clone.isIndexOnlyEditorGroupsFiles = this.isIndexOnlyEditorGroupsFiles
     clone.isInitializeSynchronously = this.isInitializeSynchronously
     clone.isRememberLastGroup = this.isRememberLastGroup
+    clone.isRoundedTabs = this.isRoundedTabs
     clone.isSelectRegexGroup = this.isSelectRegexGroup
+    clone.isShowFloatingButton = this.isShowFloatingButton
     clone.isShowMeta = this.isShowMeta
     clone.isShowPanel = this.isShowPanel
     clone.isShowSize = this.isShowSize
+    clone.isShowToolWindow = this.isShowToolWindow
     clone.isSmallLabels = this.isSmallLabels
     clone.reuseCurrentTab = this.reuseCurrentTab
     clone.tabSizeLimit = this.tabSizeLimit
     clone.tabsPlacement = this.tabsPlacement
-    clone.isRoundedTabs = this.isRoundedTabs
     return clone
   }
 
@@ -316,15 +338,17 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     this.isIndexOnlyEditorGroupsFiles = state.isIndexOnlyEditorGroupsFiles
     this.isInitializeSynchronously = state.isInitializeSynchronously
     this.isRememberLastGroup = state.isRememberLastGroup
+    this.isRoundedTabs = state.isRoundedTabs
     this.isSelectRegexGroup = state.isSelectRegexGroup
+    this.isShowFloatingButton = state.isShowFloatingButton
     this.isShowMeta = state.isShowMeta
     this.isShowPanel = state.isShowPanel
     this.isShowSize = state.isShowSize
+    this.isShowToolWindow = state.isShowToolWindow
     this.isSmallLabels = state.isSmallLabels
     this.reuseCurrentTab = state.reuseCurrentTab
     this.tabSizeLimit = state.tabSizeLimit
     this.tabsPlacement = state.tabsPlacement
-    this.isRoundedTabs = state.isRoundedTabs
     this.fireChanged()
   }
 
@@ -341,29 +365,31 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
   }
 
   fun reset() {
-    this.isSelectRegexGroup = false
+    this.customFont = DEFAULT_FONT
+    this.groupSizeLimit = DEFAULT_GROUP_SIZE_LIMIT
     this.isAutoFolders = true
     this.isAutoSameFeature = true
     this.isAutoSameName = true
-    this.isForceSwitch = true
-    this.isHideEmpty = true
-    this.isShowSize = true
     this.isColorTabs = true
-    this.isSmallLabels = true
-    this.isContinuousScrolling = false
-    this.isInitializeSynchronously = false
-    this.isIndexOnlyEditorGroupsFiles = false
-    this.isExcludeEditorGroupsFiles = false
-    this.isRememberLastGroup = true
     this.isCompactTabs = false
+    this.isContinuousScrolling = false
+    this.isCustomFont = false
+    this.isExcludeEditorGroupsFiles = false
+    this.isForceSwitch = true
     this.isGroupSwitchGroupAction = false
+    this.isHideEmpty = true
+    this.isIndexOnlyEditorGroupsFiles = false
+    this.isInitializeSynchronously = false
+    this.isRememberLastGroup = true
+    this.isRoundedTabs = true
+    this.isSelectRegexGroup = false
+    this.isShowFloatingButton = true
     this.isShowPanel = true
-    this.groupSizeLimit = DEFAULT_GROUP_SIZE_LIMIT
+    this.isShowSize = true
+    this.isShowToolWindow = true
+    this.isSmallLabels = true
     this.tabSizeLimit = DEFAULT_TAB_SIZE_LIMIT
     this.tabsPlacement = SwingConstants.TOP
-    this.isCustomFont = false
-    this.customFont = DEFAULT_FONT
-    this.isRoundedTabs = true
     this.fireChanged()
   }
 
@@ -390,15 +416,17 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     if (isIndexOnlyEditorGroupsFiles != other.isIndexOnlyEditorGroupsFiles) return false
     if (isInitializeSynchronously != other.isInitializeSynchronously) return false
     if (isRememberLastGroup != other.isRememberLastGroup) return false
+    if (isRoundedTabs != other.isRoundedTabs) return false
     if (isSelectRegexGroup != other.isSelectRegexGroup) return false
+    if (isShowFloatingButton != other.isShowFloatingButton) return false
     if (isShowMeta != other.isShowMeta) return false
     if (isShowPanel != other.isShowPanel) return false
     if (isShowSize != other.isShowSize) return false
+    if (isShowToolWindow != other.isShowToolWindow) return false
     if (isSmallLabels != other.isSmallLabels) return false
     if (reuseCurrentTab != other.reuseCurrentTab) return false
     if (tabSizeLimit != other.tabSizeLimit) return false
     if (tabsPlacement != other.tabsPlacement) return false
-    if (this@EditorGroupsSettings.isRoundedTabs != other.isRoundedTabs) return false
 
     return true
   }
@@ -421,14 +449,16 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     result = 31 * result + isIndexOnlyEditorGroupsFiles.hashCode()
     result = 31 * result + isInitializeSynchronously.hashCode()
     result = 31 * result + isRememberLastGroup.hashCode()
+    result = 31 * result + isRoundedTabs.hashCode()
+    result = 31 * result + isShowFloatingButton.hashCode()
     result = 31 * result + isShowMeta.hashCode()
     result = 31 * result + isShowPanel.hashCode()
     result = 31 * result + isShowSize.hashCode()
+    result = 31 * result + isShowToolWindow.hashCode()
     result = 31 * result + isSmallLabels.hashCode()
     result = 31 * result + reuseCurrentTab.hashCode()
     result = 31 * result + tabSizeLimit
     result = 31 * result + tabsPlacement
-    result = 31 * result + this@EditorGroupsSettings.isRoundedTabs.hashCode()
     return result
   }
 
@@ -450,15 +480,17 @@ class EditorGroupsSettings : SimplePersistentStateComponent<EditorGroupsSettings
     |isIndexOnlyEditorGroupsFiles=$isIndexOnlyEditorGroupsFiles,
     |isInitializeSynchronously=$isInitializeSynchronously,
     |isRememberLastGroup=$isRememberLastGroup,
+    |isRoundedTabs=${isRoundedTabs},
     |isSelectRegexGroup=$isSelectRegexGroup,
+    |isShowFloatingButton=$isShowFloatingButton,
     |isShowMeta=$isShowMeta,
     |isShowPanel=$isShowPanel,
     |isShowSize=$isShowSize,
+    |isShowToolWindow=$isShowToolWindow,
     |isSmallLabels=$isSmallLabels,
     |reuseCurrentTab=$reuseCurrentTab,
     |tabSizeLimit=$tabSizeLimit,
     |tabsPlacement=$tabsPlacement,
-    |isRoundedTabs=${this@EditorGroupsSettings.isRoundedTabs},
     )
   """.trimMargin()
 

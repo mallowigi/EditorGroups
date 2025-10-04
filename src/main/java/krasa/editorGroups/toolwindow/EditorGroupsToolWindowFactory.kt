@@ -20,6 +20,7 @@ import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.events.EditorGroupChangeListener
 import krasa.editorGroups.messages.EditorGroupsBundle.message
 import krasa.editorGroups.model.EditorGroup
+import krasa.editorGroups.settings.EditorGroupsSettings
 import krasa.editorGroups.support.Splitters
 import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
@@ -29,6 +30,8 @@ import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
 internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
+  override suspend fun isApplicableAsync(project: Project): Boolean = EditorGroupsSettings.instance.isShowToolWindow
+
   override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
     val panel = JPanel(BorderLayout())
     val tabList = JBList<EditorGroupFileListProvider.FileEntry>()
