@@ -127,6 +127,21 @@ fun reuseCurrentTabOption(): BooleanOptionDescription = CheckboxDescriptor(
   EditorGroupsSettings.instance::reuseCurrentTab,
 ).asOptionDescriptor { EditorGroupsSettings.instance.fireChanged() }
 
+fun roundedTabsOption(): BooleanOptionDescription = CheckboxDescriptor(
+  getText(message("toggle.rounded.tabs")),
+  EditorGroupsSettings.instance::isRoundedTabs,
+).asOptionDescriptor { EditorGroupsSettings.instance.fireChanged() }
+
+fun isShowToolWindowOption(): BooleanOptionDescription = CheckboxDescriptor(
+  getText(message("toggle.switch.file.tool.window")),
+  EditorGroupsSettings.instance::isShowToolWindow,
+).asOptionDescriptor { EditorGroupsSettings.instance.fireChanged() }
+
+fun isShowFloatingButtonOption(): BooleanOptionDescription = CheckboxDescriptor(
+  getText(message("toggle.switch.file.floating.button")),
+  EditorGroupsSettings.instance::isShowFloatingButton,
+).asOptionDescriptor { EditorGroupsSettings.instance.fireChanged() }
+
 // endregion [Checkbox Definitions]
 
 internal class EditorGroupsTopHitProvider : ApplicationLevelProvider {
@@ -146,11 +161,14 @@ internal class EditorGroupsTopHitProvider : ApplicationLevelProvider {
     isInitializeSynchronouslyOption(),
     isRememberLastGroupOption(),
     isSelectRegexGroupOption(),
+    isShowFloatingButtonOption(),
     isShowMetaOption(),
     isShowPanelEnabledOption(),
     isShowSizeOption(),
+    isShowToolWindowOption(),
     isSmallLabelsOption(),
     reuseCurrentTabOption(),
+    roundedTabsOption(),
     toggleExcludeEditorGroupsFilesOption(),
   )
 }

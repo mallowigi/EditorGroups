@@ -48,6 +48,18 @@ internal class EditorSettingsConfigurable : BoundSearchableConfigurable(
           .comment(message("EditorGroupsSettings.isShowPanelCheckbox.toolTipText"))
       }
 
+      row {
+        checkBox(message("EditorGroupsSettings.showFloatingButton.text"))
+          .bindSelected(settingsClone::isShowFloatingButton)
+          .comment(message("EditorGroupsSettings.showFloatingButton.tooltipText"))
+      }
+
+      row {
+        checkBox(message("EditorGroupsSettings.showToolWindow.text"))
+          .bindSelected(settingsClone::isShowToolWindow)
+          .comment(message("EditorGroupsSettings.showToolWindow.tooltipText"))
+      }
+
       behaviorGroup = collapsibleGroup(message("settings.features.behavior.title")) {
         row {
           checkBox(message("EditorGroupsSettings.isSelectRegexGroupCheckbox.text"))

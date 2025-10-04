@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.ActionMenuItem
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.IndexNotReadyException
@@ -62,7 +63,7 @@ class SwitchGroupAction : QuickSwitchSchemeAction(), DumbAware, CustomComponentA
 
   override fun fillActions(project: Project, defaultActionGroup: DefaultActionGroup, dataContext: DataContext) {
     try {
-      val data = dataContext.getData(PlatformDataKeys.FILE_EDITOR)
+      val data = dataContext.getData(PlatformDataKeys.FILE_EDITOR) ?: FileEditorManager.getInstance(project).selectedEditor
       var editorGroupPanel: EditorGroupPanel? = null
       var displayedGroup = EditorGroup.EMPTY
       var currentFileGroups = emptyList<EditorGroup>()

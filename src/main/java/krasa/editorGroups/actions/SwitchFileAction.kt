@@ -19,6 +19,7 @@ import krasa.editorGroups.EditorGroupManager
 import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.messages.EditorGroupsBundle.message
 import krasa.editorGroups.model.Link
+import krasa.editorGroups.settings.EditorGroupsSettings
 import krasa.editorGroups.support.Notifications.showWarning
 import krasa.editorGroups.support.Splitters
 import krasa.editorGroups.support.UniqueTabNameBuilder
@@ -58,6 +59,11 @@ class SwitchFileAction : QuickSwitchSchemeAction(), DumbAware {
   }
 
   override fun update(e: AnActionEvent) {
+    if (!EditorGroupsSettings.instance.isShowFloatingButton) {
+      e.presentation.isEnabledAndVisible = false
+      return
+    }
+
     val editor = e.getData(CommonDataKeys.EDITOR)
     if (editor == null || editor.editorKind != EditorKind.MAIN_EDITOR) {
       e.presentation.setEnabledAndVisible(false)
