@@ -225,6 +225,14 @@
 
             <separator/>
 
+            <action id="krasa.editorGroups.ToggleFloatingButton"
+                    class="krasa.editorGroups.actions.ToggleFloatingButtonAction"
+                    icon="AllIcons.General.Filter"/>
+
+            <action id="krasa.editorGroups.ToggleToolWindow"
+                    class="krasa.editorGroups.actions.ToggleToolWindowAction"
+                    icon="AllIcons.General.Filter"/>
+
             <action id="krasa.editorGroups.ToggleAutoSameFeatureGroups"
                     class="krasa.editorGroups.actions.ToggleAutoSameFeatureGroupsAction"
                     icon="AllIcons.General.Filter"/>
