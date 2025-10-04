@@ -83,7 +83,7 @@ open class EditorGroupDefaultTabTheme : EditorGroupTabTheme {
     get() = COMPACT_TAB_HEIGHT
 
   override val roundTabArc: Int
-    get() = JBUI.CurrentTheme.MainToolbar.Button.hoverArc().float.toInt()
+    get() = JBUI.CurrentTheme.MainToolbar.Dropdown.hoverArc().float.toInt()
 
   override val roundTabOpacity: Float
     get() = 0.9f
