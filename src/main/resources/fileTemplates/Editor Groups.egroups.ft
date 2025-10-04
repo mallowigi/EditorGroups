@@ -1,8 +1,11 @@
+@group.id id1
 @group.title group1
 @group.related ./*
 @group.color black
+@group.fgcolor white
 
-
+@group.id id2
+@group.disable true
 @group.title group2
 @group.related ./*
 @group.color red
