@@ -1,5 +1,6 @@
 package krasa.editorGroups.toolwindow
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -25,6 +26,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JList
 import javax.swing.JPanel
+import javax.swing.SwingUtilities
 
 internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
   override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -42,7 +44,7 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
         hasFocus: Boolean
       ) {
         if (value != null) {
-          icon = value.link.fileIcon
+          icon = value.icon
           val currentFile = getCurrentFile(project)
           val attrs = when (value.link.virtualFile) {
             currentFile -> SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES
@@ -57,15 +59,19 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
     }
 
     // Add speed search for quick filtering
-    TreeUIHelper.getInstance().installListSpeedSearch(tabList) { (_, displayName) -> displayName }
+    TreeUIHelper.getInstance().installListSpeedSearch(tabList) { (_, displayName, _) -> displayName }
 
     fun updateTabs(selectCurrent: Boolean = true) {
-      val entries = EditorGroupFileListProvider.getFileEntries(project)
-      tabList.setListData(entries.toTypedArray())
-      if (selectCurrent) {
-        val currentFile = getCurrentFile(project)
-        val idx = entries.indexOfFirst { (link, _) -> link.virtualFile == currentFile }
-        if (idx >= 0) tabList.selectedIndex = idx
+      ApplicationManager.getApplication().executeOnPooledThread {
+        val entries = EditorGroupFileListProvider.getFileEntries(project)
+        SwingUtilities.invokeLater {
+          tabList.setListData(entries.toTypedArray())
+          if (selectCurrent) {
+            val currentFile = getCurrentFile(project)
+            val idx = entries.indexOfFirst { (link, _, _) -> link.virtualFile == currentFile }
+            if (idx >= 0) tabList.selectedIndex = idx
+          }
+        }
       }
     }
 
@@ -93,10 +99,11 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
       override fun mouseClicked(e: MouseEvent) {
         if (e.clickCount == 1) {
           val index = tabList.locationToIndex(e.point)
-          val (link, _) = tabList.model.getElementAt(index)
+          val (link, _, _) = tabList.model.getElementAt(index)
           val panel = getCurrentEditorGroupPanel(project)
           val virtualFile = link.virtualFile
           val currentFile = getCurrentFile(project)
+
           if (virtualFile != null && panel != null && virtualFile != currentFile) {
             EditorGroupManager.getInstance(project).openGroupFile(
               groupPanel = panel,

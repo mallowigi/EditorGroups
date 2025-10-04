@@ -125,6 +125,7 @@
 
         <toolWindow id="Editor Groups"
                     anchor="right"
+                    doNotActivateOnStart="true"
                     factoryClass="krasa.editorGroups.toolwindow.EditorGroupsToolWindowFactory"
                     icon="AllIcons.Actions.GroupBy"
                     secondary="false"/>

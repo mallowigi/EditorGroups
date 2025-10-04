@@ -6,12 +6,18 @@ import com.intellij.openapi.project.Project
 import krasa.editorGroups.EditorGroupPanel
 import krasa.editorGroups.model.Link
 import krasa.editorGroups.support.UniqueTabNameBuilder
+import krasa.editorGroups.support.getFileIcon
+import javax.swing.Icon
 
 /**
  * Provides the list of files (Links) and their display names for the current editor group.
  */
 object EditorGroupFileListProvider {
-  data class FileEntry(val link: Link, val displayName: String)
+  data class FileEntry(
+    val link: Link,
+    val displayName: String,
+    val icon: Icon
+  )
 
   fun getFileEntries(project: Project): List<FileEntry> {
     val fileEditorManager = FileEditorManager.getInstance(project)
@@ -27,6 +33,12 @@ object EditorGroupFileListProvider {
       project = project
     )
 
-    return links.map { link -> FileEntry(link, namesByPath[link] ?: link.name) }
+    return links.map { link ->
+      FileEntry(
+        link,
+        namesByPath[link] ?: link.name,
+        getFileIcon(link.virtualFile?.path, project)
+      )
+    }
   }
 }
