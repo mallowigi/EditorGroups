@@ -1,5 +1,8 @@
 package krasa.editorGroups.toolwindow
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -17,6 +20,8 @@ import com.intellij.ui.content.ContentFactory
 import com.intellij.util.ui.JBUI
 import krasa.editorGroups.EditorGroupManager
 import krasa.editorGroups.EditorGroupPanel
+import krasa.editorGroups.actions.RefreshAction
+import krasa.editorGroups.actions.SwitchGroupAction
 import krasa.editorGroups.events.EditorGroupChangeListener
 import krasa.editorGroups.messages.EditorGroupsBundle.message
 import krasa.editorGroups.model.EditorGroup
@@ -36,6 +41,15 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
     val panel = JPanel(BorderLayout())
     val tabList = JBList<EditorGroupFileListProvider.FileEntry>()
     panel.add(tabList, BorderLayout.CENTER)
+
+    // Add action toolbar with RefreshAction and SwitchGroupAction
+    val actionGroup = DefaultActionGroup().apply {
+      add(ActionManager.getInstance().getAction(RefreshAction.ID))
+      add(ActionManager.getInstance().getAction(SwitchGroupAction.ID))
+    }
+    val actionToolbar: ActionToolbar = ActionManager.getInstance().createActionToolbar("EditorGroupsToolbar", actionGroup, true)
+    actionToolbar.targetComponent = panel
+    panel.add(actionToolbar.component, BorderLayout.NORTH)
 
     // Use ColoredListCellRenderer for native look and feel
     tabList.cellRenderer = object : ColoredListCellRenderer<EditorGroupFileListProvider.FileEntry>() {
