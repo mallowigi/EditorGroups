@@ -60,9 +60,6 @@
         <editorTabColorProvider implementation="krasa.editorGroups.extensions.CustomEditorGroupsTabColorProvider" order="first"/>
         <editorTabColorProvider implementation="krasa.editorGroups.extensions.CurrentEditorGroupColorProvider" order="last"/>
 
-        <!-- TODO: Custom size (WIP) -->
-        <!--<iconLayerProvider implementation="krasa.editorGroups.extensions.CustomFileIconLayerProvider"/>-->
-
         <!-- Indices -->
         <fileBasedIndex implementation="krasa.editorGroups.index.EditorGroupIndex"/>
         <fileBasedIndex implementation="krasa.editorGroups.index.FilenameWithoutExtensionIndex"/>

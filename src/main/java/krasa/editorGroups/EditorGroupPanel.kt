@@ -37,10 +37,7 @@ import com.intellij.util.BitUtil
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import krasa.editorGroups.actions.PopupMenu
-import krasa.editorGroups.actions.RefreshAction
-import krasa.editorGroups.actions.RemoveFromCurrentBookmarksAction
-import krasa.editorGroups.actions.SwitchGroupAction
+import krasa.editorGroups.actions.*
 import krasa.editorGroups.events.EditorGroupChangeListener
 import krasa.editorGroups.index.IndexNotReady
 import krasa.editorGroups.language.EditorGroupsLanguage.isEditorGroupsLanguage
@@ -330,12 +327,14 @@ class EditorGroupPanel(
 
   /** Add the action buttons at the left of the panel. */
   private fun createToolbar() {
+    val actionManager = ActionManager.getInstance()
     val actionGroup = DefaultActionGroup().apply {
-      add(ActionManager.getInstance().getAction(RefreshAction.ID))
-      add(ActionManager.getInstance().getAction(SwitchGroupAction.ID))
+      add(actionManager.getAction(RefreshAction.ID))
+      add(actionManager.getAction(SwitchGroupAction.ID))
+      add(GroupLinksCountAction())
     }
 
-    toolbar = ActionManager.getInstance().createActionToolbar(
+    toolbar = actionManager.createActionToolbar(
       TOOLBAR_PLACE,
       actionGroup,
       true

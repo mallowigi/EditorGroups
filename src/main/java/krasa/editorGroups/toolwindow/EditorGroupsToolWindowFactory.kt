@@ -43,11 +43,12 @@ internal class EditorGroupsToolWindowFactory : ToolWindowFactory {
     panel.add(tabList, BorderLayout.CENTER)
 
     // Add action toolbar with RefreshAction and SwitchGroupAction
+    val actionManager = ActionManager.getInstance()
     val actionGroup = DefaultActionGroup().apply {
-      add(ActionManager.getInstance().getAction(RefreshAction.ID))
-      add(ActionManager.getInstance().getAction(SwitchGroupAction.ID))
+      add(actionManager.getAction(RefreshAction.ID))
+      add(actionManager.getAction(SwitchGroupAction.ID))
     }
-    val actionToolbar: ActionToolbar = ActionManager.getInstance().createActionToolbar("EditorGroupsToolbar", actionGroup, true)
+    val actionToolbar: ActionToolbar = actionManager.createActionToolbar("EditorGroupsToolbar", actionGroup, true)
     actionToolbar.targetComponent = panel
     panel.add(actionToolbar.component, BorderLayout.NORTH)
 
