@@ -22,7 +22,6 @@ class GroupLinksCountAction : DumbAwareAction() {
     val currentGroup = EditorGroupManager.getInstance(project).lastGroup
     val count = currentGroup.size(project)
 
-    e.presentation.text = count.toString()
     e.presentation.icon = CompositeIcon(count)
   }
 
