@@ -74,6 +74,12 @@ You can also open the file in a new tab, window, or split window:
 - `Alt + Click` - open a file in a vertical split window
 - `Alt + Shift + Click` - open a file in a horizontal split window
 
+### Tool Window
+
+The plugin also provides a tool window to display all the groups and files.
+
+![Tool Window](docs/assets/toolwindow.png)
+
 ### Shortcuts
 
 - `Ctrl + Alt + Q` - Refresh
@@ -132,6 +138,12 @@ When enabled, the plugin will keep in memory the last selected group for each op
 
 ### Appearance
 
+#### Rounded Tabs
+
+Display the tabs in a new style, similar to the one used within the new "Islands Layout"
+
+![Tabs Position](docs/assets/islands.png)
+
 #### Tabs Position
 
 You can customize the position of the tab panel (`TOP` or `BOTTOM`)
@@ -149,6 +161,10 @@ You can change the font of the tabs.
 Displays the size of the group for custom groups
 
 ![Display Group Size](docs/assets/switchEditorGroup.png)
+
+There's also an icon that displays the size of the group in the tab panel.
+
+![Display Group Size](docs/assets/counter.png)
 
 #### Compact Tabs
 
@@ -213,17 +229,17 @@ These files should contain a list of groups separated by one or more blank lines
 - A group might have a **root directory**: `@group.root .*`. If unspecified, the root directory of the project will be used.
 - A group must have a **title**. It will be displayed in the _Group Switcher_.
 - A group must have a **path pattern** for the related files: `@group.related .*/*.svg`
-  - A path is relative to the root
-  - It can contain absolute and relative paths
-  - It must be a regex
-  - You can use macros like `MODULE`, `PROJECT` to reference respectively the current module or the project root
-  - It does not support globs yet
+    - A path is relative to the root
+    - It can contain absolute and relative paths
+    - It must be a regex
+    - You can use macros like `MODULE`, `PROJECT` to reference respectively the current module or the project root
+    - You can also use `globs`, e.g. something like `src/**/*.kt` (experimental!)
 - A group can have both a **color** and **fgcolor** to give them a custom background and foreground color:
-  - `@group.color #FF0096`
-  - `@group.fgcolor #FFFFFF`
-  - You can preview the color directly in the file
-  - You can enter a hex color in the forms: #123, #123456 or #12345600
-  - You can also use a color from a predefined list of colors by invoking the autocompletion
+    - `@group.color #FF0096`
+    - `@group.fgcolor #FFFFFF`
+    - You can preview the color directly in the file
+    - You can enter a hex color in the forms: #123, #123456 or #12345600
+    - You can also use a color from a predefined list of colors by invoking the autocompletion
 - A group can be **disabled**: `@group.disable`
 
 Please note that this is a very naive implementation of a custom language. It does not have any error checking or validation, so be careful
