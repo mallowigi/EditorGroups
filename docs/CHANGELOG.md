@@ -2,6 +2,21 @@
 
 ## Changelog
 
+## 4.0.0
+
+### Features
+
+* **Rounded Tabs**: Bring the tab style from the new _Islands Layout_ to the _EditorGroupPanel_! 
+* **Group Counter**: Display a counter near the _EditorGroupPanel_ buttons that displays the number of files in the group.
+* **Tool Window**: Display the current editor group's links in a _Tool Window_, instead of (or in addition to) the _EditorGroupPanel_.
+* **Display Floating Button**: Add a setting to toggle the floating button for switching the current file.
+* **Display Tool Window**: Whether or not to display the new Tool Window.
+* **Support for Globs**: In _Custom Editor Groups_, you can now define **globs** for fetching files globally
+
+### Fixes
+
+* Improve the provided _File Template_ by adding `@group.id`, `@group.disable` and `@group.fgcolor`
+
 ## 3.2.0
 
 ### Fixes
