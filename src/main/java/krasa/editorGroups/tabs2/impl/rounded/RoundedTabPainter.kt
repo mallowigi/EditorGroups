@@ -1,6 +1,7 @@
 package krasa.editorGroups.tabs2.impl.rounded
 
 import com.intellij.ui.ColorUtil
+import com.intellij.util.ui.JBInsets
 import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsTabPainter
 import krasa.editorGroups.tabs2.impl.themes.EditorGroupDefaultTabTheme
@@ -105,6 +106,9 @@ internal open class RoundedTabPainter : EditorGroupsTabPainter {
     hovered: Boolean
   ) {
     val arc = theme.roundTabArc.toFloat()
+    // Remove insets from rect
+    JBInsets.removeFrom(rect, JBInsets.create(1, 1))
+
     val shape = RoundRectangle2D.Float(
       rect.x.toFloat(),
       rect.y.toFloat(),
