@@ -79,6 +79,8 @@ open class FileResolver {
         when {
           sanitizedFilePath.startsWith("*/") && sanitizedFilePath.endsWith(".*") -> resolveSameNameProjectFiles(sanitizedFilePath)
           sanitizedFilePath.startsWith("*/")                                     -> resolveProjectFiles(sanitizedFilePath)
+          sanitizedFilePath.contains("**") && sanitizedFilePath.contains("*.")   -> resolveGlobExtensions(sanitizedFilePath)
+          sanitizedFilePath.contains("**")                                       -> resolveGlobFiles(sanitizedFilePath)
           FileUtil.isAbsolute(sanitizedFilePath)                                 -> resolve(File(sanitizedFilePath))
           else                                                                   -> resolve(File(rootFolder, sanitizedFilePath))
         }
@@ -155,6 +157,54 @@ open class FileResolver {
 
   @Throws(IOException::class)
   protected fun resolveProjectFiles(filePath: String?) {
+    val sanitizedPath = (filePath ?: return).substring("*/".length)
+
+    var fileName = sanitizedPath
+    if (fileName.contains("/")) {
+      fileName = StringUtils.substringAfterLast(fileName, "/")
+    }
+
+    val virtualFilesByName = FilenameIndex.getVirtualFilesByName(
+      fileName,
+      !SystemInfo.isWindows,
+      GlobalSearchScope.allScope(project)
+    )
+
+    for (file in virtualFilesByName) {
+      val canonicalPath = file.path
+      if (canonicalPath.endsWith(sanitizedPath)) {
+        add(canonicalPath)
+      }
+    }
+  }
+
+  @Throws(IOException::class)
+  protected fun resolveGlobExtensions(filePath: String?) {
+    val sanitizedPath = (filePath ?: return).substring("*/".length)
+
+    val parentDir = StringUtils.substringBeforeLast(sanitizedPath, "**")
+    var fileName = sanitizedPath
+    if (fileName.contains("/")) {
+      fileName = StringUtils.substringAfterLast(fileName, "/")
+    }
+    val extension = StringUtils.substringAfterLast(fileName, ".")
+
+    val virtualFilesByName = FilenameIndex.getAllFilesByExt(
+      project,
+      extension,
+      GlobalSearchScope.allScope(project)
+    )
+
+    for (file in virtualFilesByName) {
+      val canonicalPath = file.path
+      if (canonicalPath.contains(parentDir)) {
+        add(canonicalPath)
+      }
+    }
+  }
+
+  @Throws(IOException::class)
+  protected fun resolveGlobFiles(filePath: String?) {
     val sanitizedPath = (filePath ?: return).substring("*/".length)
 
     var fileName = sanitizedPath
@@ -277,7 +327,7 @@ open class FileResolver {
       ownerFilePath: String,
       root: String?,
       relatedPaths: List<String>,
-      group: EditorGroupIndexValue
+      group: EditorGroupIndexValue,
     ): List<Link> {
       thisLogger().debug("<resolveLinks ownerFilePath=$ownerFilePath, root=$root, relatedPaths=$relatedPaths, group = [$group]") // NON-NLS
 
