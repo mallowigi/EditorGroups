@@ -107,6 +107,11 @@ object EditorGroupsUI {
     defaultTheme.roundTabOpacity
   )
 
+  fun roundTabBorderWidth(): Float = JBUI.getFloat(
+    "EditorGroupsTabs.roundTabBorderWidth",
+    defaultTheme.roundTabBorderWidth
+  )
+
   fun font(): Font {
     val isCustomFont = EditorGroupsSettings.instance.isCustomFont
     val customFont = EditorGroupsSettings.instance.customFont

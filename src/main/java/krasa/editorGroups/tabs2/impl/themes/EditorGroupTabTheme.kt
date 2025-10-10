@@ -55,4 +55,5 @@ interface EditorGroupTabTheme {
   // Islands
   val roundTabArc: Int
   val roundTabOpacity: Float?
+  val roundTabBorderWidth: Float?
 }

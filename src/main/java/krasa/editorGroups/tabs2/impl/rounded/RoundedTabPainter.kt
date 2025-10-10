@@ -4,16 +4,13 @@ import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.JBInsets
 import krasa.editorGroups.tabs2.EditorGroupsTabsPosition
 import krasa.editorGroups.tabs2.impl.painter.EditorGroupsTabPainter
-import krasa.editorGroups.tabs2.impl.themes.EditorGroupDefaultTabTheme
+import krasa.editorGroups.tabs2.impl.themes.EditorGroupCustomTabTheme
 import krasa.editorGroups.tabs2.impl.themes.EditorGroupTabTheme
-import java.awt.Color
-import java.awt.Graphics2D
-import java.awt.Point
-import java.awt.Rectangle
+import java.awt.*
 import java.awt.geom.RoundRectangle2D
 
 internal open class RoundedTabPainter : EditorGroupsTabPainter {
-  private val theme = EditorGroupDefaultTabTheme()
+  private val theme = EditorGroupCustomTabTheme()
 
   private val regularColors = theme.background to theme.background
 
@@ -132,13 +129,14 @@ internal open class RoundedTabPainter : EditorGroupsTabPainter {
 
     if (fill != null) {
       // Paint rounded tab
-      g.color = fill
+      g.color = ColorUtil.withAlpha(fill, theme.roundTabOpacity.toDouble())
       g.fill(shape)
     }
 
     if (draw != null) {
       // Paint rounded border
       g.color = draw
+      g.stroke = BasicStroke(theme.roundTabBorderWidth)
       g.draw(shape)
     }
   }
