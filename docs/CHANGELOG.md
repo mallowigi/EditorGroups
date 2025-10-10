@@ -2,6 +2,17 @@
 
 ## Changelog
 
+## 4.1.0
+
+### Features
+
+- Add support for custom *rounded tabs border width*
+- Add support for custom *rounded tabs opacity*
+
+### Fixes
+
+- Fix Rounded Tabs issue taking the default theme instead of the custom one
+
 ## 4.0.0
 
 ### Features
