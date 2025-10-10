@@ -104,7 +104,7 @@ internal open class RoundedTabPainter : EditorGroupsTabPainter {
   ) {
     val arc = theme.roundTabArc.toFloat()
     // Remove insets from rect
-    JBInsets.removeFrom(rect, JBInsets.create(1, 1))
+    JBInsets.removeFrom(rect, JBInsets.create(2, 1))
 
     val shape = RoundRectangle2D.Float(
       rect.x.toFloat(),
