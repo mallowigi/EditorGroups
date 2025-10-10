@@ -72,4 +72,7 @@ open class EditorGroupCustomTabTheme : EditorGroupTabTheme {
 
   override val roundTabOpacity: Float
     get() = EditorGroupsUI.backgroundOpacity()
+
+  override val roundTabBorderWidth: Float
+    get() = EditorGroupsUI.roundTabBorderWidth()
 }
